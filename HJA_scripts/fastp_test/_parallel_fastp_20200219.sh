@@ -7,7 +7,7 @@ set -o pipefail
 # a shell script to loop through a set of fastq files and run fastp
 #######################################################################################
 #######################################################################################
-
+# 
 # Usage: bash _parallel_fastp_20200219.sh
 
 # SCRIPT OUTLINE:
