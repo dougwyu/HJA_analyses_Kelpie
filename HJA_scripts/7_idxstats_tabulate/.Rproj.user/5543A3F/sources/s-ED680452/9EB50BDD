@@ -1,0 +1,25 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1583339175116.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "9EB50BDD",
+    "lastKnownWriteTime" : 1583339240,
+    "last_content_update" : 1583339240346,
+    "path" : "~/Dropbox/Working_docs/Luo_Mingjie_Oregon/HJA_scripts/7_idxstats_tabulate/1_idxstats_tabulate.Rmd",
+    "project_path" : "1_idxstats_tabulate.Rmd",
+    "properties" : {
+        "cursorPosition" : "623,0",
+        "scrollLine" : "620"
+    },
+    "read_only" : false,
+    "read_only_alternatives" : [
+    ],
+    "relative_order" : 2,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_markdown"
+}

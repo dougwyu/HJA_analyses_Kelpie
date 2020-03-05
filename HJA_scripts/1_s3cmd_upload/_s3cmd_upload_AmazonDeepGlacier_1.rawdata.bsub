@@ -1,0 +1,23 @@
+#!/bin/sh
+#BSUB -q long-eth     # debug, short (24 hours), medium (24 hours), long (168 hours = 7 days)
+#BSUB -J s3upldOrg1
+#BSUB -oo s3upldOrg1.out
+#BSUB -eo s3upldOrg1.err
+#BSUB -M 4000
+#BSUB -B        # sends email to me when job starts
+#BSUB -N        # sends email to me when job finishes
+
+. /etc/profile
+module purge
+module add python/anaconda/2.5/2.7 # installed by sysops
+
+cd ~/_Oregon/ || exit
+
+# tar -cf 2019Sep_shotgun_1.rawdata.tar 2019Sep_shotgun/1.rawdata/
+# md5sum 2019Sep_shotgun_1.rawdata.tar > 2019Sep_shotgun_1.rawdata.tar.md5
+
+# s3cmd put LOCAL_FILE s3://BUCKET/OBJECT
+s3cmd put --multipart-chunk-size-mb=150 2019Sep_shotgun_1.rawdata.tar s3://amazon-oregon-douglasyu/2019Sep_shotgun_1.rawdata.tar
+# --recursive could be used to upload an untarred folder and subfolders, but then i don't get chk md5sum
+
+s3cmd ls --list-md5 s3://amazon-oregon-douglasyu > amazon-oregon-douglasyu_20191203.md5

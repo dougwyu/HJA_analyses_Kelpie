@@ -1,0 +1,17 @@
+#####################
+#!/bin/sh
+#BSUB -q short-eth  # short-eth/ib has 24 hrs, mellanox-ib 7 days
+#BSUB -J boldID  # 10 chars max
+#BSUB -B
+#BSUB -N
+#BSUB -oo boldID.out
+#BSUB -eo boldID.err
+#BSUB -R "rusage[mem=8000]" # 80000 = 80 GB RAM, 3800 = 3.8 GB RAM  # asking for 127 GB causes indefinite pend job
+#BSUB -M 8000
+
+. /etc/profile
+module purge
+module load R
+
+Rscript --vanilla bold_identify_hpc.R "CO1_1sequence_perBIN_040915_COIspiking.fas"
+######################

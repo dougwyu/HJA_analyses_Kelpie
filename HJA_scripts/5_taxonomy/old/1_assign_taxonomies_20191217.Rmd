@@ -1,0 +1,255 @@
+---
+title: "assign_taxonomies"
+author: "Douglas Yu"
+date: "17/12/2019"
+output: html_document
+---
+
+on macOS
+download kelpie_${timestamp}_derep.fas from hpc
+
+upload kelpie_${timestamp}_derep.fas to https://www.gbif.org/tools/sequence-id
+download csv file, which will be called blastresult.csv
+    There is probably a programmatic way to do this....
+
+rename blastresult.csv to something memorable, e.g.  blastresult_GBIF_sequence_id_20200214.csv and save to HJA_scripts/5_taxonomy
+
+```{r setup}
+library(tidyverse)
+library(seqinr)
+library(conflicted)
+  conflict_prefer("mutate", "dplyr", quiet = TRUE)
+  conflict_prefer("select", "dplyr", quiet = TRUE)
+  conflict_prefer("summarise", "dplyr", quiet = TRUE)
+  conflict_prefer("filter", "dplyr", quiet = TRUE)
+  conflict_prefer("first", "dplyr", quiet = TRUE)
+  conflict_prefer("here", "here", quiet = TRUE)
+  conflict_prefer("separate", "tidyr", quiet = TRUE)
+  conflict_prefer("unite", "tidyr", quiet = TRUE)
+```
+
+
+```{r writeFasta function}
+writeFasta <- function(data, filename){
+  fastaLines = c()
+  for (rowNum in 1:nrow(data)){
+    fastaLines = c(fastaLines, as.character(paste(">", data[rowNum,"name"], sep = "")))
+    fastaLines = c(fastaLines, as.character(data[rowNum,"seq"]))
+  }
+  fileConn <- file(filename)
+  writeLines(fastaLines, fileConn)
+  close(fileConn)
+}
+```
+
+
+```{r import and reformat}
+gbifresult <- "blastresult_GBIF_sequence_id_20200214"
+gbifdf <- read_csv(paste0(gbifresult, ".csv"))
+gbifdf <- gbifdf %>% 
+    separate(occurrenceId, c("seqID", "OTUsize"), sep = ";", remove = FALSE) %>% 
+    mutate(
+        OTUsize = str_remove(OTUsize, "size=") # remove # "size=" from otusize column
+    ) %>% 
+    mutate(
+        OTUsize = as.numeric(OTUsize)
+    ) %>% 
+    separate(classification, c("Kingdom", "Phylum", "Class", "Order", "Family", "Genus", "Species"), sep = "_") %>% 
+    arrange(desc(OTUsize))
+```
+
+Remove BLAST_NO_MATCH and non-Insecta, non-Arachnida
+```{r filter}
+gbifdf <- gbifdf %>% 
+    filter(matchType != "BLAST_NO_MATCH") %>% 
+    filter(Class %in% c("Insecta", "Arachnida"))
+# 20200214:  5291 to 5221 seqs (70 seqs removed) 
+```
+
+Keep only the largest OTU of each BOLD ID
+20200214:  5221 to 1166 seqs
+```{r remove repeated BOLDIDs}
+gbifdf <- gbifdf %>% 
+    arrange(desc(OTUsize)) %>% 
+    group_by(scientificName) %>% # scientificName is the BOLD_ID
+    summarise(
+        marker = first(marker),
+        occurrenceId = first(occurrenceId),
+        OTUsize = max(OTUsize), # or first(), since i sorted by desc(OTUsize)
+        identity = first(identity),
+        bitScore = first(bitScore),
+        expectValue = first(expectValue),
+        matchType = first(matchType),
+        Kingdom = first(Kingdom),
+        Phylum = first(Phylum),
+        Class = first(Class),
+        Order = first(Order),
+        Family = first(Family),
+        Genus = first(Genus),
+        Species = first(Species),
+        sequence = first(sequence)
+    ) %>%
+    arrange(desc(OTUsize))
+```
+
+Following GBIF's recommendations on the website:
+BLAST_EXACT_MATCH means species
+BLAST_CLOSE_MATCH go to genus and add "sp" to consensusClassification
+BLAST_WEAK_MATCH higher taxon (i keep only to order)
+and add BOLDID to make it unique
+```{r build consensus classification}
+# str_replace_na() turns NA into literal "NA"s
+gbifdf <- gbifdf %>% 
+    mutate(
+    consensusClassification = case_when(
+        matchType == "BLAST_EXACT_MATCH" ~ str_c(str_replace_na(Class), str_replace_na(Order), str_replace_na(Family), str_replace_na(Genus), str_replace_na(Species), scientificName, sep = "_"),
+        matchType == "BLAST_CLOSE_MATCH" ~ str_c(str_replace_na(Class), str_replace_na(Order), str_replace_na(Family), str_replace_na(Genus), "sp", scientificName, sep = "_"),
+        matchType == "BLAST_WEAK_MATCH" ~ str_c(str_replace_na(Class), str_replace_na(Order), scientificName, sep = "_"),
+        )
+    ) %>% 
+    select(occurrenceId, OTUsize, identity, consensusClassification, matchType, everything())
+```
+
+```{r}
+gbifdfoutput <- "kelpie_20200214_BF3BR2_derep_filtered"
+
+# write_csv(gbifdf, paste0("kelpie_20200214_BF3BR2_derep_filtered", ".csv"))
+# gbifdf <- read_csv("kelpie_20200214_BF3BR2_derep_filtered.csv")
+```
+
+View kelpie_20200214_BF3BR2_derep_filtered.csv file in Excel
+
+Create a fasta file of the filtered gbifdf file
+```{r}
+kelpie_otus <- select(gbifdf, name = occurrenceId, seq = sequence)
+
+# write to working directory
+# writeFasta(kelpie_otus, paste0("kelpie_20200214_BF3BR2_derep_filtered", ".fas"))
+```
+
+kelpie_20200214_BF3BR2_derep_filtered.fas # 1,166 sequences
+
+Next, I import into Geneious and align the sequences using Translation Align (MAFFT Alignment option, frame 2, invertebrate mitochondrial code). I then translated the alignment to amino acids to look for stop codons and to see the amino-acid alignment coloured for hydrophobicity (as a way of checkking for outlier sequences after translation)
+
+1 sequence was very short, and i removed it. 
+">R3997_19;size=1"
+"AATAAATAATATAAGATTTTGATTACTA"
+
+1 sequence was very long, had stop codons, and was not alignable (500 nts), and i removed it.
+R3590_9;size=3
+
+Four other sequences also had stop codons (and also few copies).  However, after inspection, i can't find any obvious indels, so i have kept them
+R1343_86;size=8
+R904_134;size=5
+R2320_84;size=2
+R2352_82;size=1
+
+I save this as:
+kelpie_20200214_BF3BR2_derep_filtered_geneious.fas
+
+In previous runs through this pipeline, i have hand-corrected indels in some OTU sequences, which means that they need to have their taxonomies re-assigned. In that case, i upload to GBIF again, download the CSV file, and re-run the above script. In the 20200214 Kelpie run, I only deleted two OTU sequences, so i do not need to re-assign taxonomies, and i just run the next two chunks to remove the two deleted sequences from the gbifid file and create a new OTU sequence file.
+
+To kelpie_20200214_BF3BR2_derep_filtered_geneious.fas, add the two COI spike sequences from 8_reference_sequences/COI_spike_sequences_3spp_BF3BR2.fas # 1164 + 3 = 1167 seqs
+
+Create a Geneious-filtered gbifdf and create a new fasta file, this time with the taxonomies in the info line. 
+Include the three COI spike sequences from 8_reference_sequences_datasets/COI_spike_sequences_BF3BR2.fas
+```{r}
+# coispikefasta <- "COI_spike_sequences_3spp_BF3BR2.fas"
+coispikefasta <- "assembled_plasmids.fasta"
+
+# 1166 to 1164 sequences after Geneious filtering
+gbifdf <- gbifdf %>% 
+    filter(!(occurrenceId %in% c("R3997_19;size=1", "R3590_9;size=3")))
+
+kelpie_otus <- gbifdf %>% 
+    unite(col = name, consensusClassification, occurrenceId, sep = "_") %>%
+    mutate(
+    name = str_replace(name, ":", "_"),
+    name = str_replace(name, ";", "_"),
+    name = str_replace(name, "=", "_")
+  ) %>% 
+    mutate(
+    name = str_replace_all(name, " ", "_")
+  ) %>% 
+    select(name, seq = sequence)
+
+
+# read in spikes fasta file (output is a list)
+coispikes <- read.fasta(file = file.path("..", "8_reference_sequences_datasets", coispikefasta), seqtype = "DNA", as.string = TRUE, forceDNAtolower = FALSE, set.attributes = FALSE, strip.desc = TRUE, whole.header = TRUE)
+
+# use unlist() %>% enframe() to convert list to dataframe 
+coispikesdf <- coispikes %>% 
+  unlist(recursive = FALSE) %>% 
+  enframe(name = "name", value = "seq") 
+
+# bind_rows to combine kelpie otus and spike seqs
+kelpie_otus_and_spikes <- bind_rows(coispikesdf, kelpie_otus)
+
+# write to working directory
+writeFasta(kelpie_otus_and_spikes, paste0("kelpie_20200214_BF3BR2_derep_filtered_geneious", ".fas"))
+```
+
+NEXT STEP
+Use kelpie_20200214_BF3BR2_derep_filtered_geneious.fas as the mapping target
+
+# END
+
+
+
+
+Below is archived code that used seqtk to generate the Geneious-filtered fasta file. not useful
+
+seqtk subseq list 
+```{r}
+gbifdf_seqtk_subseq <- gbifdf %>% 
+    select(occurrenceId)
+# write_csv(gbifdf, "kelpie_20200214_BF3BR2_derep_filtered.csv")
+# write_tsv(gbifdf_seqtk_subseq, "5_taxonomy/gbifdf_seqtk_subseq.tsv", col_names = FALSE)
+```
+
+
+# bash commands
+Create filtered OTU fasta file
+keyboard shortcut to send to terminal is opt-cmd-fn-return
+```{bash cleanup}
+cd ~/Dropbox/Working_docs/Luo_Mingjie_Oregon/HJA_scripts/5_taxonomy
+
+# filter fasta
+seqtk subseq kelpie_20200214_BF3BR2_derep.fas gbifdf_seqtk_subseq.tsv > kelpie_20200214_BF3BR2_derep_filtered.fas
+
+seqkit stats kelpie_20200214_BF3BR2_derep_filtered.fas
+
+# cleanup
+rm gbifdf_seqtk_subseq.tsv
+rm kelpie_20200214_BF3BR2_derep_filtered.csv
+```
+
+seqtk subseq list
+```{r}
+
+gbifdf_seqtk_subseq <- gbifdf %>% 
+    select(occurrenceId)
+
+write_csv(gbifdf, "5_taxonomy/kelpie_20200214_BF3BR2_derep_filtered_geneious.csv")
+
+write_tsv(gbifdf_seqtk_subseq, "5_taxonomy/gbifdf_seqtk_subseq_geneious.tsv", col_names = FALSE)
+```
+
+Create filtered OTU fasta file
+keyboard shortcut to send to terminal is opt-cmd-fn-return
+```{bash cleanup}
+cd ~/Dropbox/Working_docs/Luo_Mingjie_Oregon/HJA_scripts/5_taxonomy
+
+# filter fasta
+seqkit stats kelpie_20200214_BF3BR2_derep_filtered.fas
+
+seqtk subseq kelpie_20200214_BF3BR2_derep_filtered.fas gbifdf_seqtk_subseq_geneious.tsv > kelpie_20200214_BF3BR2_derep_filtered_geneious.fas
+
+seqkit stats kelpie_20200214_BF3BR2_derep_filtered_geneious.fas
+
+# cleanup
+rm gbifdf_seqtk_subseq_geneious.tsv
+```
+
+
+

@@ -1,0 +1,74 @@
+{\rtf1\ansi\ansicpg1252\cocoartf1671\cocoasubrtf600
+{\fonttbl\f0\fnil\fcharset0 HelveticaNeue;\f1\fswiss\fcharset0 Helvetica;}
+{\colortbl;\red255\green255\blue255;\red0\green0\blue0;\red0\green0\blue0;}
+{\*\expandedcolortbl;;\cssrgb\c0\c0\c0\cname textColor;\cssrgb\c0\c0\c0;}
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+
+\f0\fs24 \cf2 From: LSF <phpcadmin@hpcmgmt01.uea.ac.uk>\
+Subject: Job 619770: <mnmp10> in cluster <phpc_cluster> Done\
+Date: 20 December 2019 at 05:57:08 GMT\
+To: b042@uea.ac.uk\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+
+\f1 \cf2 \
+\pard\pardeftab720\sl280\partightenfactor0
+\cf3 \expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec3 Job <mnmp10> was submitted from host <e0002> by user <b042> in cluster <phpc_cluster>.\
+Job was executed on host(s) <i0053>, in queue <mellanox-ib>, as user <b042> in cluster <phpc_cluster>.\
+</gpfs/home/b042> was used as the home directory.\
+</gpfs/home/b042/_Oregon/2019Sep_shotgun/2.trimmeddata/BWA10> was used as the working directory.\
+Started at Thu Dec 19 22:37:48 2019\
+Results reported on Fri Dec 20 05:57:08 2019\
+\
+Your job looked like:\
+\
+------------------------------------------------------------\
+# LSBATCH: User input\
+#!/bin/sh\
+#BSUB -q mellanox-ib \'a0\'a0\'a0\'a0# long-ib & mellanox-ib (168 hours = 7 days), short-ib & short-eth (24 hours)\
+#BSUB -J mnmp10\
+#BSUB -oo mnmp10.out\
+#BSUB -eo mnmp10.err\
+#BSUB -R "rusage[mem=28000]" \'a0# set at 28000. previous runs took max max 26 GB (n.b. short-ib, long-ib, mellanox-ib)\
+#BSUB -M 32000\
+#BSUB -x # exclusive access to node, should be in anything that is threaded\
+#BSUB -B \'a0\'a0\'a0\'a0\'a0\'a0\'a0#sends email to me when job starts\
+#BSUB -N \'a0\'a0\'a0\'a0\'a0\'a0\'a0# sends email to me when job finishes\
+\
+. /etc/profile\
+module purge\
+module load samtools # samtools 1.5\
+module load python/anaconda/4.2/2.7 # Python 2.7.12\
+module load java \'a0# java/jdk1.8.0_51\
+module load gcc # needed to run bedtools\
+# PATH=$PATH:~/scripts/cutadapt-1.11/build/scripts-2.7\
+# PATH=$PATH:~/scripts/bwa_0.7.17_r1188 # made 22 Jan 2018 from github\
+# PATH=$PATH:~/scripts/bfc/ # r181 # made 3 Aug 2015 from github\
+# PATH=$PATH:~/scripts/vsearch-2.6.2-linux-x86_64/bin/ # downloaded 22 Jan 2018 from github\
+# PATH=$PATH:~/scripts/TrimGalore-0.4.5/ # downloaded 22 Jan 2018 from github\
+# PATH=$PATH:~/scripts/minimap2-2.10_x64-linux/ \'a0# downloaded binary 28 May 2018 from github 2.10-r761\
+PATH=$PATH:~/scripts/minimap2-2.15_x64-linux/ \'a0# downloaded binary 05 Feb 2019 from github 2.15-r905\
+PATH=$PATH:~/scripts/bedtools2/bin # made 22 Jan 2018 from github 2.27.1\
+# PATH=$PATH:~/scripts/bwa-mem2-2.0pre1_x64-linux/ # downloaded from github 18 Dec 2019\
+\
+bash _loop_minimap2_only_20191217.sh\
+\
+------------------------------------------------------------\
+\
+Successfully completed.\
+\
+Resource usage summary:\
+\
+\'a0\'a0\'a0CPU time : \'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a080341.70 sec.\
+\'a0\'a0\'a0Max Memory : \'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a013113 MB\
+\'a0\'a0\'a0Average Memory : \'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a09746.92 MB\
+\'a0\'a0\'a0Total Requested Memory : \'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a028000.00 MB\
+\'a0\'a0\'a0Delta Memory : \'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a014887.00 MB\
+\'a0\'a0\'a0Max Swap : \'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a015222 MB\
+\'a0\'a0\'a0Max Processes : \'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a07\
+\'a0\'a0\'a0Max Threads : \'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a045\
+\
+Read file <mnmp10.out> for stdout output of this job.\
+Read file <mnmp10.err> for stderr output of this job.\
+\
+}

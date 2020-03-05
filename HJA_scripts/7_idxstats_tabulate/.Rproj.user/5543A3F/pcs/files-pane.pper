@@ -1,0 +1,17 @@
+{
+    "path" : "~/Dropbox/Working_docs/Luo_Mingjie_Oregon/HJA_scripts/7_idxstats_tabulate",
+    "sortOrder" : [
+        {
+            "ascending" : true,
+            "columnIndex" : 2
+        },
+        {
+            "ascending" : true,
+            "columnIndex" : 4
+        },
+        {
+            "ascending" : false,
+            "columnIndex" : 3
+        }
+    ]
+}

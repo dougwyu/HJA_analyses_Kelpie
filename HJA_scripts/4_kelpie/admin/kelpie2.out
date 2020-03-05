@@ -1,0 +1,190 @@
+Home folder is /gpfs/home/b042/_Oregon/2019Sep_shotgun/testkelpie
+SM-09-M1-S2_BDSW190603191-2a SM-09-M2-S1_BDSW190603192-2a SM-09-M2-S2_BDSW190603193-2a SM-PG-M1-S1_BDSW190603194-2a SM-PG-M1-S2_BDSW190603195-1a
+There are 5 folders that will be processed.
+Kelpie (V2.0.2) -f CCHGAYATRGCHTTYCCHCG -r TCDGGRTGNCCRAARAAYCA -unfiltered -strict -min 400 -max 440 SM-09-M1-S2_BDSW190603191-2a/SM-09-M1-S2_BDSW190603191-2a_1_val_1.fq SM-09-M1-S2_BDSW190603191-2a/SM-09-M1-S2_BDSW190603191-2a_2_val_2.fq SM-09-M1-S2_BDSW190603191-2a/SM-09-M1-S2_BDSW190603191-2a.fas 
+built kMer sets from forward primer
+built kMer sets from reverse primer
+filtering SM-09-M1-S2_BDSW190603191-2a/SM-09-M1-S2_BDSW190603191-2a_1_val_1.fq
+filtering SM-09-M1-S2_BDSW190603191-2a/SM-09-M1-S2_BDSW190603191-2a_2_val_2.fq
+found 5413 reads matching starting primers, 5479 matching ending primers
+scanned 7682 reads. 1267 reads added 71032 kMers to region filter. 2244 ending kMers found
+scanned 39915 reads. 26934 reads added 2341271 kMers to region filter. 1288 ending kMers found
+scanned 230127 reads. 580 reads added 33047 kMers to region filter. 227999 ending kMers found
+scanned 28229 reads. 22139 reads added 1890343 kMers to region filter. 589 ending kMers found
+scanned 207739 reads. 151662 reads added 10738831 kMers to region filter. 18 ending kMers found
+scanned 656634 reads. 443556 reads added 23589046 kMers to region filter. 1377 ending kMers found
+initial region filter contains 76705103 kMers
+initial ending filter contains 9746 kMers
+final region filter contains 711079 kMers
+final ending filter contains 9746 kMers
+filtered and kept 1146140/44964830 primer-region reads from 2 files in 1771.7s
+built terminating primer set for extension phase
+building initial kMer table for extension phase
+denoising initial kMer table
+removed 16445263 kMers from kMerTable
+finished building kMer tables: 20129104 32-mers; 216632700 kMer pairs over 11/12 pair lengths
+cleaned 5162/5185 starting reads; 23 uncleansed starting reads
+extended 1076/1137 short starting reads; 61 not extended
+5101 reads starting with F primer after extension
+Looking at 190/1140955 additional starting reads
+added 190 starting reads
+extended 529/5291 reads
+extended 1058/5291 reads
+extended 1587/5291 reads
+extended 2116/5291 reads
+extended 2645/5291 reads
+extended 3174/5291 reads
+extended 3703/5291 reads
+extended 4232/5291 reads
+extended 4761/5291 reads
+extended 5290/5291 reads
+dropped 321 reads (too short after extension or no terminal primer found)
+wrote 4970 extended F->R reads (400bp - 440bp) to SM-09-M1-S2_BDSW190603191-2a/SM-09-M1-S2_BDSW190603191-2a.fas in 2242.2s
+Kelpie (V2.0.2) -f CCHGAYATRGCHTTYCCHCG -r TCDGGRTGNCCRAARAAYCA -unfiltered -strict -min 400 -max 440 SM-09-M2-S1_BDSW190603192-2a/SM-09-M2-S1_BDSW190603192-2a_1_val_1.fq SM-09-M2-S1_BDSW190603192-2a/SM-09-M2-S1_BDSW190603192-2a_2_val_2.fq SM-09-M2-S1_BDSW190603192-2a/SM-09-M2-S1_BDSW190603192-2a.fas 
+built kMer sets from forward primer
+built kMer sets from reverse primer
+filtering SM-09-M2-S1_BDSW190603192-2a/SM-09-M2-S1_BDSW190603192-2a_1_val_1.fq
+filtering SM-09-M2-S1_BDSW190603192-2a/SM-09-M2-S1_BDSW190603192-2a_2_val_2.fq
+found 2988 reads matching starting primers, 3022 matching ending primers
+scanned 2930 reads. 1484 reads added 85301 kMers to region filter. 439 ending kMers found
+scanned 41874 reads. 28408 reads added 1638529 kMers to region filter. 615 ending kMers found
+scanned 3040 reads. 1382 reads added 87126 kMers to region filter. 803 ending kMers found
+scanned 68052 reads. 43763 reads added 2210731 kMers to region filter. 3040 ending kMers found
+initial region filter contains 7788431 kMers
+initial ending filter contains 12508 kMers
+final region filter contains 358872 kMers
+final ending filter contains 12508 kMers
+filtered and kept 1072888/56734678 primer-region reads from 2 files in 1833.2s
+built terminating primer set for extension phase
+building initial kMer table for extension phase
+denoising initial kMer table
+removed 14342656 kMers from kMerTable
+finished building kMer tables: 6936065 32-mers; 108260060 kMer pairs over 12/12 pair lengths
+cleaned 2649/2659 starting reads; 10 uncleansed starting reads
+extended 557/628 short starting reads; 71 not extended
+2578 reads starting with F primer after extension
+Looking at 82/1070229 additional starting reads
+added 82 starting reads
+extended 266/2660 reads
+extended 532/2660 reads
+extended 798/2660 reads
+extended 1064/2660 reads
+extended 1330/2660 reads
+extended 1596/2660 reads
+extended 1862/2660 reads
+extended 2128/2660 reads
+extended 2394/2660 reads
+extended 2660/2660 reads
+dropped 292 reads (too short after extension or no terminal primer found)
+wrote 2368 extended F->R reads (400bp - 440bp) to SM-09-M2-S1_BDSW190603192-2a/SM-09-M2-S1_BDSW190603192-2a.fas in 439.9s
+Kelpie (V2.0.2) -f CCHGAYATRGCHTTYCCHCG -r TCDGGRTGNCCRAARAAYCA -unfiltered -strict -min 400 -max 440 SM-09-M2-S2_BDSW190603193-2a/SM-09-M2-S2_BDSW190603193-2a_1_val_1.fq SM-09-M2-S2_BDSW190603193-2a/SM-09-M2-S2_BDSW190603193-2a_2_val_2.fq SM-09-M2-S2_BDSW190603193-2a/SM-09-M2-S2_BDSW190603193-2a.fas 
+built kMer sets from forward primer
+built kMer sets from reverse primer
+filtering SM-09-M2-S2_BDSW190603193-2a/SM-09-M2-S2_BDSW190603193-2a_1_val_1.fq
+filtering SM-09-M2-S2_BDSW190603193-2a/SM-09-M2-S2_BDSW190603193-2a_2_val_2.fq
+found 3111 reads matching starting primers, 3306 matching ending primers
+scanned 2878 reads. 1118 reads added 76053 kMers to region filter. 995 ending kMers found
+scanned 18738 reads. 11761 reads added 686682 kMers to region filter. 1249 ending kMers found
+scanned 4124 reads. 1977 reads added 116486 kMers to region filter. 1048 ending kMers found
+scanned 36834 reads. 22430 reads added 1176650 kMers to region filter. 1521 ending kMers found
+initial region filter contains 4067717 kMers
+initial ending filter contains 18420 kMers
+final region filter contains 196198 kMers
+final ending filter contains 18420 kMers
+filtered and kept 162365/60142370 primer-region reads from 2 files in 1994.7s
+built terminating primer set for extension phase
+building initial kMer table for extension phase
+denoising initial kMer table
+removed 2638876 kMers from kMerTable
+finished building kMer tables: 1369860 32-mers; 17987266 kMer pairs over 12/12 pair lengths
+cleaned 2653/2691 starting reads; 38 uncleansed starting reads
+extended 533/632 short starting reads; 99 not extended
+2554 reads starting with F primer after extension
+Looking at 96/159674 additional starting reads
+added 96 starting reads
+extended 265/2650 reads
+extended 530/2650 reads
+extended 795/2650 reads
+extended 1060/2650 reads
+extended 1325/2650 reads
+extended 1590/2650 reads
+extended 1855/2650 reads
+extended 2120/2650 reads
+extended 2385/2650 reads
+extended 2650/2650 reads
+dropped 622 reads (too short after extension or no terminal primer found)
+wrote 2028 extended F->R reads (400bp - 440bp) to SM-09-M2-S2_BDSW190603193-2a/SM-09-M2-S2_BDSW190603193-2a.fas in 35.1s
+Kelpie (V2.0.2) -f CCHGAYATRGCHTTYCCHCG -r TCDGGRTGNCCRAARAAYCA -unfiltered -strict -min 400 -max 440 SM-PG-M1-S1_BDSW190603194-2a/SM-PG-M1-S1_BDSW190603194-2a_1_val_1.fq SM-PG-M1-S1_BDSW190603194-2a/SM-PG-M1-S1_BDSW190603194-2a_2_val_2.fq SM-PG-M1-S1_BDSW190603194-2a/SM-PG-M1-S1_BDSW190603194-2a.fas 
+built kMer sets from forward primer
+built kMer sets from reverse primer
+filtering SM-PG-M1-S1_BDSW190603194-2a/SM-PG-M1-S1_BDSW190603194-2a_1_val_1.fq
+filtering SM-PG-M1-S1_BDSW190603194-2a/SM-PG-M1-S1_BDSW190603194-2a_2_val_2.fq
+found 4536 reads matching starting primers, 4844 matching ending primers
+scanned 5826 reads. 3260 reads added 192006 kMers to region filter. 969 ending kMers found
+scanned 141956 reads. 98597 reads added 5697329 kMers to region filter. 1021 ending kMers found
+scanned 6195 reads. 3920 reads added 240788 kMers to region filter. 805 ending kMers found
+scanned 153893 reads. 114156 reads added 6675311 kMers to region filter. 1288 ending kMers found
+initial region filter contains 23106610 kMers
+initial ending filter contains 23020 kMers
+final region filter contains 2672290 kMers
+final ending filter contains 23020 kMers
+filtered and kept 1389004/67974386 primer-region reads from 2 files in 2158.6s
+built terminating primer set for extension phase
+building initial kMer table for extension phase
+denoising initial kMer table
+removed 18063356 kMers from kMerTable
+finished building kMer tables: 13335808 32-mers; 190048288 kMer pairs over 12/12 pair lengths
+cleaned 4210/4373 starting reads; 163 uncleansed starting reads
+extended 967/1123 short starting reads; 156 not extended
+4054 reads starting with F primer after extension
+Looking at 143/1384631 additional starting reads
+added 141 starting reads
+extended 419/4195 reads
+extended 838/4195 reads
+extended 1257/4195 reads
+extended 1676/4195 reads
+extended 2095/4195 reads
+extended 2514/4195 reads
+extended 2933/4195 reads
+extended 3352/4195 reads
+extended 3771/4195 reads
+extended 4190/4195 reads
+dropped 574 reads (too short after extension or no terminal primer found)
+wrote 3621 extended F->R reads (400bp - 440bp) to SM-PG-M1-S1_BDSW190603194-2a/SM-PG-M1-S1_BDSW190603194-2a.fas in 488.3s
+Kelpie (V2.0.2) -f CCHGAYATRGCHTTYCCHCG -r TCDGGRTGNCCRAARAAYCA -unfiltered -strict -min 400 -max 440 SM-PG-M1-S2_BDSW190603195-1a/SM-PG-M1-S2_BDSW190603195-1a_1_val_1.fq SM-PG-M1-S2_BDSW190603195-1a/SM-PG-M1-S2_BDSW190603195-1a_2_val_2.fq SM-PG-M1-S2_BDSW190603195-1a/SM-PG-M1-S2_BDSW190603195-1a.fas 
+built kMer sets from forward primer
+built kMer sets from reverse primer
+filtering SM-PG-M1-S2_BDSW190603195-1a/SM-PG-M1-S2_BDSW190603195-1a_1_val_1.fq
+filtering SM-PG-M1-S2_BDSW190603195-1a/SM-PG-M1-S2_BDSW190603195-1a_2_val_2.fq
+found 6685 reads matching starting primers, 6527 matching ending primers
+scanned 7534 reads. 1719 reads added 110838 kMers to region filter. 3827 ending kMers found
+scanned 17438 reads. 10284 reads added 690251 kMers to region filter. 1399 ending kMers found
+scanned 8214 reads. 4069 reads added 176434 kMers to region filter. 1004 ending kMers found
+scanned 70648 reads. 48984 reads added 2567106 kMers to region filter. 765 ending kMers found
+initial region filter contains 7076238 kMers
+initial ending filter contains 17674 kMers
+final region filter contains 178336 kMers
+final ending filter contains 17674 kMers
+filtered and kept 314871/61588510 primer-region reads from 2 files in 2009.8s
+built terminating primer set for extension phase
+building initial kMer table for extension phase
+denoising initial kMer table
+removed 5903092 kMers from kMerTable
+finished building kMer tables: 6134720 32-mers; 70433349 kMer pairs over 12/12 pair lengths
+cleaned 6022/6048 starting reads; 26 uncleansed starting reads
+extended 1334/1431 short starting reads; 97 not extended
+5925 reads starting with F primer after extension
+Looking at 238/308823 additional starting reads
+added 238 starting reads
+extended 616/6163 reads
+extended 1232/6163 reads
+extended 1848/6163 reads
+extended 2464/6163 reads
+extended 3080/6163 reads
+extended 3696/6163 reads
+extended 4312/6163 reads
+extended 4928/6163 reads
+extended 5544/6163 reads
+extended 6160/6163 reads
+dropped 401 reads (too short after extension or no terminal primer found)
+wrote 5762 extended F->R reads (400bp - 440bp) to SM-PG-M1-S2_BDSW190603195-1a/SM-PG-M1-S2_BDSW190603195-1a.fas in 265.9s

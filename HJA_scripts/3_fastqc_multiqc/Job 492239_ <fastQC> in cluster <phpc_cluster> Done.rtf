@@ -1,0 +1,67 @@
+{\rtf1\ansi\ansicpg1252\cocoartf1671\cocoasubrtf600
+{\fonttbl\f0\fnil\fcharset0 HelveticaNeue;\f1\fswiss\fcharset0 Helvetica;}
+{\colortbl;\red255\green255\blue255;\red0\green0\blue0;\red0\green0\blue0;}
+{\*\expandedcolortbl;;\cssrgb\c0\c0\c0\cname textColor;\cssrgb\c0\c0\c0;}
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+
+\f0\fs24 \cf2 From: LSF <phpcadmin@hpcmgmt01.uea.ac.uk>\
+Subject: Job 492239: <fastQC> in cluster <phpc_cluster> Done\
+Date: 5 December 2019 at 14:10:16 GMT\
+To: b042@uea.ac.uk\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+
+\f1 \cf2 \
+\pard\pardeftab720\sl280\partightenfactor0
+\cf3 \expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec3 Job <fastQC> was submitted from host <e0004> by user <b042> in cluster <phpc_cluster>.\
+Job was executed on host(s) <e0130>, in queue <short-eth>, as user <b042> in cluster <phpc_cluster>.\
+</gpfs/home/b042> was used as the home directory.\
+</gpfs/home/b042/_Oregon> was used as the working directory.\
+Started at Thu Dec \'a05 09:36:40 2019\
+Results reported on Thu Dec \'a05 14:10:16 2019\
+\
+Your job looked like:\
+\
+------------------------------------------------------------\
+# LSBATCH: User input\
+#!/bin/sh\
+#BSUB -q short-eth \'a0\'a0\'a0\'a0#debug, short (24 hours), medium (24 hours), long (168 hours = 7 days)\
+#BSUB -J fastQC\
+#BSUB -oo fastQC.out\
+#BSUB -eo fastQC.err\
+#BSUB -R "rusage[mem=12000]"\
+#BSUB -M 12000\
+#BSUB -B \'a0\'a0\'a0\'a0\'a0\'a0\'a0#sends email to me when job starts\
+#BSUB -N \'a0\'a0\'a0\'a0\'a0\'a0\'a0# sends email to me when job finishes\
+\
+. /etc/profile\
+module purge\
+module load java\
+module add python/anaconda/4.2/3.5 \'a0# multiqc is now in the path\
+PATH=$PATH:~/scripts/parallel-20170722/bin/ # GNU Parallel\
+PATH=$PATH:~/scripts/FastQC_0.11.8/ # downloaded on 20191205\
+\
+bash _parallel_fastQC_20191205.sh # this runs fastQC\
+# multiqc --version # gives version number, which is 1.4\
+multiqc . \'a0# this analyses the current directory and all subdirectories.\
+# this job runs about 1 hr 45 mins\
+\
+------------------------------------------------------------\
+\
+Successfully completed.\
+\
+Resource usage summary:\
+\
+\'a0\'a0\'a0CPU time : \'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0209770.92 sec.\
+\'a0\'a0\'a0Max Memory : \'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a06630 MB\
+\'a0\'a0\'a0Average Memory : \'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a04221.69 MB\
+\'a0\'a0\'a0Total Requested Memory : \'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a012000.00 MB\
+\'a0\'a0\'a0Delta Memory : \'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a05370.00 MB\
+\'a0\'a0\'a0Max Swap : \'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a053439 MB\
+\'a0\'a0\'a0Max Processes : \'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a037\
+\'a0\'a0\'a0Max Threads : \'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0406\
+\
+Read file <fastQC.out> for stdout output of this job.\
+Read file <fastQC.err> for stderr output of this job.\
+\
+}

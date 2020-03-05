@@ -1,0 +1,24 @@
+#!/bin/sh
+#BSUB -q short-eth     # debug, short (24 hours), medium (24 hours), long (168 hours = 7 days)
+#BSUB -J fastQC
+#BSUB -oo fastQC.out
+#BSUB -eo fastQC.err
+#BSUB -R "rusage[mem=12000]"
+#BSUB -M 12000
+#BSUB -B        #sends email to me when job starts
+#BSUB -N        # sends email to me when job finishes
+
+# upload _parallel_fastQC_20191205.bsub and _parallel_fastQC_20191205.sh *into* ~/_Oregon/
+
+. /etc/profile
+module purge
+module load java
+module add python/anaconda/4.2/3.5  # multiqc is now in the path
+PATH=$PATH:~/scripts/parallel-20170722/bin/ # GNU Parallel
+PATH=$PATH:~/scripts/FastQC_0.11.8/ # downloaded on 20191205
+
+bash _parallel_fastQC_20191205.sh # this runs fastQC
+# multiqc --version # gives version number, which is 1.4
+
+multiqc .  # this analyses the current directory and all subdirectories.
+# this job runs about 

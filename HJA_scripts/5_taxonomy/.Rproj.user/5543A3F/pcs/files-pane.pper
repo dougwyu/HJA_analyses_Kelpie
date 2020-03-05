@@ -1,0 +1,13 @@
+{
+    "path" : "~/Dropbox/Working_docs/Luo_Mingjie_Oregon/HJA_scripts/5_taxonomy",
+    "sortOrder" : [
+        {
+            "ascending" : true,
+            "columnIndex" : 2
+        },
+        {
+            "ascending" : false,
+            "columnIndex" : 4
+        }
+    ]
+}

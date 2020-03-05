@@ -1,0 +1,20 @@
+#!/bin/sh
+#BSUB -q mellanox-ib     # mellanox-ib is much faster than short-eth; short-eth (24 hours), long-eth (168 hours = 7 days), mellanox-ib (7 days)
+#BSUB -J samtools01
+#BSUB -oo samtools01.out
+#BSUB -eo samtools01.err
+#BSUB -R "rusage[mem=1200]" # 1.2 GB (previous runs take around 10 MB! )
+#BSUB -M 1200
+#BSUB -B        #sends email to me when job starts
+#BSUB -N        # sends email to me when job finishes
+
+. /etc/profile
+module purge
+module load samtools # samtools 1.5
+module load python/anaconda/4.2/2.7 # Python 2.7.12
+module load java  # java/jdk1.8.0_51
+module load gcc # needed to run bedtools
+PATH=$PATH:~/scripts/minimap2-2.10_x64-linux/  # downloaded binary 28 May 2018 from github 2.10-r761
+PATH=$PATH:~/scripts/bedtools2/bin # made 22 Jan 2018 from github 2.27.1
+
+bash _loop_samtools_only_20191217.sh

@@ -1,0 +1,23 @@
+#!/bin/sh
+#BSUB -q long-eth     # debug, short (24 hours), medium (24 hours), long (168 hours = 7 days)
+#BSUB -J s3upldOreg
+#BSUB -oo s3upldOreg.out
+#BSUB -eo s3upldOreg.err
+#BSUB -M 4000
+#BSUB -B        # sends email to me when job starts
+#BSUB -N        # sends email to me when job finishes
+
+. /etc/profile
+module purge
+module add python/anaconda/2.5/2.7 # installed by sysops
+
+cd ~/_Oregon || exit
+
+tar -cf qseq.tar qseq/
+md5sum qseq.tar > qseq.tar.md5
+
+# s3cmd put LOCAL_FILE s3://BUCKET/OBJECT
+s3cmd put --multipart-chunk-size-mb=100 qseq.tar s3://amazon-oregon-douglasyu/qseq.tar
+# --recursive could be used to upload an untarred folder and subfolders, but then i don't get chk md5sum
+
+s3cmd ls --list-md5 s3://amazon-oregon-douglasyu > amazon-oregon-douglasyu_20191203.md5

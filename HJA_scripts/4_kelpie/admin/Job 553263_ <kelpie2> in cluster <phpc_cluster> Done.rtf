@@ -1,0 +1,67 @@
+{\rtf1\ansi\ansicpg1252\cocoartf1671\cocoasubrtf600
+{\fonttbl\f0\fnil\fcharset0 HelveticaNeue;\f1\fswiss\fcharset0 Helvetica;}
+{\colortbl;\red255\green255\blue255;\red0\green0\blue0;\red0\green0\blue0;}
+{\*\expandedcolortbl;;\cssrgb\c0\c0\c0\cname textColor;\cssrgb\c0\c0\c0;}
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+
+\f0\fs24 \cf2 From: LSF <phpcadmin@hpcmgmt01.uea.ac.uk>\
+Subject: Job 553263: <kelpie2> in cluster <phpc_cluster> Done\
+Date: 10 December 2019 at 09:31:54 GMT\
+To: b042@uea.ac.uk\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+
+\f1 \cf2 \
+\pard\pardeftab720\sl280\partightenfactor0
+\cf3 \expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec3 Job <kelpie2> was submitted from host <e0005> by user <b042> in cluster <phpc_cluster>.\
+Job was executed on host(s) <i0003>, in queue <short-ib>, as user <b042> in cluster <phpc_cluster>.\
+</gpfs/home/b042> was used as the home directory.\
+</gpfs/home/b042/_Oregon/2019Sep_shotgun/testkelpie> was used as the working directory.\
+Started at Tue Dec 10 08:17:59 2019\
+Results reported on Tue Dec 10 09:31:54 2019\
+\
+Your job looked like:\
+\
+------------------------------------------------------------\
+# LSBATCH: User input\
+#!/bin/sh\
+#BSUB -q short-ib # mellanox-ib 128 GB & 28 cores, long/short-eth 64 GB & 16 cores, long/short-ib 128 GB & 24 cores\
+#BSUB -J kelpie2\
+#BSUB -oo kelpie2.out\
+#BSUB -eo kelpie2.err\
+#BSUB -R "rusage[mem=126000]" # max mem for mellanox-ib is 128GB = 128000\
+#BSUB -M 126000\
+#BSUB -B \'a0\'a0\'a0\'a0\'a0\'a0\'a0#sends email to me when job starts\
+#BSUB -N \'a0\'a0\'a0\'a0\'a0\'a0\'a0# sends email to me when job finishes\
+\
+\
+. /etc/profile\
+module purge\
+PATH=$PATH:~/scripts/vsearch-2.6.2-linux-x86_64/bin/ # downloaded 22 Jan 2018 from github\
+PATH=$PATH:~/scripts/parallel-20170722/bin/ # GNU Parallel\
+module add singularity/3.3.0\
+# singularity exec ~/ubuntukelpie.sif Kelpie_v2 -h # test if binary runs\
+# singularity exec --bind /gpfs/scratch/b042:/mnt ~/ubuntukelpie.sif \'a0ls /mnt # use /mnt as scratch\
+\
+# upload _parallel_kelpie_20191209.bsub and _parallel_kelpie_20191209.sh *into* ~/_Oregon/2019Sep_shotgun/testkelpie/\
+bash _parallel_kelpie_20191209.sh # this runs Kelpie\
+\
+------------------------------------------------------------\
+\
+Successfully completed.\
+\
+Resource usage summary:\
+\
+\'a0\'a0\'a0CPU time : \'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a036949.99 sec.\
+\'a0\'a0\'a0Max Memory : \'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a031681 MB\
+\'a0\'a0\'a0Average Memory : \'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a08928.04 MB\
+\'a0\'a0\'a0Total Requested Memory : \'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0126000.00 MB\
+\'a0\'a0\'a0Delta Memory : \'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a094319.00 MB\
+\'a0\'a0\'a0Max Swap : \'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0120795 MB\
+\'a0\'a0\'a0Max Processes : \'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a020\
+\'a0\'a0\'a0Max Threads : \'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0180\
+\
+Read file <kelpie2.out> for stdout output of this job.\
+Read file <kelpie2.err> for stderr output of this job.\
+\
+}

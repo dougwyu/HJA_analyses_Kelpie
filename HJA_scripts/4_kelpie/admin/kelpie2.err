@@ -1,0 +1,45 @@
+vsearch v2.6.2_linux_x86_64, 125.9GB RAM, 24 cores
+https://github.com/torognes/vsearch
+
+Reading file SM-PG-M1-S1_BDSW190603194-2a/SM-PG-M1-S1_BDSW190603194-2a.fas 100%
+1515776 nt in 3621 seqs, min 412, max 440, avg 419
+Dereplicating 100%
+Sorting 100%
+91 unique sequences, avg cluster 39.8, median 6, max 578
+Writing output file 100%
+vsearch v2.6.2_linux_x86_64, 125.9GB RAM, 24 cores
+https://github.com/torognes/vsearch
+
+Reading file SM-09-M1-S2_BDSW190603191-2a/SM-09-M1-S2_BDSW190603191-2a.fas 100%
+2077379 nt in 4970 seqs, min 415, max 418, avg 418
+Dereplicating 100%
+Sorting 100%
+15 unique sequences, avg cluster 331.3, median 58, max 1341
+Writing output file 100%
+vsearch v2.6.2_linux_x86_64, 125.9GB RAM, 24 cores
+https://github.com/torognes/vsearch
+
+Reading file SM-PG-M1-S2_BDSW190603195-1a/SM-PG-M1-S2_BDSW190603195-1a.fas 100%
+2408560 nt in 5762 seqs, min 418, max 440, avg 418
+Dereplicating 100%
+Sorting 100%
+37 unique sequences, avg cluster 155.7, median 23, max 2405
+Writing output file 100%
+vsearch v2.6.2_linux_x86_64, 125.9GB RAM, 24 cores
+https://github.com/torognes/vsearch
+
+Reading file SM-09-M2-S1_BDSW190603192-2a/SM-09-M2-S1_BDSW190603192-2a.fas 100%
+989824 nt in 2368 seqs, min 418, max 418, avg 418
+Dereplicating 100%
+Sorting 100%
+50 unique sequences, avg cluster 47.4, median 13, max 530
+Writing output file 100%
+vsearch v2.6.2_linux_x86_64, 125.9GB RAM, 24 cores
+https://github.com/torognes/vsearch
+
+Reading file SM-09-M2-S2_BDSW190603193-2a/SM-09-M2-S2_BDSW190603193-2a.fas 100%
+847704 nt in 2028 seqs, min 418, max 418, avg 418
+Dereplicating 100%
+Sorting 100%
+18 unique sequences, avg cluster 112.7, median 104, max 315
+Writing output file 100%
