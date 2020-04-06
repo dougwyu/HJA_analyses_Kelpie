@@ -69,7 +69,7 @@ idxstatsgenomecovfolder <- paste0("outputs_F2308_f0x2_", samtoolsqual, "_minimap
 # mkdir outputs_minimap2_20200221_F2308_f0x2_q48_kelpie20200214_vsearch97
 outputidxstatstabulatefolder <- "outputs_minimap2_20200221_F2308_f0x2_q48_kelpie20200214_vsearch97_BWA11_dilutionseries"
 
-idxstatsfile <- paste0("*", samtoolsfilter, "_", samtoolsqual, "_sorted\\.bam_idxstats\\.txt")  
+idxstatsfile <- paste0("*", samtoolsfilter, "_", samtoolsqual, "_sorted\\.bam_idxstats\\.txt")  # idxstatsfile
     # e.g. "*F2308_f0x2_q1_sorted.bam_idxstats.txt"
     # e.g. 076361-M1-S1_BDSW190602952-1a_F2308_f0x2_q48_sorted.bam_idxstats.txt
 # choose the filename suffix to match the desired samtools filter. precede with * as a wildcard. \\ is used to escape the . before txt (because it is read with grep as "any character" in list.files() below)

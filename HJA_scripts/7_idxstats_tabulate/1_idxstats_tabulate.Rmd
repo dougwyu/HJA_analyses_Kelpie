@@ -781,14 +781,12 @@ idx_meta_genomecov_corr_filtered_wide <- envdataTosa %>%
 # F2308 f0x2 samtools filter
 # write_csv(idx_meta_genomecov_corr_filtered_wide, file.path("..", "..", "Kelpie_maps", outputidxstatstabulatefolder, "sample_by_species_corr_table_F2308_f0x2_minimap2_20200221_kelpie20200214.csv"))
 
-  # read_csv() commands
-    # mapped_reads_corr
-      # F2308 samtools filter
-      # idx_meta_genomecov_corr_filtered_wide <- read_csv(file.path("..", "..", "Kelpie_maps", outputidxstatstabulatefolder, "sample_by_species_corr_table_F2308_minimap2_20200221_kelpie20200214.csv"))
-      # F2308 f0x2 samtools filter
-      # not yet created
-
-
+# read_csv() commands 
+  # mapped_reads_corr
+    # F2308 samtools filter
+    # idx_meta_genomecov_corr_filtered_wide <- read_csv(file.path("..", "..", "Kelpie_maps", outputidxstatstabulatefolder, "sample_by_species_corr_table_F2308_minimap2_20200221_kelpie20200214.csv"))
+    # F2308 f0x2 samtools filter
+    # not yet created
 
 # mapped_reads only
 # join idx_meta_genomecov_filtered_wide and envdataTosa
@@ -839,6 +837,18 @@ sampletable_pt <- sampletable_pt %>%
   rownames_to_column(var = "site") %>% 
   # filter(site !="Total") %>% 
   arrange(desc(S1_Total))
+
+# other summarising code
+# library(janitor)
+# tabyl(idx_meta_genomecov_corr_filtered_wide, SiteName, trap, period, show_na=FALSE, show_missing_levels = FALSE)
+# idx_meta_genomecov_corr_filtered_wide %>% distinct(SiteName) %>% count()
+# species_list <- idx_meta_genomecov_corr_filtered_wide %>% 
+#   filter(trap=="M1" & period=="S1") %>% 
+#   count(trap, period) %>% 
+#   arrange(desc(n))
+# species_list <- idx_meta_genomecov_corr_filtered_wide %>% 
+#   count(period, trap) #%>% 
+#   arrange(desc(n))
 ```
 
 
