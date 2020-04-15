@@ -1,13 +1,13 @@
 {
-    "path" : "~/Dropbox/Working_docs/Luo_Mingjie_Oregon/HJA_scripts/5_taxonomy",
-    "sortOrder" : [
+    "path": "~/Dropbox/Working_docs/Luo_Mingjie_Oregon/HJA_analyses_Kelpie/HJA_scripts/5_taxonomy",
+    "sortOrder": [
         {
-            "ascending" : true,
-            "columnIndex" : 2
+            "columnIndex": 2,
+            "ascending": true
         },
         {
-            "ascending" : false,
-            "columnIndex" : 4
+            "columnIndex": 4,
+            "ascending": false
         }
     ]
 }

@@ -1,25 +1,24 @@
 {
-    "collab_server" : "",
-    "contents" : "",
-    "created" : 1582025243854.000,
-    "dirty" : false,
-    "encoding" : "UTF-8",
-    "folds" : "",
-    "hash" : "396339483",
-    "id" : "403719FE",
-    "lastKnownWriteTime" : 1582448875,
-    "last_content_update" : 1582448875708,
-    "path" : "~/Dropbox/Working_docs/Luo_Mingjie_Oregon/HJA_scripts/5_taxonomy/1_assign_taxonomies_20200218.Rmd",
-    "project_path" : "1_assign_taxonomies_20200218.Rmd",
-    "properties" : {
-        "cursorPosition" : "95,0",
-        "scrollLine" : "83"
+    "id": "403719FE",
+    "path": "~/Dropbox/Working_docs/Luo_Mingjie_Oregon/HJA_analyses_Kelpie/HJA_scripts/5_taxonomy/1_assign_taxonomies_20200218.Rmd",
+    "project_path": "1_assign_taxonomies_20200218.Rmd",
+    "type": "r_markdown",
+    "hash": "396339483",
+    "contents": "",
+    "dirty": false,
+    "created": 1582025243854.0,
+    "source_on_save": false,
+    "relative_order": 1,
+    "properties": {
+        "cursorPosition": "30,0",
+        "scrollLine": "0"
     },
-    "read_only" : false,
-    "read_only_alternatives" : [
-    ],
-    "relative_order" : 1,
-    "source_on_save" : false,
-    "source_window" : "",
-    "type" : "r_markdown"
+    "folds": "",
+    "lastKnownWriteTime": 1582448875,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1586963912351,
+    "read_only": false,
+    "read_only_alternatives": []
 }
