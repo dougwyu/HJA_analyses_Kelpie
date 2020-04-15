@@ -1,0 +1,42 @@
+biodiversity_site_info_multispectral_2020-04-13.txt variable information
+imagery from Matt Gregory, Oregon State University from the Google Earth Engine
+
+column names: 
+"SiteName"
+
+Site coordinates in UTM NAD83 zone 10
+"UTM_E"
+"UTM_N"
+
+Multispectral imagery variable column names take the form Variable_DateOfImage
+Imagery from Landsat8 on 4 dates with negligible cloud coverage: 17 Jul 2018, 26 Jul 2018, 02 Aug 2018, and 18 Aug 2018
+Bands 1-7, 10-11 represented as B#
+
+B1 - coastal aerosol
+B2 - Blue
+B3 - Green
+B4 - Red
+B5 - Near IR
+B6 - Shortwave IR 1
+B7 - Shortwave IR 2
+B8 - Panchromatic
+B9 - Cirrus
+B10 - Thermal IR 1
+B11 - Thermal IR 2
+
+NDVI - normalized difference vegetation index (calculated using bands 4 and 5): NDVI = (NearIR-Red)/(NearIR+Red)
+       these values should range between -1 and 1. Values in these columns should be divided by 1000
+EVI - enhanced vegetation index (calculated using bands 4, 5, and 2):  2.5 * ((Band 5 – Band 4) / (Band 5 + 6 * Band 4 – 7.5 * Band 2 + 1))
+      the values in these columns should be divided by 1000
+B - Tasseled cap index brightness: Brightness = 0.3037 (band 1) + 0.2793 (band 2) + 0.4743 (band 3) + 0.5585 (band 4) + 0.5082 (band 5) + 0.1863 (band 7)
+G - Tasseled cap index greenness: Greenness = −0.2848 (band 1) − 0.2435 (band 2) − 0.5436 (band 3) + 0.7243 (band 4) + 0.0840 (band 5) − 0.1800 (band 7)
+W - Tasseled cap index wetness: Wetness = 0.1509 (band 1) + 0.1973 (band 2) + 0.3279 (band 3) + 0.3406 (band 4) − 0.7112 (band 5) − 0.4572 (band 7)
+
+Examples:
+"B1_20180717" - band 1 for imagery from 17 Jul 2018
+"B2_20180717" - band 2 for imagery from 17 Jul 2018
+"NDVI_20180717" - NDVI for imagery from 17 Jul 2018
+"EVI_20180717" - EVI for imagery from 17 Jul 2018
+"B_20180717" - Tasseled cap brightness for imagery from 17 Jul 2018
+"G_20180717" - Tasseled cap greenness for imagery from 17 Jul 2018
+"W_20180717" - Tasseled cap wetness for imagery from 17 Jul 2018
