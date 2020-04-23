@@ -132,7 +132,7 @@ writeFasta(kelpie_otus, paste0("kelpie_20200214_BF3BR2_derep_filtered_geneious",
 
 Cluster the sequences.  This is not a fully resolved problem because even with 97% and 96% clustering, there are still some size=1 OTUs that receive the same species ID as larger OTUs. I can use vsearch97_min2 (minsize = 2), which has 1,211 OTUs or vsearch96_min1, which has 1,171 OTUs, or vsearch96_min2, which has 1,149 OTUs. Not a huge amount of difference amongst them
 ```{bash}
-# send to terminal:  cmd-alt-numerickeypadenter
+# send to terminal:  cmd-alt-numeric_keypad_enter
 cd "/Users/Negorashi2011/Dropbox/Working_docs/Luo_Mingjie_Oregon/HJA_scripts/5_taxonomy"
 
 timestamp="20200214"
