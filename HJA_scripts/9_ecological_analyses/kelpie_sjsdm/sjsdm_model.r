@@ -1,30 +1,40 @@
 # Yuanheng
 # create: Mar 23, 2020
 # last modified:  Apr , 2020
-# apply sj-sdm & hmsd 
+# apply sj-sdm & hmsc 
 # with data (in'data_Feb_25/', 'kelpie20200214')
 
 
+# revised working directory code
+library(here)
+here() # this reads working directory as the pathname of the 9_ecological_analyses.Rproj file. It therefore varies transparently from user to user. You can then use 'here' as a drop-in for file.path(), as i show below
+# [1] "/Users/Negorashi2011/Dropbox/Working_docs/Luo_Mingjie_Oregon/HJA_analyses_Kelpie/HJA_scripts/9_ecological_analyses"
+
 # .................................................................
-rm(list=ls())
-setwd("/media/yuanheng/SD-64g2/files/Projects/Oregon")
-getwd()
+# rm(list=ls())
+# setwd("/media/yuanheng/SD-64g2/files/Projects/Oregon")
+# getwd()
 	
 source('R/source/sjsdm_function.r')
+# missing from repo
 	
-lapply(c("ggplot2", "gridExtra",'vegan', 'labdsv','tidyverse','scatterplot3d', 'gridBase','grid', 'ggcorrplot'),library,character.only=T)
+lapply(c("ggplot2", "gridExtra",'vegan', 'labdsv','tidyverse','scatterplot3d', 'gridBase','grid', 'ggcorrplot', 'here'),library,character.only=T)
 	
 lapply(c('Hmsc','sjSDM', 'reticulate'),library, character.only=T)
 	
 # ...................... kelpie, lidar data ..............................
 # (lidar data)
-lidar.env = read.csv('kelpie/lidar_data/biodiversity_site_info_multispectral_2020-04-13.txt', header=T, sep=',', stringsAsFactors = F, na.strings='NA')
+# lidar.env = read.csv('kelpie/lidar_data/biodiversity_site_info_multispectral_2020-04-13.txt', header=T, sep=',', stringsAsFactors = F, na.strings='NA')
+lidar.env = read.csv(here("..", "10_eo_data", "biodiversity_site_info_multispectral_2020-04-13.txt"), header=T, sep=',', stringsAsFactors = F, na.strings='NA') # this formulation works on any computer with RStudio
+
 str(lidar.env)
 	
 # ('data_Feb_25' folder) 
-otu.env1.noS = read.csv('kelpie/data_Feb_25/sample_by_species_table_F2308_minimap2_20200221_kelpie20200214.csv', header=T, sep=',', stringsAsFactors = F, na.strings='NA')
+# otu.env1.noS = read.csv('kelpie/data_Feb_25/sample_by_species_table_F2308_minimap2_20200221_kelpie20200214.csv', header=T, sep=',', stringsAsFactors = F, na.strings='NA')
+otu.env1.noS = read.csv(here("..", "..", "Kelpie_maps", "outputs_minimap2_20200221_F2308_f0x2_q48_kelpie20200214_vsearch97", "sample_by_species_table_F2308_minimap2_20200221_kelpie20200214.csv"), header=T, sep=',', stringsAsFactors = F, na.strings='NA')
 	
-otu.env1.spike = read.csv('kelpie/data_Feb_25/sample_by_species_corr_table_F2308_minimap2_20200221_kelpie20200214.csv', header=T, sep=',', stringsAsFactors = F, na.strings='NA')
+# otu.env1.spike = read.csv('kelpie/data_Feb_25/sample_by_species_corr_table_F2308_minimap2_20200221_kelpie20200214.csv', header=T, sep=',', stringsAsFactors = F, na.strings='NA')
+otu.env1.spike = read.csv(here("..", "..", "Kelpie_maps", "outputs_minimap2_20200221_F2308_f0x2_q48_kelpie20200214_vsearch97", "sample_by_species_corr_table_F2308_minimap2_20200221_kelpie20200214.csv"), header=T, sep=',', stringsAsFactors = F, na.strings='NA')
 	
 print(c(dim(otu.env1.spike), dim(otu.env1.noS)))
 # 1173-26, more otus
@@ -51,13 +61,14 @@ a = lidar.env %>% select(13,14,27,28,41,42,55,56) %>% rename(nor.NDVI_20180717=1
 	
 a[,c(1,3,5,7)]
 # mean of all 4 NDVI, EVI
-lidar.env= cbind(lidar.env,a)
+lidar.env= cbind(lidar.env, a)
 str(lidar.env)
 	
-pdf('kelpie/R/graph/lidar_describe_EVI_NDVI.pdf', height=5, width=5)
+# pdf('kelpie/R/graph/lidar_describe_EVI_NDVI.pdf', height=5, width=5)
+pdf(here("..", "..", "sjSDM", "lidar_describe_EVI_NDVI.pdf"), height=5, width=5)
 	
 range(lidar.env[,60:67])
-plot(1:96, lidar.env[,61],ylim=c(0,3.3),type='l', main='solid - EVI, dash - NDVI')
+plot(1:96, lidar.env[,61], ylim=c(0,3.3),type='l', main='solid - EVI, dash - NDVI')
 lines(1:96, lidar.env[,63], col='red')
 lines(1:96, lidar.env[,65], col='blue')
 lines(1:96, lidar.env[,67], col='green')
