@@ -2,14 +2,13 @@
 ---
 
 ```{r setup}
-lapply(c("ggplot2", "gridExtra",'vegan', 'labdsv','tidyverse','scatterplot3d', 'gridBase','grid', 'ggcorrplot','here'),library,character.only=T)
-	
-lapply(c('reticulate','sjSDM'),library, character.only=T)
+lapply(c("ggplot2", "gridExtra",'vegan', 'labdsv', 'tidyverse', 'scatterplot3d', 'gridBase', 'grid', 'ggcorrplot','here'), library, character.only=T)
+
+lapply(c('reticulate','sjSDM'), library, character.only=T)
 	
 here::here()
 getwd()
-source(here('R/source/sjsdm_function.r'))
-	
+source(here("R", "source", "sjsdm_function.r"))
 ```
 
 ```{r convert data (go directly to 'load files')}
