@@ -2,7 +2,7 @@
 ---
 
 ```{r setup}
-lapply(c("ggplot2", "gridExtra",'vegan', 'labdsv', 'tidyverse', 'scatterplot3d', 'gridBase', 'grid', 'ggcorrplot','here'), library, character.only=T)
+lapply(c("ggplot2", "gridExtra",'vegan', 'labdsv', 'tidyverse', 'scatterplot3d', 'gridBase', 'grid', 'ggcorrplot','here', 'rescale'), library, character.only=T)
 
 lapply(c('reticulate','sjSDM'), library, character.only=T)
 	
@@ -158,17 +158,29 @@ names(otu.env1.noS)[1:37]
 #DY referring to columns by number is not robust because the number of environmental columns can change. it is always better to refer to columns by name. difficult to do this in the base R but it's easy to do this in tidyverse code
 a = data.frame(lapply(data.frame(otu.env1.noS[,-c(1:36)]>0), as.numeric))
 otu.env1.noS.present = cbind(otu.env1.noS[,1:36], a)
-	
-a = data.frame(sapply(otu.env1.noS[,-c(1:36)],function(x) scale(x,center=F)))
+
+#DY old code using base::scale()
+# a = data.frame(sapply(otu.env1.noS[,-c(1:36)],function(x) scale(x,center=F)))
+# otu.env1.noS.rel.abun = cbind(otu.env1.noS[,1:36], a)
+
+#DY rescaling to quasi-probabilities, following Max's advice
+a = data.frame(sapply(otu.env1.noS[,-c(1:36)],function(x) scales::rescale(log(x+0.001))))
 otu.env1.noS.rel.abun = cbind(otu.env1.noS[,1:36], a)
 	
+
 # . spike
 a = data.frame(lapply(data.frame(otu.env1.spike[,-c(1:36)]>0), as.numeric))
 otu.env1.spike.present = cbind(otu.env1.spike[,1:36], a)
-	
-a = data.frame(sapply(otu.env1.spike[,-c(1:36)], function(x) scale(x,center=F)))
+# hist(otu.env1.spike$R200_218__Insecta_Diptera_Syrphidae_Blera_Blera_scitula_BOLD_ABY7981_size.595)
+
+#DY old code using base::scale()
+# a = data.frame(sapply(otu.env1.spike[,-c(1:36)], function(x) scale(x,center=F)))
+# otu.env1.spike.rel.abun = cbind(otu.env1.spike[,1:36], a)
+
+#DY rescaling to quasi-probabilities, following Max's advice
+a = data.frame(sapply(otu.env1.spike[,-c(1:36)], function(x) scales::rescale(log(x+0.001))))
 otu.env1.spike.rel.abun = cbind(otu.env1.spike[,1:36], a)
-	
+
 range(otu.env1.spike.rel.abun[,-c(1:36)])
 
 #DY i usually comment out write.table() commands, to prevent running them incorrectly (e.g. when debugging)
