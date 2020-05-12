@@ -15,14 +15,15 @@ source(here("R", "source", "sjsdm_function.r"))
 # for backup, converted data are saved
 
 # format OTU data, combine with lidar data 
+#dy not lidar data. it's landsat data.  there will be lidar data later, so must name it correctly
 # (remote sensing data)
 mulspec.env = read.csv(here('..','..','HJA_scripts','10_eo_data','biodiversity_site_info_multispectral_2020-04-13.txt'), header=T, sep=',', stringsAsFactors = F, na.strings='NA')
 str(mulspec.env)
 	
 # ('HJA_analyses_Kelpie/Kelpie_maps' folder) 
-otu.env1.noS = read.csv(here('..','..','Kelpie_maps','sample_by_species_table_F2308_minimap2_20200221_kelpie20200214.csv'), header=T, sep=',', stringsAsFactors = F, na.strings='NA')
+otu.env1.noS = read.csv(here('..','..','Kelpie_maps', 'outputs_minimap2_20200221_F2308_f0x2_q48_kelpie20200214_vsearch97','sample_by_species_table_F2308_minimap2_20200221_kelpie20200214.csv'), header=T, sep=',', stringsAsFactors = F, na.strings='NA')
 	
-otu.env1.spike = read.csv(here('..','..','Kelpie_maps','sample_by_species_corr_table_F2308_minimap2_20200221_kelpie20200214.csv'), header=T, sep=',', stringsAsFactors = F, na.strings='NA')
+otu.env1.spike = read.csv(here('..','..','Kelpie_maps', 'outputs_minimap2_20200221_F2308_f0x2_q48_kelpie20200214_vsearch97', 'sample_by_species_corr_table_F2308_minimap2_20200221_kelpie20200214.csv'), header=T, sep=',', stringsAsFactors = F, na.strings='NA')
 	
 print(c(dim(otu.env1.spike), dim(otu.env1.noS)))
 # 1173-26, more otus
@@ -35,7 +36,7 @@ names(otu.env1.spike)[1:26]=names(otu.env1.noS)[1:26]
 str(otu.env1.spike[,1:27])
 	
 
-# ........ formate mulspec.env .......
+# ........ format mulspec.env .......
 sort(mulspec.env$SiteName) == sort(unique(otu.env1.spike$SiteName))
 	
 #NDVI - normalized difference vegetation index (calculated using bands 4 and 5): NDVI = (NearIR-Red)/(NearIR+Red)
@@ -44,6 +45,8 @@ sort(mulspec.env$SiteName) == sort(unique(otu.env1.spike$SiteName))
 #      the values in these columns should be divided by 1000
 names(mulspec.env)   #sort()
 # 4 NDVI, 4 EVI
+
+#DY this line doesn't work. 
 data.frame(mulspec.env$nor.NDVI_20180717, mulspec.env$EVI_20180818)
 	
 a = mulspec.env %>% select(13,14,27,28,41,42,55,56) %>% rename(nor.NDVI_20180717=1, nor.EVI_20180717=2, nor.NDVI_20180726=3, nor.EVI_20180726=4, nor.NDVI_20180802=5, nor.EVI_20180802=6, nor.NDVI_20180818=7, nor.EVI_20180818=8)/1000
@@ -123,11 +126,11 @@ str(otu.env1.noS[,1:37])
 otu.env1.noS = otu.env1.noS[,c(1:34,1182:1183,35:1181)]
 dim(otu.env1.noS)
 	
-write.table(otu.env1.noS, here('kelpie','formatted_data','mulspec_sample_by_species_table_F2308_minimap2_20200221_kelpie20200214.csv'), row.names=F, sep=',')
-	
-write.table(otu.env1.spike, here('kelpie','formatted_data','mulspec_sample_by_species_corr_table_F2308_minimap2_20200221_kelpie20200214.csv'), row.names=F, sep=',')
-	
-write.table(mulspec.env, here('kelpie','rs_data','sjsdm_biodiversity_site_info_multispectral_2020-04-13.csv'), row.names= F, sep=',')
+# write.table(otu.env1.noS, here('kelpie','formatted_data','mulspec_sample_by_species_table_F2308_minimap2_20200221_kelpie20200214.csv'), row.names=F, sep=',')
+# 	
+# write.table(otu.env1.spike, here('kelpie','formatted_data','mulspec_sample_by_species_corr_table_F2308_minimap2_20200221_kelpie20200214.csv'), row.names=F, sep=',')
+# 	
+# write.table(mulspec.env, here('kelpie','rs_data','sjsdm_biodiversity_site_info_multispectral_2020-04-13.csv'), row.names= F, sep=',')
 	
 ```
 
@@ -152,6 +155,7 @@ print(c(dim(otu.env1.spike), dim(otu.env1.noS)))
 # . no spike
 names(otu.env1.noS)[1:37]
 	
+#DY referring to columns by number is not robust because the number of environmental columns can change. it is always better to refer to columns by name. difficult to do this in the base R but it's easy to do this in tidyverse code
 a = data.frame(lapply(data.frame(otu.env1.noS[,-c(1:36)]>0), as.numeric))
 otu.env1.noS.present = cbind(otu.env1.noS[,1:36], a)
 	
@@ -166,16 +170,13 @@ a = data.frame(sapply(otu.env1.spike[,-c(1:36)], function(x) scale(x,center=F)))
 otu.env1.spike.rel.abun = cbind(otu.env1.spike[,1:36], a)
 	
 range(otu.env1.spike.rel.abun[,-c(1:36)])
-	
-write.table(otu.env1.noS.rel.abun, here('kelpie','formatted_data','relAbun_mulspec_sample_by_species_table_F2308_minimap2_20200221_kelpie20200214.csv'), row.names=F, sep=',')
-write.table(otu.env1.noS.present, here('kelpie','formatted_data','present_mulspec_sample_by_species_table_F2308_minimap2_20200221_kelpie20200214.csv'), row.names=F, sep=',')
-	
-write.table(otu.env1.spike.present, here('kelpie','formatted_data','present_mulspec_sample_by_species_corr_table_F2308_minimap2_20200221_kelpie20200214.csv'), row.names=F, sep=',')
-write.table(otu.env1.spike.rel.abun, here('kelpie','formatted_data','relAbun_mulspec_sample_by_species_corr_table_F2308_minimap2_20200221_kelpie20200214.csv'), row.names=F, sep=',')
-	
 
-
-
+#DY i usually comment out write.table() commands, to prevent running them incorrectly (e.g. when debugging)
+# write.table(otu.env1.noS.rel.abun, here('kelpie','formatted_data','relAbun_mulspec_sample_by_species_table_F2308_minimap2_20200221_kelpie20200214.csv'), row.names=F, sep=',')
+# write.table(otu.env1.noS.present, here('kelpie','formatted_data','present_mulspec_sample_by_species_table_F2308_minimap2_20200221_kelpie20200214.csv'), row.names=F, sep=',')
+# 
+# write.table(otu.env1.spike.present, here('kelpie','formatted_data','present_mulspec_sample_by_species_corr_table_F2308_minimap2_20200221_kelpie20200214.csv'), row.names=F, sep=',')
+# write.table(otu.env1.spike.rel.abun, here('kelpie','formatted_data','relAbun_mulspec_sample_by_species_corr_table_F2308_minimap2_20200221_kelpie20200214.csv'), row.names=F, sep=',')
 ```
 
 
@@ -186,18 +187,18 @@ str(mulspec.env)
 
 # ('formatted_data' folder, load data formatted for sjsdm, present) 
 otu.env1.noS.present = read.csv(here('kelpie','formatted_data','present_mulspec_sample_by_species_table_F2308_minimap2_20200221_kelpie20200214.csv'), header=T, sep=',', stringsAsFactors = F, na.strings='NA')
-	
-otu.env1.noS.rel.abun = read.csv(here('kelpie','formatted_data','relAbun_lidar_sample_by_species_table_F2308_minimap2_20200221_kelpie20200214.csv'), header=T, sep=',', stringsAsFactors = F, na.strings='NA')
-	
+
+#DY changed from lidar to mulspec in filename
+otu.env1.noS.rel.abun = read.csv(here('kelpie','formatted_data','relAbun_mulspec_sample_by_species_table_F2308_minimap2_20200221_kelpie20200214.csv'), header=T, sep=',', stringsAsFactors = F, na.strings='NA')
+
 otu.env1.spike.present = read.csv(here('kelpie','formatted_data','present_mulspec_sample_by_species_corr_table_F2308_minimap2_20200221_kelpie20200214.csv'), header=T, sep=',', stringsAsFactors = F, na.strings='NA')
 	
 otu.env1.spike.rel.abun = read.csv(here('kelpie','formatted_data','relAbun_mulspec_sample_by_species_corr_table_F2308_minimap2_20200221_kelpie20200214.csv'), header=T, sep=',', stringsAsFactors = F, na.strings='NA')
-	
-
 ```
 
 ```{r explore remote sensing data }
-pdf(here('R','graph','describe_EVI_NDVI.pdf'), height=5, width=5)
+#DY i comment out pdf() and dev.off() commands for the same reason: to prevent saving a file for no reason
+# pdf(here('R','graph','describe_EVI_NDVI.pdf'), height=5, width=5)
 	
 range(mulspec.env[,60:67])
 plot(1:96, mulspec.env[,61],ylim=c(0,3.3),type='l', main='solid - EVI, dash - NDVI')
@@ -210,7 +211,7 @@ lines(1:96, mulspec.env[,62], lty=2, col='red')
 lines(1:96, mulspec.env[,64], lty=2, col='blue')
 lines(1:96, mulspec.env[,66], lty=2, col='green')
 	
-dev.off()
+# dev.off()
 	
 ```
 
