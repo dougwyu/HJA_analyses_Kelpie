@@ -310,7 +310,7 @@ hyper.s1_m1_spike.relAbun = sjSDM_cv(
 	CV=3L, tune_steps = 25L, iter = 60L 
 	# iter -> optimization step; lambda -> regularization strength (multiplied constant)
 	)
-saveRDS(hyper.s1_m1_spike.relAbun, file = here('R','result','s-jSDM_tune_s1_m1_spike.relAbun.RDS') )
+# saveRDS(hyper.s1_m1_spike.relAbun, file = here('R','result','s-jSDM_tune_s1_m1_spike.relAbun.RDS') )
 	
 # visualize tuning and best points:
 best = plot(hyper.s1_m1_spike.relAbun, perf = "AUC")
@@ -338,7 +338,7 @@ p = getSe(sjsdm.s1_m1_spike.relAbun)
 #plot(sjsdm.s1_m1_spike.relAbun$history)
 #save result
 result = list(beta = coef(sjsdm.s1_m1_spike.relAbun), sigma = getCov(sjsdm.s1_m1_spike.relAbun), history = sjsdm.s1_m1_spike.relAbun$history, p = p, logLik=logLik(sjsdm.s1_m1_spike.relAbun))
-saveRDS(result, file = here('R','result','sjSDM_s1_m1_spike.relAbun_V0.0.2.9000’.RDS')) 
+# saveRDS(result, file = here('R','result','sjSDM_s1_m1_spike.relAbun_V0.0.2.9000’.RDS')) 
 	
 
 # ... session 1, Malaise I, spike, 0/1 ...
@@ -353,7 +353,7 @@ hyper.s1_m1_spike.present = sjSDM_cv(
 	CV=3L, tune_steps = 25L, iter = 60L 
 	# iter -> optimization step; lambda -> regularization strength (multiplied constant)
 	)
-saveRDS(hyper.s1_m1_spike.present, file = here('R','result','s-jSDM_tune_s1_m1_spike.present.RDS') )
+# saveRDS(hyper.s1_m1_spike.present, file = here('R','result','s-jSDM_tune_s1_m1_spike.present.RDS') )
 	
 # visualize tuning and best points:
 best = plot(hyper.s1_m1_spike.present, perf = "AUC")
@@ -381,13 +381,13 @@ p = getSe(sjsdm.s1_m1_spike.present)
 #plot(sjsdm.s1_m1_spike.relAbun$history)
 #save result
 result = list(beta = coef(sjsdm.s1_m1_spike.present), sigma = getCov(sjsdm.s1_m1_spike.present), history = sjsdm.s1_m1_spike.present$history, p = p, logLik=logLik)
-saveRDS(result, file = here('R','result','sjSDM_s1_m1_spike.present_V0.0.2.9000’.RDS')) 
+# saveRDS(result, file = here('R','result','sjSDM_s1_m1_spike.present_V0.0.2.9000’.RDS')) 
 	
 
 ```
 
-
-```{r sjsdm-model (old version)}
+#DY use eval=FALSE, include=FALSE
+```{r sjsdm-model old version, eval=FALSE, include=FALSE}
 # old sjsdm version, even syntax of model changed!
 # just for backup! don't bother to run!
 
