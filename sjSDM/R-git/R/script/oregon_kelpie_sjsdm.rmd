@@ -2,13 +2,14 @@
 ---
 
 ```{r setup}
-lapply(c("ggplot2", "gridExtra",'vegan', 'labdsv', 'tidyverse', 'scatterplot3d', 'gridBase', 'grid', 'ggcorrplot','here', 'rescale'), library, character.only=T)
-
+lapply(c("ggplot2", "gridExtra",'vegan', 'labdsv', 'tidyverse', 'scatterplot3d', 'gridBase', 'grid', 'ggcorrplot','here'), library, character.only=T)
+	
 lapply(c('reticulate','sjSDM'), library, character.only=T)
 	
 here::here()
 getwd()
 source(here("R", "source", "sjsdm_function.r"))
+	
 ```
 
 ```{r convert data (go directly to 'load files')}
@@ -46,18 +47,18 @@ sort(mulspec.env$SiteName) == sort(unique(otu.env1.spike$SiteName))
 names(mulspec.env)   #sort()
 # 4 NDVI, 4 EVI
 
-#DY this line doesn't work. 
-data.frame(mulspec.env$nor.NDVI_20180717, mulspec.env$EVI_20180818)
+data.frame(mulspec.env$NDVI_20180717, mulspec.env$EVI_20180818)
 	
-a = mulspec.env %>% select(13,14,27,28,41,42,55,56) %>% rename(nor.NDVI_20180717=1, nor.EVI_20180717=2, nor.NDVI_20180726=3, nor.EVI_20180726=4, nor.NDVI_20180802=5, nor.EVI_20180802=6, nor.NDVI_20180818=7, nor.EVI_20180818=8)/1000
+a = mulspec.env %>% select(starts_with('NDVI'), starts_with('EVI')) %>% rename(nor.NDVI_20180717=1, nor.EVI_20180717=5, nor.NDVI_20180726=2, nor.EVI_20180726=6, nor.NDVI_20180802=3, nor.EVI_20180802=7, nor.NDVI_20180818=4, nor.EVI_20180818=8)/1000
+#13,14,27,28,41,42,55,56
 	
 a[,c(1,3,5,7)]
 # mean of all 4 NDVI, EVI
 mulspec.env= cbind(mulspec.env,a)
 str(mulspec.env)
 	
-mulspec.env$mean.NDVI = base::rowMeans(mulspec.env[,c(60,62,64,66)])
-mulspec.env$mean.EVI = base::rowMeans(mulspec.env[,c(61,63,65,67)])
+mulspec.env$mean.NDVI = base::rowMeans(select(mulspec.env, starts_with('nor.NDVI_')))
+mulspec.env$mean.EVI = base::rowMeans(select(mulspec.env, starts_with('nor.EVI_')))
 mulspec.env[,c(60,62,64,66,68)]
 mulspec.env[,c(61,63,65,67,69)]
 	
@@ -89,12 +90,16 @@ otu.env1.spike = otu.env1.spike[-c(181,237),]
 	
 
 # ....... scale variables .......
+names(otu.env1.spike)[15:22]
+	
 a = select(otu.env1.spike,15:22)%>%rename(elevation.scale=1,canopy.ht.scale=2,min.T.scale=3, max.T.scale=4, precipitation.scale=5, metre.road.scale=6, metre.stream.scale=7, yrs.disturb.min.scale=8)%>% scale()
 	
 otu.env1.spike = cbind(otu.env1.spike[,1:26], data.frame(a), otu.env1.spike[,27:dim(otu.env1.spike)[2]])
 dim(otu.env1.spike)
 	
-otu.env1.noS = dplyr::left_join(otu.env1.noS, otu.env1.spike[,26:34], by=c('site_trap_period', 'site_trap_period'), copy=F)
+names(otu.env1.spike)[26:34]
+	
+otu.env1.noS = dplyr::left_join(otu.env1.noS, select(otu.env1.spike,'site_trap_period',ends_with('.scale')), by=c('site_trap_period', 'site_trap_period'), copy=F)
 otu.env1.noS = otu.env1.noS[,c(1:26,1174:1181,27:1173)]
 str(otu.env1.noS[,1:34])
 	
@@ -105,22 +110,26 @@ str(mulspec.env)
 hist(mulspec.env$mean.NDVI)
 hist(mulspec.env$mean.EVI)
 	
-a = select(mulspec.env,68:69) %>% rename(mean.NDVI.scale=1,mean.EVI.scale=2) %>% scale()
+names(mulspec.env)[68:69]
+	
+a = select(mulspec.env,"mean.NDVI", "mean.EVI") %>% rename(mean.NDVI.scale=1,mean.EVI.scale=2) %>% scale()
 mulspec.env = cbind(mulspec.env,data.frame(a))
 	
 hist(mulspec.env$mean.NDVI.scale)
 hist(mulspec.env$mean.EVI.scale)
 	
 # row 181, 237 -> "HOBO-040", "290415" in OTU datasets
-mulspec.env$SiteName == sort(unique(otu.env1.noS$SiteName))
+sort(mulspec.env$SiteName) == sort(unique(otu.env1.noS$SiteName))
 	
-otu.env1.spike = dplyr::left_join(otu.env1.spike, mulspec.env[,c(1,70:71)], by=c('SiteName', 'SiteName'), copy=F) 
+names(mulspec.env)[c(1,70:71)]
+	
+otu.env1.spike = dplyr::left_join(otu.env1.spike, mulspec.env[,c("SiteName", "mean.NDVI.scale", "mean.EVI.scale")], by=c('SiteName', 'SiteName'), copy=F) 
 str(otu.env1.spike[,1:37])
 	
 otu.env1.spike = otu.env1.spike[,c(1:34,1182:1183,35:1181)]
 dim(otu.env1.spike)
 	
-otu.env1.noS = dplyr::left_join(otu.env1.noS, mulspec.env[,c(1,70:71)], by=c('SiteName', 'SiteName'), copy=F) 
+otu.env1.noS = dplyr::left_join(otu.env1.noS, mulspec.env[,c("SiteName", "mean.NDVI.scale", "mean.EVI.scale")], by=c('SiteName', 'SiteName'), copy=F) 
 str(otu.env1.noS[,1:37])
 	
 otu.env1.noS = otu.env1.noS[,c(1:34,1182:1183,35:1181)]
@@ -132,6 +141,7 @@ dim(otu.env1.noS)
 # 	
 # write.table(mulspec.env, here('kelpie','rs_data','sjsdm_biodiversity_site_info_multispectral_2020-04-13.csv'), row.names= F, sep=',')
 	
+
 ```
 
 ```{r convert data2 (go directly to 'load files')}
@@ -149,46 +159,65 @@ otu.env1.noS = read.csv(here('kelpie','formatted_data','mulspec_sample_by_specie
 otu.env1.spike = read.csv(here('kelpie','formatted_data','mulspec_sample_by_species_corr_table_F2308_minimap2_20200221_kelpie20200214.csv'), header=T, sep=',', stringsAsFactors = F, na.strings='NA')
 	
 print(c(dim(otu.env1.spike), dim(otu.env1.noS)))
-
 	
+
 # ..... convert to presence/absence .....
 # . no spike
 names(otu.env1.noS)[1:37]
 	
-#DY referring to columns by number is not robust because the number of environmental columns can change. it is always better to refer to columns by name. difficult to do this in the base R but it's easy to do this in tidyverse code
-a = data.frame(lapply(data.frame(otu.env1.noS[,-c(1:36)]>0), as.numeric))
-otu.env1.noS.present = cbind(otu.env1.noS[,1:36], a)
+a = select(otu.env1.noS, contains('__'))
+dim(a)
+dim(otu.env1.noS)
+# 1147 + 36 = 1183
+	
+# !!! env.variables cannot have '__' in their names !!!
+a = data.frame(lapply(data.frame(select(otu.env1.noS, contains('__'))>0), as.numeric))
+otu.env1.noS.present = cbind(select(otu.env1.noS, -contains('__')), a)
+	
 
 #DY old code using base::scale()
-# a = data.frame(sapply(otu.env1.noS[,-c(1:36)],function(x) scale(x,center=F)))
-# otu.env1.noS.rel.abun = cbind(otu.env1.noS[,1:36], a)
+# a = data.frame(sapply(otu.env1.noSlogLik(sjsdm.s1_m1_spike.relAbun)[,-c(1:36)],function(x) scale(x,center=F)))
 
 #DY rescaling to quasi-probabilities, following Max's advice
-a = data.frame(sapply(otu.env1.noS[,-c(1:36)],function(x) scales::rescale(log(x+0.001))))
-otu.env1.noS.rel.abun = cbind(otu.env1.noS[,1:36], a)
+# sjsdm is a probit model, X needs to be [0,1]
+a = data.frame(sapply(select(otu.env1.noS, contains('__')),function(x) scales::rescale(log(x+0.001))))
+	
+# with log(), data points go towards either 0/1. is this better for a probit model ??? 
+par(mfrow=c(1,2))
+hist(a[,115])
+hist(otu.env1.noS[,115+36])
+	
+otu.env1.noS.rel.abun = cbind(select(otu.env1.noS, -contains('__')), a)
 	
 
 # . spike
-a = data.frame(lapply(data.frame(otu.env1.spike[,-c(1:36)]>0), as.numeric))
-otu.env1.spike.present = cbind(otu.env1.spike[,1:36], a)
+a = data.frame(lapply(data.frame(select(otu.env1.noS, contains('__'))>0), as.numeric))
+table(a[,111])
+otu.env1.spike.present = cbind(select(otu.env1.noS, -contains('__')), a)
+names(otu.env1.spike.present)[1:37]
+	
 # hist(otu.env1.spike$R200_218__Insecta_Diptera_Syrphidae_Blera_Blera_scitula_BOLD_ABY7981_size.595)
 
-#DY old code using base::scale()
-# a = data.frame(sapply(otu.env1.spike[,-c(1:36)], function(x) scale(x,center=F)))
-# otu.env1.spike.rel.abun = cbind(otu.env1.spike[,1:36], a)
 
 #DY rescaling to quasi-probabilities, following Max's advice
-a = data.frame(sapply(otu.env1.spike[,-c(1:36)], function(x) scales::rescale(log(x+0.001))))
-otu.env1.spike.rel.abun = cbind(otu.env1.spike[,1:36], a)
-
+a = data.frame(sapply(select(otu.env1.noS, contains('__')), function(x) scales::rescale(log(x+0.001))))
+par(mfrow=c(1,2))
+hist(a[,115])
+hist(otu.env1.spike[,115+36])
+	
+otu.env1.spike.rel.abun = cbind(select(otu.env1.noS, -contains('__')), a)
 range(otu.env1.spike.rel.abun[,-c(1:36)])
+	
 
 #DY i usually comment out write.table() commands, to prevent running them incorrectly (e.g. when debugging)
 # write.table(otu.env1.noS.rel.abun, here('kelpie','formatted_data','relAbun_mulspec_sample_by_species_table_F2308_minimap2_20200221_kelpie20200214.csv'), row.names=F, sep=',')
 # write.table(otu.env1.noS.present, here('kelpie','formatted_data','present_mulspec_sample_by_species_table_F2308_minimap2_20200221_kelpie20200214.csv'), row.names=F, sep=',')
+	
 # 
 # write.table(otu.env1.spike.present, here('kelpie','formatted_data','present_mulspec_sample_by_species_corr_table_F2308_minimap2_20200221_kelpie20200214.csv'), row.names=F, sep=',')
 # write.table(otu.env1.spike.rel.abun, here('kelpie','formatted_data','relAbun_mulspec_sample_by_species_corr_table_F2308_minimap2_20200221_kelpie20200214.csv'), row.names=F, sep=',')
+	
+
 ```
 
 
@@ -196,20 +225,21 @@ range(otu.env1.spike.rel.abun[,-c(1:36)])
 # kelpie, remote sensing data 
 mulspec.env = read.csv(here('kelpie','rs_data','sjsdm_biodiversity_site_info_multispectral_2020-04-13.csv'), header=T, sep=',', stringsAsFactors = F, na.strings='NA')
 str(mulspec.env)
-
+	
 # ('formatted_data' folder, load data formatted for sjsdm, present) 
 otu.env1.noS.present = read.csv(here('kelpie','formatted_data','present_mulspec_sample_by_species_table_F2308_minimap2_20200221_kelpie20200214.csv'), header=T, sep=',', stringsAsFactors = F, na.strings='NA')
-
-#DY changed from lidar to mulspec in filename
+	
 otu.env1.noS.rel.abun = read.csv(here('kelpie','formatted_data','relAbun_mulspec_sample_by_species_table_F2308_minimap2_20200221_kelpie20200214.csv'), header=T, sep=',', stringsAsFactors = F, na.strings='NA')
-
+range(otu.env1.noS.rel.abun[,37:800])
+	
 otu.env1.spike.present = read.csv(here('kelpie','formatted_data','present_mulspec_sample_by_species_corr_table_F2308_minimap2_20200221_kelpie20200214.csv'), header=T, sep=',', stringsAsFactors = F, na.strings='NA')
 	
 otu.env1.spike.rel.abun = read.csv(here('kelpie','formatted_data','relAbun_mulspec_sample_by_species_corr_table_F2308_minimap2_20200221_kelpie20200214.csv'), header=T, sep=',', stringsAsFactors = F, na.strings='NA')
+range(otu.env1.spike.rel.abun[,37:800])
+	
 ```
 
 ```{r explore remote sensing data }
-#DY i comment out pdf() and dev.off() commands for the same reason: to prevent saving a file for no reason
 # pdf(here('R','graph','describe_EVI_NDVI.pdf'), height=5, width=5)
 	
 range(mulspec.env[,60:67])
@@ -236,19 +266,19 @@ dataI.1.spike.rel.abun = subset(otu.env1.spike.rel.abun, session == 'S1' & trap 
 print(c(dim(dataI.1.spike.rel.abun), dim(dataI.1.spike.present)))
 	
 # .... if there's all zero OTUs ....
-b = data.frame(otu=colnames(dataI.1.spike.rel.abun[,-c(1:36)]), zero=apply(dataI.1.spike.rel.abun[,-c(1:36)],2,sum)==0)
+b = data.frame(otu=colnames(select(dataI.1.spike.rel.abun, contains('__'))), zero=apply(select(dataI.1.spike.rel.abun, contains('__')),2,sum)==0)
 b$otu=as.character(b$otu)
 dim(b)
 	
-dataI.1.spike.rel.abun2 = dplyr::select(dataI.1.spike.rel.abun, 1:36,b$otu[b$zero==F])
+dataI.1.spike.rel.abun2 = dplyr::select(dataI.1.spike.rel.abun, -contains('__'),b$otu[b$zero==F])
 dim(dataI.1.spike.rel.abun2)
 dataI.1.spike.rel.abun2[1:5,34:40]
 	
-b = data.frame(otu=colnames(dataI.1.spike.present[,-c(1:36)]), zero=apply(dataI.1.spike.present[,-c(1:36)],2,sum)==0)
+b = data.frame(otu=colnames(select(dataI.1.spike.present,contains('__'))), zero=apply(select(dataI.1.spike.present,contains('__')),2,sum)==0)
 b$otu=as.character(b$otu)
 dim(b)
 	
-dataI.1.spike.present2 = dplyr::select(dataI.1.spike.present, 1:36,b$otu[b$zero==F])
+dataI.1.spike.present2 = dplyr::select(dataI.1.spike.present, -contains('__'),b$otu[b$zero==F])
 dim(dataI.1.spike.present2)
 dataI.1.spike.present2[1:5,34:40]
 	
@@ -260,29 +290,107 @@ dataI.1.spike.present2[1:5,34:40]
 # according to nmds, precipitation, elevation, yrs.disturb.min, old.growth.str, T, canopy.height can be used for now
 
 # ... session 1, Malaise I, spike, rel.abun ...
-lrs = seq(-18, -1, length.out = 7);f = function(x) 2^x;lrs = f(lrs)
-result = vector("list", 7)
-	
+# . sjSDM-version = ‘0.0.2.9000’
+names(dataI.1.spike.rel.abun2[,c(1:3,24:36)])
+# [1] "SiteName"              "UTM_E"                 "UTM_N"                
+# [4] "trap"                  "session"               "site_trap_period"     
+# [7] "elevation.scale"       "canopy.ht.scale"       "min.T.scale"          
+#[10] "max.T.scale"           "precipitation.scale"   "metre.road.scale"     
+#[13] "metre.stream.scale"    "yrs.disturb.min.scale" "mean.NDVI.scale"      
+#[16] "mean.EVI.scale"
 scale.env = dataI.1.spike.rel.abun2[,c(1:3,24:36)]
 str(scale.env)
 	
-for(i in 1:7) { 
-model = sjSDM(X = scale.env, 
-               Y = as.matrix(dataI.1.spike.rel.abun2[,-c(1:36)]),
-               formula = ~ elevation.scale+canopy.ht.scale+min.T.scale+max.T.scale+precipitation.scale+metre.road.scale+metre.stream.scale+yrs.disturb.min.scale,  
-               learning_rate = 0.01, 
-               iter = 100L,
-               step_size = 27L, l1_coefs = 0.07*lrs[i], l2_coefs = 0.03*lrs[i], # should be normally tuned...
-               sampling = 100L,l1_cov = lrs[i], l2_cov = lrs[i])
-  loss=unlist(model$logLik)
-  history=model$history
-  weights = list(beta = coef(model), sigma = getCov(model),loss=loss,history=history)
-  rm(model)
-  result[[i]] = weights
- }
-  #iter = 1000L, step_size = 6L, sampling = 100L, learning_rate = 0.0003
-  saveRDS(result, file = here('R','result','s-jSDM_result_s1_m1_spike.relAbun.RDS') )
-  
+scale.env1 = dataI.1.spike.rel.abun2[,c('elevation.scale','canopy.ht.scale','min.T.scale','max.T.scale','precipilogLik(sjsdm.s1_m1_spike.relAbun)tation.scale','metre.road.scale','metre.stream.scale','yrs.disturb.min.scale')]
+	
+hyper.s1_m1_spike.relAbun = sjSDM_cv(
+	Y = as.matrix(as.data.frame(dplyr::select(dataI.1.spike.rel.abun2, contains('__')))),
+	env = as.matrix(scale.env1),
+	biotic = bioticStruct(on_diag=FALSE), tune='random', n_cores = NULL,
+	CV=3L, tune_steps = 25L, iter = 60L 
+	# iter -> optimization step; lambda -> regularization strength (multiplied constant)
+	)
+saveRDS(hyper.s1_m1_spike.relAbun, file = here('R','result','s-jSDM_tune_s1_m1_spike.relAbun.RDS') )
+	
+# visualize tuning and best points:
+best = plot(hyper.s1_m1_spike.relAbun, perf = "AUC")
+	
+# print overall results:
+hyper.s1_m1_spike.relAbun
+# summary (mean values over CV for each tuning step)
+summary(hyper.s1_m1_spike.relAbun)
+	
+sjsdm.s1_m1_spike.relAbun = sjSDM(
+	Y = as.matrix(as.data.frame(dplyr::select(dataI.1.spike.rel.abun2, contains('__')))),
+	iter = 60L, step_size = 27L, link = "probit",
+	env = linear(data = as.matrix(scale.env1), formula = ~ elevation.scale+canopy.ht.scale+min.T.scale+max.logLik(sjsdm.s1_m1_spike.relAbun)T.scale+precipitation.scale+metre.road.scale+metre.stream.scale+yrs.disturb.min.scale,
+	lambda = best[["lambda_coef"]], alpha = best[["alpha_coef"]]
+	), 
+	biotic = bioticStruct(lambda = best[["lambda_cov"]], alpha = best[["alpha_cov"]], on_diag = FALSE
+	)
+)
+
+#summary(model)
+# calculate post-hoc p-values:
+p = getSe(sjsdm.s1_m1_spike.relAbun)
+#summary(p)
+#summary.p=summary(p)
+#plot(sjsdm.s1_m1_spike.relAbun$history)
+#save result
+result = list(beta = coef(sjsdm.s1_m1_spike.relAbun), sigma = getCov(sjsdm.s1_m1_spike.relAbun), history = sjsdm.s1_m1_spike.relAbun$history, p = p, logLik=logLik(sjsdm.s1_m1_spike.relAbun))
+saveRDS(result, file = here('R','result','sjSDM_s1_m1_spike.relAbun_V0.0.2.9000’.RDS')) 
+	
+
+# ... session 1, Malaise I, spike, 0/1 ...
+# . sjSDM-version = ‘0.0.2.9000’
+scale.env1 = dataI.1.spike.present2[,c('elevation.scale','canopy.ht.scale','min.T.scale','max.T.scale','precipitation.scale','metre.road.scale','metre.stream.scale','yrs.disturb.min.scale')]
+str(scale.env1)
+	
+hyper.s1_m1_spike.present = sjSDM_cv(
+	Y = as.matrix(as.data.frame(dplyr::select(dataI.1.spike.present2, contains('__')))),
+	env = as.matrix(scale.env1),
+	biotic = bioticStruct(on_diag=FALSE), tune='random', n_cores = NULL,
+	CV=3L, tune_steps = 25L, iter = 60L 
+	# iter -> optimization step; lambda -> regularization strength (multiplied constant)
+	)
+saveRDS(hyper.s1_m1_spike.present, file = here('R','result','s-jSDM_tune_s1_m1_spike.present.RDS') )
+	
+# visualize tuning and best points:
+best = plot(hyper.s1_m1_spike.present, perf = "AUC")
+	
+# print overall results:
+hyper.s1_m1_spike.present
+# summary (mean values over CV for each tuning step)
+summary(hyper.s1_m1_spike.present)
+	
+sjsdm.s1_m1_spike.present = sjSDM(
+	Y = as.matrix(as.data.frame(dplyr::select(dataI.1.spike.present2, contains('__')))),
+	iter = 60L, step_size = 27L, link = "probit",
+	env = linear(data = as.matrix(scale.env1), formula = ~ elevation.scale+canopy.ht.scale+min.T.scale+max.T.scale+precipitation.scale+metre.road.scale+metre.stream.scale+yrs.disturb.min.scale,
+	lambda = best[["lambda_coef"]], alpha = best[["alpha_coef"]]
+	), 
+	biotic = bioticStruct(lambda = best[["lambda_cov"]], alpha = best[["alpha_cov"]], on_diag = FALSE
+	)
+)
+logLik = logLik(sjsdm.s1_m1_spike.present)
+#summary(model)
+# calculate post-hoc p-values:
+p = getSe(sjsdm.s1_m1_spike.present)
+#summary(p)
+#summary.p=summary(p)
+#plot(sjsdm.s1_m1_spike.relAbun$history)
+#save result
+result = list(beta = coef(sjsdm.s1_m1_spike.present), sigma = getCov(sjsdm.s1_m1_spike.present), history = sjsdm.s1_m1_spike.present$history, p = p, logLik=logLik)
+saveRDS(result, file = here('R','result','sjSDM_s1_m1_spike.present_V0.0.2.9000’.RDS')) 
+	
+
+```
+
+
+```{r sjsdm-model (old version)}
+# old sjsdm version, even syntax of model changed!
+# just for backup! don't bother to run!
+
 # ... session 1, Malaise I, spike, rel.abun ...
 lrs = seq(-18, -1, length.out = 7);f = function(x) 2^x;lrs = f(lrs)
 result = vector("list", 7)
@@ -309,7 +417,605 @@ model = sjSDM(X = scale.env,
 	
 ```
 
-```{r sjsdm-analyse-correlation (rel.abun)}
+```{r sjsdm-analyse-correlation (0/1)} 
+# ... session 1, Malaise I, spike, present ...
+# .. load 'sjSDM_cv' result
+hyper = readRDS(here('R','result','s-jSDM_tune_s1_m1_spike.present.RDS'))
+# summary (mean values over CV for each tuning step)
+summary(hyper)
+	
+# visualize tuning and best points:
+best = plot(hyper, perf = "AUC")
+	
+rm(hyper)
+	
+# . load 'sjSDM' result
+result = readRDS(here('R','result','sjSDM_s1_m1_spike.present_V0.0.2.9000’.RDS'))
+	
+summary(result)
+plot(result$history)
+	
+# . cov <- result$sigma 
+dim(result$sigma)
+# [1] 850 850
+co.env.spp <- cov2cor(result$sigma)
+#spp.names<-colnames(dataI.1.spike.rel.abun2[,-c(1:36)])
+	
+rownames(co.env.spp) <- 1:dim(result$sigma)[1]   #spp.names
+colnames(co.env.spp) <- 1:dim(result$sigma)[1]   #spp.names
+	
+#ggcorrplot(co.env.spp[1:400,1:400], hc.order = T, outline.color = "white", insig = "blank",sig.level = 0.05, lab_size = 1,show.legend=T)
+	
+cut.t = cut(co.env.spp, breaks = seq(-1,1,length.out = 12))
+summary(cut.t)
+	
+rm(cut.t)
+	
+# species correlation plot
+#pdf(here('R','graph','sjsdm_s1_m1_spike_present','species_correlation.pdf'), height=20, width=20)
+	
+ggcorrplot(co.env.spp, hc.order = T, outline.color = "white", insig = "blank",sig.level = 0.05, lab_size = 1,show.legend=T, title=paste('sjSDM version: ',packageVersion('sjSDM'),', kelpie20200214, alpha: ', best[["alpha_coef"]],', lambda: ', round(best[['lambda_coef']],5),sep='')) 
+# > packageVersion('sjSDM')
+#[1] ‘0.0.2.9000’
+	
+#dev.off()
+	
+```
+
+```{r model-analyse-polygon (0/1)}
+# ... session 1, Malaise I, spike, present ...
+# ..... Polygon Drawing .....
+# . species association .
+number=10
+	
+otu.tbl = as.data.frame(dplyr::select(dataI.1.spike.present2, contains('__')))
+	
+sigma = re_scale(result$sigma)[order(apply(otu.tbl, 2, sum)), order(apply(otu.tbl, 2, sum))]
+	
+sigmas = sigma[base::upper.tri(sigma)]
+upper = order(sigmas, decreasing = TRUE)[1:number]
+lower = order(sigmas, decreasing = FALSE)[1:number]
+cuts = cut(sigmas, breaks = seq(-1,1,length.out = 12))
+summary(cuts)
+	
+to_plot = 1:length(sigmas) %in% upper | 1:length(sigmas) %in% lower
+levels(cuts) = viridis::viridis(11)
+cuts = as.character(cuts)
+n = ncol(result$sigma)
+lineSeq = 4.7
+nseg = 100
+	
+pdf(here('R','graph','sjsdm_s1_m1_spike_present','species_covariance_circular.pdf'), height=8, width=8)
+	
+plot(NULL, NULL, xlim = c(-5,5), ylim =c(-5,5),pty="s", axes = F, xlab = "", ylab = "")
+text(x = -2, y = 6, pos = 3, xpd = NA, labels = paste('sjSDM version: ',packageVersion('sjSDM'),', kelpie20200214, alpha: ', best[["alpha_coef"]],', lambda: ', round(best[['lambda_coef']], 5),sep=''))
+#text(x = -6, y = 5.7, pos = 3, xpd = NA, labels = "A", font = 2, cex = 1.5)
+	
+xx = lineSeq*cos( seq(0,2*pi, length.out=nseg) )
+yy = lineSeq*sin( seq(0,2*pi, length.out=nseg) )
+polygon(xx,yy, col= "white", border = "black", lty = 1, lwd = 1)
+angles = seq(0,355,length.out = n+1)[1:(n)]
+xx = cos(deg2rad(angles))*lineSeq
+yy = sin(deg2rad(angles))*lineSeq
+	
+counter = 1
+coords = cbind(xx, yy, angles)
+for(i in 2:n) {
+	for(j in 1:(i-1)){
+      if(to_plot[counter]) {
+		print (c(i,j,counter))
+		add_curve(coords[i,], coords[j,], col = cuts[counter], n = 5, lineSeq = lineSeq)
+	}
+	counter = counter + 1
+  }
+}
+	
+OTU_log = log(sort(apply(otu.tbl, 2, sum))+.001)
+range(OTU_log)
+OTU_log[1]=0 
+cuts = cut(OTU_log, breaks = 10)
+cols = viridis::magma(10) 
+	
+levels(cuts) = cols
+sppnames2=paste("spp",1:20,sep = "")
+abun=as.character(cuts)
+sppsort=1:20
+	
+OTU_sort_abun <- data.frame(sppsort=rep(sppsort, len=dim(otu.tbl)[2]), sum = apply(otu.tbl, 2, sum))
+OTU_sort_abun = OTU_sort_abun[order(OTU_sort_abun$sum), ]
+OTU_sort_abun$abun<-abun
+OTU_sort_abun = OTU_sort_abun[order(OTU_sort_abun$sppsort), ]
+	
+# .. add abundance legends
+lineSeq = 5.0
+for(i in 1:length(OTU_log)){
+  p1 = coords[i,]
+  x1 = c(cos(deg2rad(p1[3]))*(lineSeq+0.1), cos(deg2rad(p1[3]))*(lineSeq+0.3))
+  y1 = c(sin(deg2rad(p1[3]))* (lineSeq+0.1), sin(deg2rad(p1[3]))* (lineSeq+0.3))
+  segments(x0 = x1[1], x1 = x1[2], y0 = y1[1], y1 = y1[2], col = as.character(cuts[i]), lend = 1)
+}
+	
+add_legend(viridis::viridis(11), angles = c(140,110),radius = 5.4)
+text(cos(deg2rad(123))*(lineSeq+1), sin(deg2rad(123))*(lineSeq+1.2), labels = "covariance", pos = 2, xpd = NA)
+	
+add_legend(cols = cols, range = c(2, 850), angles = c(70,40),radius = 5.4)
+text(cos(deg2rad(53))*(lineSeq+1), sin(deg2rad(55))*(lineSeq+1.1), labels = "low to high", pos = 4, xpd = NA) 
+text(cos(deg2rad(64))*(lineSeq+1.3), sin(deg2rad(62))*(lineSeq+1.1), labels = "sum of presence", pos = 4, xpd = NA) 
+	
+### arrows
+segments(x0 = cos(deg2rad(-1))*(lineSeq-0.2), x1 = cos(deg2rad(-1))*(lineSeq+0.9), y0 = sin(deg2rad(-1))*(lineSeq-0.2), y1 = sin(deg2rad(-1))*(lineSeq+0.9), xpd = NA)
+segments(x0 = cos(deg2rad(356))*(lineSeq-0.2), x1 = cos(deg2rad(356))*(lineSeq+0.9), 
+         y0 = sin(deg2rad(356))*(lineSeq-0.2), y1 = sin(deg2rad(356))*(lineSeq+0.9), xpd = NA)
+	
+# first
+angles = seq(150,195,length.out = n+1)[1:(n)]
+xx = cos(deg2rad(angles))*(lineSeq+0.6)
+yy = sin(deg2rad(angles))*(lineSeq+0.6)
+lines(xx, yy, xpd = NA)
+end = curve_text(195+3, "Species",lineSeq = lineSeq+0.6,reverse = TRUE)
+	
+# second
+angles = seq(rad2deg(end)+3,rad2deg(end)+45+8,length.out = n+1)[1:(n)]
+xx = cos(deg2rad(angles))*(lineSeq+0.6)
+yy = sin(deg2rad(angles))*(lineSeq+0.6)
+lines(xx, yy, xpd = NA)
+arrow_angle = max(angles)-2.8
+polygon(x = c(cos(deg2rad(arrow_angle))*(lineSeq+0.5), cos(deg2rad(arrow_angle))*(lineSeq+0.7), cos(deg2rad(max(angles)))*(lineSeq+0.6), cos(deg2rad(arrow_angle))*(lineSeq+0.5)),
+        y = c(sin(deg2rad(arrow_angle))*(lineSeq+0.5), sin(deg2rad(arrow_angle))*(lineSeq+0.7), sin(deg2rad(max(angles)))*(lineSeq+0.6), sin(deg2rad(arrow_angle))*(lineSeq+0.5)),col = "black", xpd = NA)
+	
+dev.off()
+	
+```
+
+
+```{r model-analyse-polygon-envir (0/1)}
+# ... session 1, Malaise I, spike, present ...
+# ..... environmental effect .....
+# Drawing parameter of OTU and environmental covariant
+#formula = ~ elevation.scale+canopy.ht.scale+min.T.scale+max.T.scale+precipitation.scale+metre.road.scale+metre.stream.scale+yrs.disturb.min.scale,  
+# 8 variables, excluding intercept
+
+beta = as.matrix(data.frame(result$beta)[,2:9])
+effects= apply(beta, 1, function(o) sum(abs(o)))
+	
+turn_over = 1
+n = ncol(result$sigma)# number of otus
+max_effects= apply(beta ,1, function(e) which.max(abs(e)))
+turn_over = 1
+effect_comb = data.frame(cbind(max_effects,sapply(1:n, function(i) beta[i,max_effects[i]] )))
+# variables index & value which has biggest coefficient
+	
+sppname3=seq(1:20); sppname3=as.character(sppname3)
+effect_comb$name <- rep(sppname3, len=850)
+effect_comb$abun <- OTU_sort_abun$abun
+effect_comb$abun<-as.character(effect_comb$abun)
+effect_comb_ind = order(effect_comb[,1], effect_comb[,2])
+effect_comb = effect_comb[effect_comb_ind,]
+	
+sigma = re_scale(result$sigma)[effect_comb_ind, effect_comb_ind]
+sigmas = sigma[upper.tri(sigma)]
+number=10
+upper = order(sigmas, decreasing = TRUE)[1:number]
+lower = order(sigmas, decreasing = FALSE)[1:number]
+cuts = cut(sigmas, breaks = seq(-1,1,length.out = 12))
+to_plot = 1:length(sigmas) %in% upper | 1:length(sigmas) %in% lower
+levels(cuts) = viridis::viridis(11)
+cuts = as.character(cuts)
+n = ncol(result$sigma)
+lineSeq = 3.5
+nseg = 100
+	
+pdf(here('R','graph','sjsdm_s1_m1_spike_present','max_environ_spp_cov.pdf'), height=8, width=8)
+	
+#Drawing figure parameter
+par( mar = c(1,2,2.1,2)+0.1)
+plot(NULL, NULL, xlim = c(-5,5), ylim =c(-5,5),pty="s", axes = F, xlab = "", ylab = "")
+text(x = -1.7, y = 5.5, pos = 3, xpd = NA, labels = paste('sjSDM: ',packageVersion('sjSDM'),', kelpie20200214, alpha: ', best[["alpha_coef"]],', lambda: ', round(best[['lambda_coef']],5), sep=''), font = 2, cex = 1)
+	
+xx = lineSeq*cos( seq(0,2*pi, length.out=nseg) )
+yy = lineSeq*sin( seq(0,2*pi, length.out=nseg) )
+polygon(xx,yy, col= "white", border = "black", lty = 1, lwd = 1)
+angles = seq(0,360,length.out = n+1)[1:(n)] # for all otus
+xx = cos(deg2rad(angles))*lineSeq
+yy = sin(deg2rad(angles))*lineSeq
+	
+##inside circle
+counter = 1
+coords = cbind(xx, yy, angles)
+	
+for(i in 2:n) {
+  for(j in 1:(i-1)){
+    
+      if(to_plot[counter]) add_curve(coords[i,], coords[j,], col = cuts[counter], n = 5, species = T, lineSeq = 3.5, lwd = 1.3)
+      counter = counter + 1
+  }
+}
+
+lineSeq = 4.0
+for(i in 1:n){
+  p1 = coords[i,]
+  x1 = c(cos(deg2rad(p1[3]))*(lineSeq+0.1), cos(deg2rad(p1[3]))*(lineSeq+0.3))
+  y1 = c(sin(deg2rad(p1[3]))* (lineSeq+0.1), sin(deg2rad(p1[3]))* (lineSeq+0.3))
+  segments(x0 = x1[1], x1 = x1[2], y0 = y1[1], y1 = y1[2], col = effect_comb$abun[i], lend = 1)
+}
+lineSeq = 3.5
+	
+##outside circle 
+#formula = ~elevation.scale+canopy.ht.scale+min.T.scale+max.T.scale+precipitation.scale+metre.road.scale+metre.stream.scale+yrs.disturb.min.scale,  
+evnames=c("ele","canopy","min.T","max.T","preci","road","stream","disturb")
+colourCount = length(unique(evnames))
+getPalette = colorRampPalette(RColorBrewer::brewer.pal(8, "Dark2"))
+cols=getPalette(colourCount)
+	
+coords = data.frame(cbind(xx, yy, angles))
+effect_comb=effect_comb[,-c(3,4)]
+effect_comb2 = effect_comb
+effect_comb2[,2] = ff(effect_comb[,2])
+effect_comb2 = cbind(effect_comb2, effect_comb[,2])
+effect_comb2 = data.frame(effect_comb2)
+	
+for(i in sort(unique(max_effects))) {
+  sub<- coords %>% filter(effect_comb2$max_effects==i)
+  sub_eff <- effect_comb2 %>% filter(max_effects==i)
+  from <- sub[1,3]
+  to <- sub[nrow(sub),3]
+
+  x = c((3.6+1.5*(sub_eff[,2]))*cos(deg2rad(sub[,3]) ), 
+        rev((3.6+1.5/2)*cos(deg2rad(sub[,3]))))
+  
+  y = c((3.6+1.5*(sub_eff[,2]))*sin(deg2rad(sub[,3])),
+        rev((3.6+1.5/2)*sin(deg2rad(sub[,3]))))
+  
+  angleName = (from+to)/2
+  if(angleName > 180) {reverse = TRUE} else {reverse = FALSE}
+  ###environment variable text
+  curve_text(angleName, label = evnames[i],reverse = reverse,lineSeq = 5.5, middle = TRUE, extend = 1.1, col = cols[i])
+  ###environment variable bar
+ if(i == 8) polygon(x-0.1, y, xpd = NA,col = cols[i])
+#  else if(i == 5) polygon(x, y+0.55, xpd = NA,col = cols[i])
+#  else if(i == 7) polygon(x-0.6, y-0.2, xpd = NA,col = cols[i])
+#  else if(i == 9) polygon(x, y-0.55, xpd = NA,col = cols[i])
+  #else if(i == 12) polygon(x-0.2, y-0.5, xpd = NA,col = cols[i])
+ else 
+polygon(x, y, xpd = NA,col = cols[i])
+  
+  ###environment variable range number
+  text(srt = 0, 
+         x = (3.6+1.5)*cos(deg2rad(sub[1,3]+4)), 
+         y =  (3.6+1.5)*sin(deg2rad(sub[1,3]+4)), 
+         xpd = NA, labels = round(min(sub_eff[,3]), 2), col = cols[i], cex = 0.8)
+  
+   text(srt = 0, 
+         x = (3.6+1.5)*cos(deg2rad(sub[nrow(sub),3]-4)), 
+         y =  (3.6+1.5)*sin(deg2rad(sub[nrow(sub),3]-4)), 
+         xpd = NA, labels = round(max(sub_eff[,3]), 2), col = cols[i], cex = 0.8)
+}
+	
+###legend of bar
+rec_cols = viridis::viridis(11)
+x = seq(3,5, length.out = 12)
+for(i in 1:length(rec_cols)){
+  rect(xleft = x[i], xright = x[i+1], ybottom = -5, ytop = -5+diff(x)[1], col = rec_cols[i], xpd = NA, border = NA)
+}
+text(x[1],-5.2, labels = -1)
+text(x[11],-5.2, labels = +1)
+	
+#abun=as.character(abun)
+abun1 = as.character(viridis::magma(10))
+x = seq(-5.5,-3, length.out = 11)
+for(i in 1:unique(length(abun))){
+  rect(xleft = x[i], xright = x[i+1], ybottom = -5, ytop = -5+diff(x)[1], col = abun1[i], xpd = NA, border = NA)
+  text(x= x[1]-0.2, y=-5.2, labels = "2", pos = 4, xpd = NA)
+  text(x= x[10]-0.2, y=-5.2, labels = '850', pos = 4, xpd = NA)
+}
+text(x=-5.3, y=-5.3, labels = "presence. spp.", pos = 4, xpd = NA)
+	
+dev.off()
+	
+```
+
+
+```{r sjsdm-analyse-correlation (rel.abun)} 
+# ... session 1, Malaise I, spike, rel.abun ...
+# .. load 'sjSDM_cv' result
+hyper = readRDS(here('R','result','s-jSDM_tune_s1_m1_spike.relAbun.RDS'))
+# summary (mean values over CV for each tuning step)
+summary(hyper)
+	
+# visualize tuning and best points:
+best = plot(hyper, perf = "AUC")
+	
+rm(hyper)
+	
+# . load 'sjSDM' result
+result = readRDS(here('R','result','sjSDM_s1_m1_spike.relAbun_V0.0.2.9000’.RDS'))
+	
+summary(result)
+plot(result$history)
+	
+
+# . cov <- result$sigma 
+dim(result$sigma)
+# [1] 850 850
+co.env.spp <- cov2cor(result$sigma)
+#spp.names<-colnames(dataI.1.spike.rel.abun2[,-c(1:36)])
+	
+rownames(co.env.spp) <- 1:dim(result$sigma)[1]   #spp.names
+colnames(co.env.spp) <- 1:dim(result$sigma)[1]   #spp.names
+	
+#ggcorrplot(co.env.spp[1:400,1:400], hc.order = T, outline.color = "white", insig = "blank",sig.level = 0.05, lab_size = 1,show.legend=T)
+	
+cut.t = cut(co.env.spp, breaks = seq(-1,1,length.out = 12))
+summary(cut.t)
+	
+rm(cut.t)
+	
+# species correlation plot
+pdf(here('R','graph','sjsdm_s1_m1_spike_relAbun','species_correlation.pdf'), height=20, width=20)
+	
+ggcorrplot(co.env.spp, hc.order = T, outline.color = "white", insig = "blank",sig.level = 0.05, lab_size = 1,show.legend=T, title=paste('sjSDM version: ',packageVersion('sjSDM'),', kelpie20200214, alpha: ', best[["alpha_coef"]],', lambda: ', best[['lambda_coef']],sep='')) 
+# > packageVersion('sjSDM')
+#[1] ‘0.0.2.9000’
+	
+dev.off()
+	
+
+```
+
+```{r model-analyse-polygon (rel.abun)}
+# ..... Polygon Drawing .....
+# . species association .
+number=10
+	
+otu.tbl = as.data.frame(dplyr::select(dataI.1.spike.rel.abun2, contains('__')))
+sigma = re_scale(result$sigma)[order(apply(otu.tbl, 2, sum)), order(apply(otu.tbl, 2, sum))]
+	
+sigmas = sigma[base::upper.tri(sigma)]
+upper = order(sigmas, decreasing = TRUE)[1:number]
+lower = order(sigmas, decreasing = FALSE)[1:number]
+cuts = cut(sigmas, breaks = seq(-1,1,length.out = 12))
+summary(cuts)
+	
+to_plot = 1:length(sigmas) %in% upper | 1:length(sigmas) %in% lower
+levels(cuts) = viridis::viridis(11)
+cuts = as.character(cuts)
+n = ncol(result$sigma)
+lineSeq = 4.7
+nseg = 100
+	
+pdf(here('R','graph','sjsdm_s1_m1_spike_relAbun','species_covariance_circular.pdf'), height=8, width=8)
+	
+plot(NULL, NULL, xlim = c(-5,5), ylim =c(-5,5),pty="s", axes = F, xlab = "", ylab = "")
+text(x = -2, y = 6, pos = 3, xpd = NA, labels = paste('sjSDM version: ',packageVersion('sjSDM'),', kelpie20200214, alpha: ', best[["alpha_coef"]],', lambda: ', best[['lambda_coef']],sep=''))
+#text(x = -6, y = 5.7, pos = 3, xpd = NA, labels = "A", font = 2, cex = 1.5)
+	
+xx = lineSeq*cos( seq(0,2*pi, length.out=nseg) )
+yy = lineSeq*sin( seq(0,2*pi, length.out=nseg) )
+polygon(xx,yy, col= "white", border = "black", lty = 1, lwd = 1)
+angles = seq(0,355,length.out = n+1)[1:(n)]
+xx = cos(deg2rad(angles))*lineSeq
+yy = sin(deg2rad(angles))*lineSeq
+	
+counter = 1
+coords = cbind(xx, yy, angles)
+for(i in 2:n) {
+	for(j in 1:(i-1)){
+      if(to_plot[counter]) {
+		print (c(i,j,counter))
+		add_curve(coords[i,], coords[j,], col = cuts[counter], n = 5, lineSeq = lineSeq)
+	}
+	counter = counter + 1
+  }
+}
+	
+OTU_log = log(sort(apply(otu.tbl, 2, sum)))
+range(OTU_log)
+OTU_log[1]=0 
+cuts = cut(OTU_log, breaks = 10)
+cols = viridis::magma(10) 
+	
+levels(cuts) = cols
+sppnames2=paste("spp",1:20,sep = "")
+abun=as.character(cuts)
+sppsort=1:20
+	
+OTU_sort_abun <- data.frame(sppsort=rep(sppsort, len=dim(otu.tbl)[2]), sum = apply(otu.tbl, 2, sum))
+OTU_sort_abun = OTU_sort_abun[order(OTU_sort_abun$sum), ]
+OTU_sort_abun$abun<-abun
+OTU_sort_abun = OTU_sort_abun[order(OTU_sort_abun$sppsort), ]
+	
+# .. add abundance legends
+lineSeq = 5.0
+for(i in 1:length(OTU_log)){
+  p1 = coords[i,]
+  x1 = c(cos(deg2rad(p1[3]))*(lineSeq+0.1), cos(deg2rad(p1[3]))*(lineSeq+0.3))
+  y1 = c(sin(deg2rad(p1[3]))* (lineSeq+0.1), sin(deg2rad(p1[3]))* (lineSeq+0.3))
+  segments(x0 = x1[1], x1 = x1[2], y0 = y1[1], y1 = y1[2], col = as.character(cuts[i]), lend = 1)
+}
+	
+add_legend(viridis::viridis(11), angles = c(140,110),radius = 5.4)
+text(cos(deg2rad(123))*(lineSeq+1), sin(deg2rad(123))*(lineSeq+1.2), labels = "covariance", pos = 2, xpd = NA)
+	
+add_legend(cols = cols, range = c(2, 850), angles = c(70,40),radius = 5.4)
+text(cos(deg2rad(53))*(lineSeq+1), sin(deg2rad(55))*(lineSeq+1.1), labels = "low to high", pos = 4, xpd = NA) 
+text(cos(deg2rad(64))*(lineSeq+1.3), sin(deg2rad(62))*(lineSeq+1.1), labels = "sum of rel. abun.", pos = 4, xpd = NA) 
+	
+### arrows
+segments(x0 = cos(deg2rad(-1))*(lineSeq-0.2), x1 = cos(deg2rad(-1))*(lineSeq+0.9), y0 = sin(deg2rad(-1))*(lineSeq-0.2), y1 = sin(deg2rad(-1))*(lineSeq+0.9), xpd = NA)
+segments(x0 = cos(deg2rad(356))*(lineSeq-0.2), x1 = cos(deg2rad(356))*(lineSeq+0.9), 
+         y0 = sin(deg2rad(356))*(lineSeq-0.2), y1 = sin(deg2rad(356))*(lineSeq+0.9), xpd = NA)
+	
+# first
+angles = seq(150,195,length.out = n+1)[1:(n)]
+xx = cos(deg2rad(angles))*(lineSeq+0.6)
+yy = sin(deg2rad(angles))*(lineSeq+0.6)
+lines(xx, yy, xpd = NA)
+end = curve_text(195+3, "Species",lineSeq = lineSeq+0.6,reverse = TRUE)
+	
+# second
+angles = seq(rad2deg(end)+3,rad2deg(end)+45+8,length.out = n+1)[1:(n)]
+xx = cos(deg2rad(angles))*(lineSeq+0.6)
+yy = sin(deg2rad(angles))*(lineSeq+0.6)
+lines(xx, yy, xpd = NA)
+arrow_angle = max(angles)-2.8
+polygon(x = c(cos(deg2rad(arrow_angle))*(lineSeq+0.5), cos(deg2rad(arrow_angle))*(lineSeq+0.7), cos(deg2rad(max(angles)))*(lineSeq+0.6), cos(deg2rad(arrow_angle))*(lineSeq+0.5)),
+        y = c(sin(deg2rad(arrow_angle))*(lineSeq+0.5), sin(deg2rad(arrow_angle))*(lineSeq+0.7), sin(deg2rad(max(angles)))*(lineSeq+0.6), sin(deg2rad(arrow_angle))*(lineSeq+0.5)),col = "black", xpd = NA)
+	
+dev.off()
+	
+```
+
+```{r model-analyse-polygon-envir (rel.abun)}
+# ..... environmental effect .....
+# Drawing parameter of OTU and environmental covariant
+#formula = ~ elevation.scale+canopy.ht.scale+min.T.scale+max.T.scale+precipitation.scale+metre.road.scale+metre.stream.scale+yrs.disturb.min.scale,  
+# 8 variables, excluding intercept
+
+beta = as.matrix(data.frame(result$beta)[,2:9])
+effects= apply(beta, 1, function(o) sum(abs(o)))
+	
+turn_over = 1
+n = ncol(result$sigma)# number of otus
+max_effects= apply(beta ,1, function(e) which.max(abs(e)))
+turn_over = 1
+effect_comb = data.frame(cbind(max_effects,sapply(1:n, function(i) beta[i,max_effects[i]] )))
+# variables index & value which has biggest coefficient
+	
+sppname3=seq(1:20); sppname3=as.character(sppname3)
+effect_comb$name <- rep(sppname3, len=850)
+effect_comb$abun <- OTU_sort_abun$abun
+effect_comb$abun<-as.character(effect_comb$abun)
+effect_comb_ind = order(effect_comb[,1], effect_comb[,2])
+effect_comb = effect_comb[effect_comb_ind,]
+	
+sigma = re_scale(result$sigma)[effect_comb_ind, effect_comb_ind]
+sigmas = sigma[upper.tri(sigma)]
+number=10
+upper = order(sigmas, decreasing = TRUE)[1:number]
+lower = order(sigmas, decreasing = FALSE)[1:number]
+cuts = cut(sigmas, breaks = seq(-1,1,length.out = 12))
+to_plot = 1:length(sigmas) %in% upper | 1:length(sigmas) %in% lower
+levels(cuts) = viridis::viridis(11)
+cuts = as.character(cuts)
+n = ncol(result$sigma)
+lineSeq = 3.5
+nseg = 100
+	
+pdf(here('R','graph','sjsdm_s1_m1_spike_relAbun','max_environ_spp_cov.pdf'), height=8, width=8)
+	
+#Drawing figure parameter
+par( mar = c(1,2,2.1,2)+0.1)
+plot(NULL, NULL, xlim = c(-5,5), ylim =c(-5,5),pty="s", axes = F, xlab = "", ylab = "")
+text(x = -2.3, y = 5.5, pos = 3, xpd = NA, labels = paste('sjSDM: ',packageVersion('sjSDM'),', kelpie20200214, alpha: ', best[["alpha_coef"]],', lambda: ', best[['lambda_coef']],sep=''), font = 2, cex = 1)
+	
+xx = lineSeq*cos( seq(0,2*pi, length.out=nseg) )
+yy = lineSeq*sin( seq(0,2*pi, length.out=nseg) )
+polygon(xx,yy, col= "white", border = "black", lty = 1, lwd = 1)
+angles = seq(0,360,length.out = n+1)[1:(n)] # for all otus
+xx = cos(deg2rad(angles))*lineSeq
+yy = sin(deg2rad(angles))*lineSeq
+	
+##inside circle
+counter = 1
+coords = cbind(xx, yy, angles)
+	
+for(i in 2:n) {
+  for(j in 1:(i-1)){
+    
+      if(to_plot[counter]) add_curve(coords[i,], coords[j,], col = cuts[counter], n = 5, species = T, lineSeq = 3.5, lwd = 1.3)
+      counter = counter + 1
+  }
+}
+
+lineSeq = 4.0
+for(i in 1:n){
+  p1 = coords[i,]
+  x1 = c(cos(deg2rad(p1[3]))*(lineSeq+0.1), cos(deg2rad(p1[3]))*(lineSeq+0.3))
+  y1 = c(sin(deg2rad(p1[3]))* (lineSeq+0.1), sin(deg2rad(p1[3]))* (lineSeq+0.3))
+  segments(x0 = x1[1], x1 = x1[2], y0 = y1[1], y1 = y1[2], col = effect_comb$abun[i], lend = 1)
+}
+lineSeq = 3.5
+	
+##outside circle 
+#formula = ~elevation.scale+canopy.ht.scale+min.T.scale+max.T.scale+precipitation.scale+metre.road.scale+metre.stream.scale+yrs.disturb.min.scale,  
+evnames=c("ele","canopy","min.T","max.T","preci","road","stream","disturb")
+colourCount = length(unique(evnames))
+getPalette = colorRampPalette(RColorBrewer::brewer.pal(8, "Dark2"))
+cols=getPalette(colourCount)
+
+coords = data.frame(cbind(xx, yy, angles))
+effect_comb=effect_comb[,-c(3,4)]
+effect_comb2 = effect_comb
+effect_comb2[,2] = ff(effect_comb[,2])
+effect_comb2 = cbind(effect_comb2, effect_comb[,2])
+effect_comb2 = data.frame(effect_comb2)
+	
+for(i in sort(unique(max_effects))) {
+  sub<- coords %>% filter(effect_comb2$max_effects==i)
+  sub_eff <- effect_comb2 %>% filter(max_effects==i)
+  from <- sub[1,3]
+  to <- sub[nrow(sub),3]
+
+  x = c((3.6+1.5*(sub_eff[,2]))*cos(deg2rad(sub[,3]) ), 
+        rev((3.6+1.5/2)*cos(deg2rad(sub[,3]))))
+  
+  y = c((3.6+1.5*(sub_eff[,2]))*sin(deg2rad(sub[,3])),
+        rev((3.6+1.5/2)*sin(deg2rad(sub[,3]))))
+  
+  angleName = (from+to)/2
+  if(angleName > 180) {reverse = TRUE} else {reverse = FALSE}
+  ###environment variable text
+  curve_text(angleName, label = evnames[i],reverse = reverse,lineSeq = 5.5, middle = TRUE, extend = 1.1, col = cols[i])
+  ###environment variable bar
+ if(i == 8) polygon(x-0.1, y, xpd = NA,col = cols[i])
+#  else if(i == 5) polygon(x, y+0.55, xpd = NA,col = cols[i])
+#  else if(i == 7) polygon(x-0.6, y-0.2, xpd = NA,col = cols[i])
+#  else if(i == 9) polygon(x, y-0.55, xpd = NA,col = cols[i])
+  #else if(i == 12) polygon(x-0.2, y-0.5, xpd = NA,col = cols[i])
+ else 
+polygon(x, y, xpd = NA,col = cols[i])
+  
+  ###environment variable range number
+  text(srt = 0, 
+         x = (3.6+1.5)*cos(deg2rad(sub[1,3]+4)), 
+         y =  (3.6+1.5)*sin(deg2rad(sub[1,3]+4)), 
+         xpd = NA, labels = round(min(sub_eff[,3]), 2), col = cols[i], cex = 0.8)
+  
+   text(srt = 0, 
+         x = (3.6+1.5)*cos(deg2rad(sub[nrow(sub),3]-4)), 
+         y =  (3.6+1.5)*sin(deg2rad(sub[nrow(sub),3]-4)), 
+         xpd = NA, labels = round(max(sub_eff[,3]), 2), col = cols[i], cex = 0.8)
+}
+	
+###legend of bar
+rec_cols = viridis::viridis(11)
+x = seq(3,5, length.out = 12)
+for(i in 1:length(rec_cols)){
+  rect(xleft = x[i], xright = x[i+1], ybottom = -5, ytop = -5+diff(x)[1], col = rec_cols[i], xpd = NA, border = NA)
+}
+text(x[1],-5.2, labels = -1)
+text(x[11],-5.2, labels = +1)
+	
+#abun=as.character(abun)
+abun1 = as.character(viridis::magma(10))
+x = seq(-5.5,-3, length.out = 11)
+for(i in 1:unique(length(abun))){
+  rect(xleft = x[i], xright = x[i+1], ybottom = -5, ytop = -5+diff(x)[1], col = abun1[i], xpd = NA, border = NA)
+  text(x= x[1]-0.2, y=-5.2, labels = "2", pos = 4, xpd = NA)
+  text(x= x[10]-0.2, y=-5.2, labels = '850', pos = 4, xpd = NA)
+}
+text(x=-5.3, y=-5.3, labels = "rel. abun. spp.", pos = 4, xpd = NA)
+	
+dev.off()
+	
+
+
+```
+
+
+```{r sjsdm-analyse-correlation (old version)}
+# model result from old sjsdm version
+# don't bother to run! just for backup!
 # s1, m1, spiked data 
 # formula = ~ elevation.scale+canopy.ht.scale+min.T.scale+max.T.scale+precipitation.scale+metre.road.scale+metre.stream.scale+yrs.disturb.min.scale,  
 result<-readRDS(here('R','result','s-jSDM_result_s1_m1_spike.relAbun.RDS'))
@@ -379,7 +1085,9 @@ dev.off()
 
 ```
 
-```{r model-analyse-polygon (rel.abun)}
+```{r model-analyse-polygon (old version)}
+# model result from old sjsdm version
+# don't bother to run! just for backup!
 # ..... Polygon Drawing .....
 # . species association .
 # result[1][4][7], lrs 
@@ -483,7 +1191,9 @@ dev.off()
 	
 ```
 
-```{r model-analyse-polygon-envir (rel.abun)}
+```{r model-analyse-polygon-envir (old version)}
+# model result from old sjsdm version
+# don't bother to run! just for backup!
 # ..... environmental effect .....
 # Drawing parameter of OTU and environmental covariant
 # result[1][4][7]

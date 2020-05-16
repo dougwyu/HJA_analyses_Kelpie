@@ -1,1 +1,1 @@
-'s-jSDM_result_s1_m1_spike.relAbun.RDS' & 's-jSDM_result_s1_m1_spike.present.RDS' should be in this folder, but git doesn't allow individual files that are larger than 25 mb.
+'..._tune_...' results for tune (hyper) result are too big to upload
