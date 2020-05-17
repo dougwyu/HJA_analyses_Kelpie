@@ -324,8 +324,6 @@ best = plot(hyper.s1_m1_spike.relAbun, perf = "AUC")
 hyper.s1_m1_spike.relAbun
 # summary (mean values over CV for each tuning step)
 summary(hyper.s1_m1_spike.relAbun)
-
-# START HERE
 	
 sjsdm.s1_m1_spike.relAbun = sjSDM(
 	Y = as.matrix(as.data.frame(dplyr::select(dataI.1.spike.rel.abun2, contains('__')))),
@@ -400,35 +398,10 @@ result = list(beta = coef(sjsdm.s1_m1_spike.present), sigma = getCov(sjsdm.s1_m1
 
 ```
 
-#DY use eval=FALSE, include=FALSE
 ```{r sjsdm-model old version, eval=FALSE, include=FALSE}
 # old sjsdm version, even syntax of model changed!
 # just for backup! don't bother to run!
-
-# ... session 1, Malaise I, spike, rel.abun ...
-lrs = seq(-18, -1, length.out = 7);f = function(x) 2^x;lrs = f(lrs)
-result = vector("list", 7)
-	
-scale.env = dataI.1.spike.rel.abun2[,c(1:3,24:36)]
-str(scale.env)
-	
-for(i in 1:7) { 
-model = sjSDM(X = scale.env, 
-               Y = as.matrix(dataI.1.spike.rel.abun2[,-c(1:36)]),
-               formula = ~ elevation.scale+min.T.scale+max.T.scale+precipitation.scale+mean.NDVI.scale+mean.EVI.scale,  
-               learning_rate = 0.01, 
-               iter = 100L,
-               step_size = 27L, l1_coefs = 0.07*lrs[i], l2_coefs = 0.03*lrs[i], # should be normally tuned...
-               sampling = 100L,l1_cov = lrs[i], l2_cov = lrs[i])
-  loss=unlist(model$logLik)
-  history=model$history
-  weights = list(beta = coef(model), sigma = getCov(model),loss=loss,history=history)
-  rm(model)
-  result[[i]] = weights
- }
-  #iter = 1000L, step_size = 6L, sampling = 100L, learning_rate = 0.0003
-  saveRDS(result, file = here('R','result','s-jSDM_result_s1_m1_spike.relAbun_lidar.RDS') )
-	
+# code moved down below
 ```
 
 ```{r sjsdm-analyse-correlation (0/1)} 
@@ -586,7 +559,6 @@ polygon(x = c(cos(deg2rad(arrow_angle))*(lineSeq+0.5), cos(deg2rad(arrow_angle))
 #dev.off()
 	
 ```
-
 
 ```{r model-analyse-polygon-envir (0/1)}
 # ... session 1, Malaise I, spike, present ...
@@ -1037,6 +1009,41 @@ text(x=-5.3, y=-5.3, labels = "rel. abun. spp.", pos = 4, xpd = NA)
 
 ```
 
+
+
+
+
+Old code, don't run. just here for backup
+```{r sjsdm-model old version, eval=FALSE, include=FALSE}
+# old sjsdm version, even syntax of model changed!
+# just for backup! don't bother to run!
+# code moved down below
+
+# ... session 1, Malaise I, spike, rel.abun ...
+lrs = seq(-18, -1, length.out = 7);f = function(x) 2^x;lrs = f(lrs)
+result = vector("list", 7)
+	
+scale.env = dataI.1.spike.rel.abun2[,c(1:3,24:36)]
+str(scale.env)
+	
+for(i in 1:7) { 
+model = sjSDM(X = scale.env, 
+               Y = as.matrix(dataI.1.spike.rel.abun2[,-c(1:36)]),
+               formula = ~ elevation.scale+min.T.scale+max.T.scale+precipitation.scale+mean.NDVI.scale+mean.EVI.scale,  
+               learning_rate = 0.01, 
+               iter = 100L,
+               step_size = 27L, l1_coefs = 0.07*lrs[i], l2_coefs = 0.03*lrs[i], # should be normally tuned...
+               sampling = 100L,l1_cov = lrs[i], l2_cov = lrs[i])
+  loss=unlist(model$logLik)
+  history=model$history
+  weights = list(beta = coef(model), sigma = getCov(model),loss=loss,history=history)
+  rm(model)
+  result[[i]] = weights
+ }
+  #iter = 1000L, step_size = 6L, sampling = 100L, learning_rate = 0.0003
+  saveRDS(result, file = here('R','result','s-jSDM_result_s1_m1_spike.relAbun_lidar.RDS') )
+	
+```
 
 ```{r sjsdm-analyse-correlation (old version), eval=FALSE, include=FALSE}
 # model result from old sjsdm version
