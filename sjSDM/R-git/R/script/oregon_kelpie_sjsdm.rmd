@@ -12,7 +12,7 @@ source(here("R", "source", "sjsdm_function.r"))
 	
 ```
 
-```{r convert data (go directly to 'load files')}
+```{r convert data (go directly to 'load files'), eval=FALSE, include=FALSE}
 # for backup, converted data are saved
 
 # format OTU data, combine with lidar data 
@@ -144,7 +144,7 @@ dim(otu.env1.noS)
 
 ```
 
-```{r convert data2 (go directly to 'load files')}
+```{r convert data2 (go directly to 'load files'), eval=FALSE, include=FALSE}
 # for backup, data are already saved
 # convert to present/rel.abun according to formatted data 
 # ( continue with 'convert data')
@@ -301,7 +301,7 @@ names(dataI.1.spike.rel.abun2[,c(1:3,24:36)])
 scale.env = dataI.1.spike.rel.abun2[,c(1:3,24:36)]
 str(scale.env)
 	
-scale.env1 = dataI.1.spike.rel.abun2[,c('elevation.scale','canopy.ht.scale','min.T.scale','max.T.scale','precipilogLik(sjsdm.s1_m1_spike.relAbun)tation.scale','metre.road.scale','metre.stream.scale','yrs.disturb.min.scale')]
+scale.env1 = dataI.1.spike.rel.abun2[,c('elevation.scale','canopy.ht.scale','min.T.scale','max.T.scale','precipitation.scale','metre.road.scale','metre.stream.scale','yrs.disturb.min.scale')]
 	
 hyper.s1_m1_spike.relAbun = sjSDM_cv(
 	Y = as.matrix(as.data.frame(dplyr::select(dataI.1.spike.rel.abun2, contains('__')))),
@@ -323,7 +323,7 @@ summary(hyper.s1_m1_spike.relAbun)
 sjsdm.s1_m1_spike.relAbun = sjSDM(
 	Y = as.matrix(as.data.frame(dplyr::select(dataI.1.spike.rel.abun2, contains('__')))),
 	iter = 60L, step_size = 27L, link = "probit",
-	env = linear(data = as.matrix(scale.env1), formula = ~ elevation.scale+canopy.ht.scale+min.T.scale+max.logLik(sjsdm.s1_m1_spike.relAbun)T.scale+precipitation.scale+metre.road.scale+metre.stream.scale+yrs.disturb.min.scale,
+	env = linear(data = as.matrix(scale.env1), formula = ~ elevation.scale+canopy.ht.scale+min.T.scale+max.T.scale+precipitation.scale+metre.road.scale+metre.stream.scale+yrs.disturb.min.scale,
 	lambda = best[["lambda_coef"]], alpha = best[["alpha_coef"]]
 	), 
 	biotic = bioticStruct(lambda = best[["lambda_cov"]], alpha = best[["alpha_cov"]], on_diag = FALSE
@@ -420,14 +420,20 @@ model = sjSDM(X = scale.env,
 ```{r sjsdm-analyse-correlation (0/1)} 
 # ... session 1, Malaise I, spike, present ...
 # .. load 'sjSDM_cv' result
-hyper = readRDS(here('R','result','s-jSDM_tune_s1_m1_spike.present.RDS'))
-# summary (mean values over CV for each tuning step)
-summary(hyper)
+#hyper = readRDS(here('R','result','s-jSDM_tune_s1_m1_spike.present.RDS'))
 	
-# visualize tuning and best points:
-best = plot(hyper, perf = "AUC")
+#summary(hyper)  # mean values over CV for each tuning step
 	
-rm(hyper)
+## visualize tuning and best points:
+#best = plot(hyper, perf = "AUC")
+	
+#rm(hyper)
+	
+#saveRDS(best, file = here('R','result','s-jSDM_tune_best_s1_m1_spike.present.RDS'))
+	
+# sjSDM_cv result is too big to upload to git, saved only alpha & lambda coef,cov !!!
+	
+best = readRDS(here('R','result','s-jSDM_tune_best_s1_m1_spike.present.RDS'))
 	
 # . load 'sjSDM' result
 result = readRDS(here('R','result','sjSDM_s1_m1_spike.present_V0.0.2.9000’.RDS'))
@@ -485,7 +491,7 @@ n = ncol(result$sigma)
 lineSeq = 4.7
 nseg = 100
 	
-pdf(here('R','graph','sjsdm_s1_m1_spike_present','species_covariance_circular.pdf'), height=8, width=8)
+#pdf(here('R','graph','sjsdm_s1_m1_spike_present','species_covariance_circular.pdf'), height=8, width=8)
 	
 plot(NULL, NULL, xlim = c(-5,5), ylim =c(-5,5),pty="s", axes = F, xlab = "", ylab = "")
 text(x = -2, y = 6, pos = 3, xpd = NA, labels = paste('sjSDM version: ',packageVersion('sjSDM'),', kelpie20200214, alpha: ', best[["alpha_coef"]],', lambda: ', round(best[['lambda_coef']], 5),sep=''))
@@ -563,7 +569,7 @@ arrow_angle = max(angles)-2.8
 polygon(x = c(cos(deg2rad(arrow_angle))*(lineSeq+0.5), cos(deg2rad(arrow_angle))*(lineSeq+0.7), cos(deg2rad(max(angles)))*(lineSeq+0.6), cos(deg2rad(arrow_angle))*(lineSeq+0.5)),
         y = c(sin(deg2rad(arrow_angle))*(lineSeq+0.5), sin(deg2rad(arrow_angle))*(lineSeq+0.7), sin(deg2rad(max(angles)))*(lineSeq+0.6), sin(deg2rad(arrow_angle))*(lineSeq+0.5)),col = "black", xpd = NA)
 	
-dev.off()
+#dev.off()
 	
 ```
 
@@ -605,7 +611,7 @@ n = ncol(result$sigma)
 lineSeq = 3.5
 nseg = 100
 	
-pdf(here('R','graph','sjsdm_s1_m1_spike_present','max_environ_spp_cov.pdf'), height=8, width=8)
+#pdf(here('R','graph','sjsdm_s1_m1_spike_present','max_environ_spp_cov.pdf'), height=8, width=8)
 	
 #Drawing figure parameter
 par( mar = c(1,2,2.1,2)+0.1)
@@ -710,7 +716,7 @@ for(i in 1:unique(length(abun))){
 }
 text(x=-5.3, y=-5.3, labels = "presence. spp.", pos = 4, xpd = NA)
 	
-dev.off()
+#dev.off()
 	
 ```
 
@@ -718,14 +724,19 @@ dev.off()
 ```{r sjsdm-analyse-correlation (rel.abun)} 
 # ... session 1, Malaise I, spike, rel.abun ...
 # .. load 'sjSDM_cv' result
-hyper = readRDS(here('R','result','s-jSDM_tune_s1_m1_spike.relAbun.RDS'))
-# summary (mean values over CV for each tuning step)
-summary(hyper)
+#hyper = readRDS(here('R','result','s-jSDM_tune_s1_m1_spike.relAbun.RDS'))
+## summary (mean values over CV for each tuning step)
+#summary(hyper)
 	
-# visualize tuning and best points:
-best = plot(hyper, perf = "AUC")
+## visualize tuning and best points:
+#best = plot(hyper, perf = "AUC")
 	
-rm(hyper)
+#rm(hyper)
+	
+#saveRDS(best, here('R','result','s-jSDM_tune_best_s1_m1_spike.relAbun.RDS'))
+	
+# sjSDM_cv result is too big to upload to git, saved only alpha & lambda coef,cov instead !!!
+best = readRDS(here('R','result','s-jSDM_tune_best_s1_m1_spike.relAbun.RDS'))
 	
 # . load 'sjSDM' result
 result = readRDS(here('R','result','sjSDM_s1_m1_spike.relAbun_V0.0.2.9000’.RDS'))
@@ -751,13 +762,13 @@ summary(cut.t)
 rm(cut.t)
 	
 # species correlation plot
-pdf(here('R','graph','sjsdm_s1_m1_spike_relAbun','species_correlation.pdf'), height=20, width=20)
+#pdf(here('R','graph','sjsdm_s1_m1_spike_relAbun','species_correlation.pdf'), height=20, width=20)
 	
 ggcorrplot(co.env.spp, hc.order = T, outline.color = "white", insig = "blank",sig.level = 0.05, lab_size = 1,show.legend=T, title=paste('sjSDM version: ',packageVersion('sjSDM'),', kelpie20200214, alpha: ', best[["alpha_coef"]],', lambda: ', best[['lambda_coef']],sep='')) 
 # > packageVersion('sjSDM')
 #[1] ‘0.0.2.9000’
 	
-dev.off()
+#dev.off()
 	
 
 ```
@@ -783,7 +794,7 @@ n = ncol(result$sigma)
 lineSeq = 4.7
 nseg = 100
 	
-pdf(here('R','graph','sjsdm_s1_m1_spike_relAbun','species_covariance_circular.pdf'), height=8, width=8)
+#pdf(here('R','graph','sjsdm_s1_m1_spike_relAbun','species_covariance_circular.pdf'), height=8, width=8)
 	
 plot(NULL, NULL, xlim = c(-5,5), ylim =c(-5,5),pty="s", axes = F, xlab = "", ylab = "")
 text(x = -2, y = 6, pos = 3, xpd = NA, labels = paste('sjSDM version: ',packageVersion('sjSDM'),', kelpie20200214, alpha: ', best[["alpha_coef"]],', lambda: ', best[['lambda_coef']],sep=''))
@@ -861,7 +872,7 @@ arrow_angle = max(angles)-2.8
 polygon(x = c(cos(deg2rad(arrow_angle))*(lineSeq+0.5), cos(deg2rad(arrow_angle))*(lineSeq+0.7), cos(deg2rad(max(angles)))*(lineSeq+0.6), cos(deg2rad(arrow_angle))*(lineSeq+0.5)),
         y = c(sin(deg2rad(arrow_angle))*(lineSeq+0.5), sin(deg2rad(arrow_angle))*(lineSeq+0.7), sin(deg2rad(max(angles)))*(lineSeq+0.6), sin(deg2rad(arrow_angle))*(lineSeq+0.5)),col = "black", xpd = NA)
 	
-dev.off()
+#dev.off()
 	
 ```
 
@@ -901,7 +912,7 @@ n = ncol(result$sigma)
 lineSeq = 3.5
 nseg = 100
 	
-pdf(here('R','graph','sjsdm_s1_m1_spike_relAbun','max_environ_spp_cov.pdf'), height=8, width=8)
+#pdf(here('R','graph','sjsdm_s1_m1_spike_relAbun','max_environ_spp_cov.pdf'), height=8, width=8)
 	
 #Drawing figure parameter
 par( mar = c(1,2,2.1,2)+0.1)
@@ -1006,14 +1017,14 @@ for(i in 1:unique(length(abun))){
 }
 text(x=-5.3, y=-5.3, labels = "rel. abun. spp.", pos = 4, xpd = NA)
 	
-dev.off()
+#dev.off()
 	
 
 
 ```
 
 
-```{r sjsdm-analyse-correlation (old version)}
+```{r sjsdm-analyse-correlation (old version), eval=FALSE, include=FALSE}
 # model result from old sjsdm version
 # don't bother to run! just for backup!
 # s1, m1, spiked data 
@@ -1085,7 +1096,7 @@ dev.off()
 
 ```
 
-```{r model-analyse-polygon (old version)}
+```{r model-analyse-polygon (old version), eval=FALSE, include=FALSE}
 # model result from old sjsdm version
 # don't bother to run! just for backup!
 # ..... Polygon Drawing .....
@@ -1191,7 +1202,7 @@ dev.off()
 	
 ```
 
-```{r model-analyse-polygon-envir (old version)}
+```{r model-analyse-polygon-envir (old version), eval=FALSE, include=FALSE}
 # model result from old sjsdm version
 # don't bother to run! just for backup!
 # ..... environmental effect .....
