@@ -292,10 +292,10 @@ dataI.1.spike.present2[1:5,34:40]
 # ... session 1, Malaise I, spike, rel.abun ...
 # . sjSDM-version = ‘0.0.2.9000’
 names(dataI.1.spike.rel.abun2[,c(1:3,24:36)])
-# [1] "SiteName"              "UTM_E"                 "UTM_N"                
-# [4] "trap"                  "session"               "site_trap_period"     
-# [7] "elevation.scale"       "canopy.ht.scale"       "min.T.scale"          
-#[10] "max.T.scale"           "precipitation.scale"   "metre.road.scale"     
+# [1] "SiteName"              "UTM_E"                 "UTM_N"             
+# [4] "trap"                  "session"               "site_trap_period"
+# [7] "elevation.scale"       "canopy.ht.scale"       "min.T.scale"      
+#[10] "max.T.scale"           "precipitation.scale"   "metre.road.scale"  
 #[13] "metre.stream.scale"    "yrs.disturb.min.scale" "mean.NDVI.scale"      
 #[16] "mean.EVI.scale"
 scale.env = dataI.1.spike.rel.abun2[,c(1:3,24:36)]
@@ -304,11 +304,16 @@ str(scale.env)
 scale.env1 = dataI.1.spike.rel.abun2[,c('elevation.scale','canopy.ht.scale','min.T.scale','max.T.scale','precipitation.scale','metre.road.scale','metre.stream.scale','yrs.disturb.min.scale')]
 	
 hyper.s1_m1_spike.relAbun = sjSDM_cv(
-	Y = as.matrix(as.data.frame(dplyr::select(dataI.1.spike.rel.abun2, contains('__')))),
+	Y = as.matrix(as.data.frame(
+	  dplyr::select(dataI.1.spike.rel.abun2, contains('__')))
+	  ),
 	env = as.matrix(scale.env1),
-	biotic = bioticStruct(on_diag=FALSE), tune='random', n_cores = NULL,
-	CV=3L, tune_steps = 25L, iter = 60L 
-	# iter -> optimization step; lambda -> regularization strength (multiplied constant)
+	biotic = bioticStruct(on_diag=FALSE), 
+	tune='random', 
+	n_cores = NULL,
+	CV=3L, 
+	tune_steps = 25L, 
+	iter = 60L # iter -> optimization step; lambda -> regularization strength (multiplied constant)
 	)
 # saveRDS(hyper.s1_m1_spike.relAbun, file = here('R','result','s-jSDM_tune_s1_m1_spike.relAbun.RDS') )
 	
@@ -319,16 +324,20 @@ best = plot(hyper.s1_m1_spike.relAbun, perf = "AUC")
 hyper.s1_m1_spike.relAbun
 # summary (mean values over CV for each tuning step)
 summary(hyper.s1_m1_spike.relAbun)
+
+# START HERE
 	
 sjsdm.s1_m1_spike.relAbun = sjSDM(
 	Y = as.matrix(as.data.frame(dplyr::select(dataI.1.spike.rel.abun2, contains('__')))),
-	iter = 60L, step_size = 27L, link = "probit",
-	env = linear(data = as.matrix(scale.env1), formula = ~ elevation.scale+canopy.ht.scale+min.T.scale+max.T.scale+precipitation.scale+metre.road.scale+metre.stream.scale+yrs.disturb.min.scale,
-	lambda = best[["lambda_coef"]], alpha = best[["alpha_coef"]]
-	), 
-	biotic = bioticStruct(lambda = best[["lambda_cov"]], alpha = best[["alpha_cov"]], on_diag = FALSE
+	iter = 60L, 
+	step_size = 27L, 
+	link = "probit",
+	env = linear(data = as.matrix(scale.env1), formula = ~ elevation.scale + canopy.ht.scale + min.T.scale + max.T.scale + precipitation.scale + metre.road.scale + metre.stream.scale + yrs.disturb.min.scale,
+	lambda = best[["lambda_coef"]], alpha = best[["alpha_coef"]]), 
+	biotic = bioticStruct(lambda = best[["lambda_cov"]], 
+	                      alpha = best[["alpha_cov"]], 
+	                      on_diag = FALSE)
 	)
-)
 
 #summary(model)
 # calculate post-hoc p-values:
@@ -337,7 +346,12 @@ p = getSe(sjsdm.s1_m1_spike.relAbun)
 #summary.p=summary(p)
 #plot(sjsdm.s1_m1_spike.relAbun$history)
 #save result
-result = list(beta = coef(sjsdm.s1_m1_spike.relAbun), sigma = getCov(sjsdm.s1_m1_spike.relAbun), history = sjsdm.s1_m1_spike.relAbun$history, p = p, logLik=logLik(sjsdm.s1_m1_spike.relAbun))
+result = list(beta = coef(sjsdm.s1_m1_spike.relAbun), 
+              sigma = getCov(sjsdm.s1_m1_spike.relAbun), 
+              history = sjsdm.s1_m1_spike.relAbun$history, 
+              p = p, 
+              logLik=logLik(sjsdm.s1_m1_spike.relAbun)
+              )
 # saveRDS(result, file = here('R','result','sjSDM_s1_m1_spike.relAbun_V0.0.2.9000’.RDS')) 
 	
 
