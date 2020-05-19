@@ -86,7 +86,26 @@ names(lidar)
 # [10] "l_p25"              "l_p25_all"          "l_p95"             
 # [13] "l_p95_all"          "l_rumple"      
 
-ggplot(lidar, aes(x=UTM_E, y=UTM_N)) +
-    geom_point(aes(col=l_rumple))
+p1 <- ggplot(lidar, aes(x=UTM_E, y=UTM_N)) +
+    geom_point(aes(size=l_Cover_2m_4m_all))
+
+p2 <- ggplot(lidar, aes(x=UTM_E, y=UTM_N)) +
+    geom_point(aes(size=l_Cover_2m_max_all))
+p3 <- ggplot(lidar, aes(x=UTM_E, y=UTM_N)) +
+    geom_point(aes(size=l_Cover_2m_max))
+
+p3 <- ggplot(lidar, aes(x=UTM_E, y=UTM_N)) +
+    geom_point(aes(size=l_Cover_4m_16m_all))
+
+p4 <- ggplot(lidar, aes(x=UTM_E, y=UTM_N)) +
+    geom_point(aes(size=l_p25_all))
+
+p5 <- ggplot(lidar, aes(x=UTM_E, y=UTM_N)) +
+    geom_point(aes(size=l_p95_all))
+
+p6 <- ggplot(lidar, aes(x=UTM_E, y=UTM_N)) +
+    geom_point(aes(size=l_rumple))
+
+(p1 | p2 | p3) / (p4 | p5 | p6)
 ```
 
