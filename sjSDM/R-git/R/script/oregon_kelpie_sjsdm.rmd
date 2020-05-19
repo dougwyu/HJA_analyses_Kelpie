@@ -15,8 +15,7 @@ source(here("R", "source", "sjsdm_function.r"))
 ```{r convert data (go directly to 'load files'), eval=FALSE, include=FALSE}
 # for backup, converted data are saved
 
-# format OTU data, combine with lidar data 
-#dy not lidar data. it's landsat data.  there will be lidar data later, so must name it correctly
+# format OTU data, combine with multispectral data 
 # (remote sensing data)
 mulspec.env = read.csv(here('..','..','HJA_scripts','10_eo_data','biodiversity_site_info_multispectral_2020-04-13.txt'), header=T, sep=',', stringsAsFactors = F, na.strings='NA')
 str(mulspec.env)
