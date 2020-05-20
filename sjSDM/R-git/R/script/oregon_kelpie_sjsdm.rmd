@@ -365,6 +365,14 @@ p = getSe(sjsdm.s2_m1_spike.relAbun)
 #plot(sjsdm.s1_m1_spike.relAbun$history)
 #save result
 result = list(beta = coef(sjsdm.s2_m1_spike.relAbun), sigma = getCov(sjsdm.s2_m1_spike.relAbun), history = sjsdm.s2_m1_spike.relAbun$history, p = p, logLik=logLik(sjsdm.s2_m1_spike.relAbun))
+
+#VP for test
+imp =importance(sjsdm.s2_m1_spike.relAbun)
+plot(imp)
+an = anova(sjsdm.s2_m1_spike.relAbun, cv = 2L)
+#print(an)
+plot(an)
+
 saveRDS(result, file = here('R','result','sjSDM_s2_m1_spike.relAbun_V0.0.2.9000.RDS')) 
 	
 
