@@ -235,6 +235,7 @@ str(mulspec.env)
 otu.env1.spike.present = read.csv(here('kelpie','formatted_data','present_mulspec_sample_by_species_corr_table_F2308_minimap2_20200221_kelpie20200214.csv'), header=T, sep=',', stringsAsFactors = F, na.strings='NA')
 	
 otu.env1.spike.rel.abun = read.csv(here('kelpie','formatted_data','relAbun_mulspec_sample_by_species_corr_table_F2308_minimap2_20200221_kelpie20200214.csv'), header=T, sep=',', stringsAsFactors = F, na.strings='NA')
+
 range(otu.env1.spike.rel.abun[,37:800])
 	
 ```
