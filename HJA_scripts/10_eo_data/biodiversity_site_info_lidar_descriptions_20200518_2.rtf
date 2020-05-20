@@ -1,0 +1,771 @@
+{\rtf1\ansi\ansicpg1252\cocoartf1671\cocoasubrtf600
+{\fonttbl\f0\fnil\fcharset0 HelveticaNeue;\f1\fswiss\fcharset0 Helvetica;\f2\fswiss\fcharset0 Helvetica-Bold;
+\f3\fnil\fcharset0 Calibri;\f4\fnil\fcharset0 Calibri-Bold;\f5\fswiss\fcharset0 ArialMT;
+\f6\fnil\fcharset0 Tahoma;\f7\fnil\fcharset0 Calibri-Italic;\f8\fswiss\fcharset0 Helvetica-Oblique;
+\f9\fmodern\fcharset0 CourierNewPSMT;}
+{\colortbl;\red255\green255\blue255;\red0\green0\blue0;\red0\green0\blue0;\red255\green255\blue255;
+\red69\green60\blue204;\red9\green79\blue209;\red24\green24\blue23;\red20\green160\blue194;\red29\green184\blue14;
+\red69\green69\blue69;}
+{\*\expandedcolortbl;;\cssrgb\c0\c0\c0\cname textColor;\cssrgb\c0\c0\c0;\cssrgb\c100000\c100000\c100000;
+\cssrgb\c34510\c33725\c83922;\cssrgb\c0\c40784\c85490;\cssrgb\c12549\c12157\c11765;\cssrgb\c0\c68627\c80392;\cssrgb\c7059\c75294\c5490;
+\cssrgb\c34118\c34118\c34118;}
+{\*\listtable{\list\listtemplateid1\listhybrid{\listlevel\levelnfc23\levelnfcn23\leveljc0\leveljcn0\levelfollow0\levelstartat1\levelspace360\levelindent0{\*\levelmarker \{disc\}}{\leveltext\leveltemplateid1\'01\uc0\u8226 ;}{\levelnumbers;}\fi-360\li720\lin720 }{\listname ;}\listid1}}
+{\*\listoverridetable{\listoverride\listid1\listoverridecount0\ls1}}
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+
+\f0\fs24 \cf2 From: Douglas Yu <dougwyu@mac.com>\
+Subject: Re: Novogene and Kelpie samples\
+Date: 19 May 2020 at 13:53:31 BST\
+To: Marie Tosa <marie.tosa@oregonstate.edu>\
+Cc: Taal Levi <thetaaltree@gmail.com>, Yin2 Qiu1 \uc0\u23395 \u21535 \u31179  Ji4 <jiyinqiu@hotmail.com>, Li Yuanheng <li_yuanheng_eco@126.com>, Ming2 Jie3 Luo2 <LoreMJ@163.com>\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+
+\f1 \cf2 \
+\pard\pardeftab720\sl280\partightenfactor0
+\cf3 \expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec3 Thanks Marie,\
+\
+i found a good paper to help me understand the metrics. \'a0According to Kane et al. (2010), the key lidar metrics are rumple, p95_height, and lidar density. \'a0\
+\
+First, the forest increases in lidar density to some max, then it increases in rumpliness. \'a0it continuously increases in height.\'a0\
+\
+Kane et al. define lidar density as: "Proportion of first returns greater than a lower height limit of 3 m above ground in the digital terrain model. Height limit was used eliminate returns from herbaceous and shrub cover."\'a0\
+\
+Given this, would you and Dave agree that these are the direct or closest equivalents of Kane's variables in your dataset? \'a0(i just want to get an a priori expectation)\
+\
+Also, should we use\'a0
+\f2\b all
+\f1\b0 \'a0or\'a0
+\f2\b first
+\f1\b0 \'a0returns? \'a0\
+\
+Kane measure: \'a0
+\f2\b Bell measure
+\f1\b0 \
+p95_height: \'a0
+\f2\b l_p95 , l_p95_all
+\f1\b0 \
+rumple:
+\f2\b  l_rumple
+\f1\b0 \
+lidar density:\'a0
+\f2\b l_Cover_4m_16m, l_Cover_4m_16m_all
+\f1\b0 \
+\
+doug\
+\
+ps \'a0here are the significant species correlations that correspond to the blue and yellow lines. \'a0these correlations can be interpreted in 2 ways: \'a0as actual species interactions (unlikely, in my opinion) or as unmeasured environmental variates, which is revealed by community structure) (more likely)\'a0\
+\
+\
+\
+\
+\
+\pard\pardeftab720\sl280\partightenfactor0
+
+\f2\b \cf3 \
+\pard\pardeftab720\sl280\partightenfactor0
+
+\f1\b0 \cf3 \
+\
+\
+\
+\
+\
+\pard\pardeftab720\sl340\partightenfactor0
+
+\f3\fs28 \cf3 \cb4 95
+\fs23\fsmilli11667 \cb1 \super th
+\fs28 \nosupersub \'a0\cb4 percentile height (p95) for first returns and all returns\'a0\cb1 (
+\f4\b l_p95 , l_p95_all
+\f3\b0 )
+\f1\fs24 \cf5 \strokec5 \
+\pard\pardeftab720\sl280\partightenfactor0
+\cf3 \strokec3 \
+\pard\pardeftab720\sl340\partightenfactor0
+
+\f3\fs28 \cf3 \cb4 25
+\fs23\fsmilli11667 \cb1 \super th
+\fs28 \nosupersub \'a0\cb4 percentile height (p25) for first returns and all returns\'a0\cb1 (
+\f4\b l_p25,\'a0l_p25_all
+\f3\b0 )\
+\pard\pardeftab720\sl280\partightenfactor0
+
+\f1\fs24 \cf3 	\
+\pard\pardeftab720\sl340\partightenfactor0
+
+\f3\fs28 \cf3 \cb4 Cover based on the proportion of total returns at least 2 m above ground (Cover_2m_max) for first returns and all returns (
+\f4\b \cb1 l_Cover_2m_max, l_Cover_2m_max_all
+\f3\b0 )
+\f1\fs24 \cf5 \strokec5 \
+\pard\pardeftab720\sl280\partightenfactor0
+\cf3 \strokec3 \
+\pard\pardeftab720\sl340\partightenfactor0
+
+\f3\fs28 \cf3 \cb4 Cover for 2m to 4m (Cover_2m_4m) for first returns and all returns (
+\f4\b \cb1 l_Cover_2m_4m, l_Cover_2m_4m_all
+\f3\b0 )
+\f1\fs24 \cf5 \strokec5 \
+\pard\pardeftab720\sl280\partightenfactor0
+\cf3 \strokec3 \
+\pard\pardeftab720\sl340\partightenfactor0
+
+\f3\fs28 \cf3 \cb4 Cover for 4m to 16m (Dover_4m_16m) for first returns and all returns (
+\f4\b \cb1 l_Cover_4m_16m, l_Cover_4m_16m_all
+\f3\b0 )
+\f1\fs24 \cf5 \strokec5 \
+\pard\pardeftab720\sl280\partightenfactor0
+\cf3 \strokec3 \
+\pard\pardeftab720\sl340\partightenfactor0
+
+\f3\fs28 \cf3 \cb4 Rumple index (rumple) for first returns (all returns should produce the same number) (
+\f4\b \cb1 l_rumple
+\f3\b0 )
+\f1\fs24 \cf5 \strokec5 \
+\pard\pardeftab720\sl340\partightenfactor0
+
+\f3\fs28 \cf3 \strokec3 \
+\pard\pardeftab720\sl280\partightenfactor0
+
+\f1\fs24 \cf3 \
+\
+\
+\pard\pardeftab720\sl220\partightenfactor0
+
+\f5\fs20 \cf3 --\'a0\
+Prof. Douglas W. Yu\
+School of Biological Sciences, University of East Anglia,\'a0Norwich, Norfolk\'a0 NR4 7TJ \'a0UK, \'a0mob +44-7510-308-272
+\fs24 \
+
+\fs20 Kunming Institute of Zoology, 21 Qingsong Lu, Kunming, Yunnan 650201 China \uc0\u20013 \u22269 \u20113 \u21335 \u26118 \u26126 \u24066 \u30424 \u40857 \u21306 \u33576 \u22365 \u38738 \u26494 \u36335 21\u21495 , ofc +86-871-519 9178, mob +86 183 138 29970
+\f1\fs24 \
+\pard\pardeftab720\sl220\partightenfactor0
+{\field{\*\fldinst{HYPERLINK "https://people.uea.ac.uk/en/persons/douglas-yu"}}{\fldrslt 
+\f5\fs20 \cf6 \ul \ulc6 \strokec6 people.uea.ac.uk/en/persons/douglas-yu}}
+\f5\fs20 ,\'a0{\field{\*\fldinst{HYPERLINK "http://eastanglia.academia.edu/DouglasYu/Papers"}}{\fldrslt \cf6 \ul \ulc6 \strokec6 eastanglia.academia.edu/DouglasYu/Papers}}\'a0for pdfs
+\f1\fs24 \
+\
+\pard\pardeftab720\sl280\partightenfactor0
+\cf5 \strokec5 On 19 May 2020, at 06:07, Tosa, Marie I <{\field{\*\fldinst{HYPERLINK "mailto:marie.tosa@oregonstate.edu"}}{\fldrslt \cf6 \ul \ulc6 \strokec6 marie.tosa@oregonstate.edu}}> wrote:\
+\pard\pardeftab720\sl380\partightenfactor0
+
+\f3\fs32 \cf5 Thanks for sending those.\
+\
+Attached are the LiDAR variables for each of our sites.\'a0\
+\
+Definitions for each variable from Dave Bell:\
+\pard\tx220\tx720\pardeftab720\sl360\partightenfactor0
+\ls1\ilvl0
+\fs29\fsmilli14667 \cf7 \cb4 \kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec7 95
+\fs24\fsmilli12222 \super th
+\fs29\fsmilli14667 \nosupersub \'a0percentile height (p95) for first returns and all returns\cb1 \
+\ls1\ilvl0\cb4 \kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec7 25
+\fs24\fsmilli12222 \super th
+\fs29\fsmilli14667 \nosupersub \'a0percentile height (p25) for first returns and all returns\cb1 \
+\ls1\ilvl0\cb4 \kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec7 Cover based on the proportion of total returns at least 2 m above ground (Cover_2m_max) for first returns and all returns\cb1 \
+\ls1\ilvl0\cb4 \kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec7 Cover for 2m to 4m (Cover_2m_4m) for first returns and all returns\cb1 \
+\ls1\ilvl0\cb4 \kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec7 Cover for 4m to 16m (Dover_4m_16m) for first returns and all returns\cb1 \
+\ls1\ilvl0\cb4 \kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec7 Rumple index (rumple) for first returns (all returns should produce the same number)\cb1 \
+\pard\pardeftab720\sl380\partightenfactor0
+
+\fs32 \cf5 \strokec5 \
+Best,\
+Marie\
+\
+\pard\pardeftab720\sl320\partightenfactor0
+
+\f6\fs26 \cf5 Marie Tosa\
+PhD student\
+Department of Fisheries and Wildlife\
+Oregon State University\
+\pard\pardeftab720\sl320\partightenfactor0
+{\field{\*\fldinst{HYPERLINK "mailto:tosam@oregonstate.edu"}}{\fldrslt \cf6 \ul \ulc6 \strokec6 tosam@oregonstate.edu}}\
+\pard\pardeftab720\sl280\partightenfactor0
+
+\f1\fs24 \cf5 \
+\pard\pardeftab720\sl360\partightenfactor0
+
+\f4\b\fs29\fsmilli14667 \cf5 From:
+\f3\b0  Douglas Yu <{\field{\*\fldinst{HYPERLINK "mailto:dougwyu@mac.com"}}{\fldrslt \cf6 \ul \ulc6 \strokec6 dougwyu@mac.com}}>\
+
+\f4\b Sent:
+\f3\b0  Monday, May 18, 2020 12:19 PM\
+
+\f4\b To:
+\f3\b0  Tosa, Marie I <{\field{\*\fldinst{HYPERLINK "mailto:marie.tosa@oregonstate.edu"}}{\fldrslt \cf6 \ul \ulc6 \strokec6 marie.tosa@oregonstate.edu}}>\
+
+\f4\b Cc:
+\f3\b0  Taal Levi <{\field{\*\fldinst{HYPERLINK "mailto:thetaaltree@gmail.com"}}{\fldrslt \cf6 \ul \ulc6 \strokec6 thetaaltree@gmail.com}}>; Yin2 Qiu1 \uc0\u23395 \u21535 \u31179  Ji4 <{\field{\*\fldinst{HYPERLINK "mailto:jiyinqiu@hotmail.com"}}{\fldrslt \cf6 \ul \ulc6 \strokec6 jiyinqiu@hotmail.com}}>; Li Yuanheng <{\field{\*\fldinst{HYPERLINK "mailto:li_yuanheng_eco@126.com"}}{\fldrslt \cf6 \ul \ulc6 \strokec6 li_yuanheng_eco@126.com}}>; Ming2 Jie3 Luo2 <{\field{\*\fldinst{HYPERLINK "mailto:LoreMJ@163.com"}}{\fldrslt \cf6 \ul \ulc6 \strokec6 LoreMJ@163.com}}>\
+
+\f4\b Subject:
+\f3\b0  Re: Novogene and Kelpie samples\
+\pard\pardeftab720\sl280\partightenfactor0
+
+\f1\fs24 \cf5 \'a0\
+these community datasets are really information-rich, but they require new methods to pull out that information, which we're doing with joint species distribution modelling. \'a0but it's all new to me. \'a0\
+\
+here is the paper describing the software (sjSDM), and here's a second paper that describes a different dataset and how jSDM was used to analyse it (diff package, called Hmsc). \'a0\
+\
+you can read the cover letter to get a gist of the paper, which, so far, has been desk-rejected at ecoletts, PNAS, and PLoS Biology. it's just been submitted to Nature ClimChg. Because of the first 3 rejections, i rewrote the cover letter to make it clearer what we had achieved with the paper.\'a0\
+\
+doug\
+\
+\
+\
+\
+\
+\
+\pard\pardeftab720\sl220\partightenfactor0
+
+\f5\fs20 \cf5 --\'a0\
+Prof. Douglas W. Yu\
+School of Biological Sciences, University of East Anglia,\'a0Norwich, Norfolk\'a0 NR4 7TJ \'a0UK, \'a0mob +44-7510-308-272
+\fs24 \
+
+\fs20 Kunming Institute of Zoology, 21 Qingsong Lu, Kunming, Yunnan 650201 China \uc0\u20013 \u22269 \u20113 \u21335 \u26118 \u26126 \u24066 \u30424 \u40857 \u21306 \u33576 \u22365 \u38738 \u26494 \u36335 21\u21495 , ofc +86-871-519 9178, mob +86 183 138 29970
+\f1\fs24 \
+\pard\pardeftab720\sl220\partightenfactor0
+{\field{\*\fldinst{HYPERLINK "https://people.uea.ac.uk/en/persons/douglas-yu"}}{\fldrslt 
+\f5\fs20 \cf6 \ul \ulc6 \strokec6 people.uea.ac.uk/en/persons/douglas-yu}}
+\f5\fs20 ,\'a0{\field{\*\fldinst{HYPERLINK "http://eastanglia.academia.edu/DouglasYu/Papers"}}{\fldrslt \cf6 \ul \ulc6 \strokec6 eastanglia.academia.edu/DouglasYu/Papers}}\'a0for pdfs
+\f1\fs24 \
+\
+\pard\pardeftab720\sl280\partightenfactor0
+\cf8 \strokec8 On 18 May 2020, at 20:13, Tosa, Marie I <{\field{\*\fldinst{HYPERLINK "mailto:marie.tosa@oregonstate.edu"}}{\fldrslt \cf6 \ul \ulc6 \strokec6 marie.tosa@oregonstate.edu}}> wrote:\
+\
+\pard\pardeftab720\sl380\partightenfactor0
+
+\f3\fs32 \cf8 Very cool. I didn't realize you were using such a new package. Regularisation sound very interesting. Excited to see how this works with the LiDAR variables!\
+\
+\pard\pardeftab720\sl320\partightenfactor0
+
+\f6\fs26 \cf8 Marie Tosa\
+PhD student\
+Department of Fisheries and Wildlife\
+Oregon State University\
+\pard\pardeftab720\sl320\partightenfactor0
+{\field{\*\fldinst{HYPERLINK "mailto:tosam@oregonstate.edu"}}{\fldrslt \cf6 \ul \ulc6 \strokec6 tosam@oregonstate.edu}}\
+\pard\pardeftab720\sl280\partightenfactor0
+
+\f1\fs24 \cf8 \
+\pard\pardeftab720\sl360\partightenfactor0
+
+\f4\b\fs29\fsmilli14667 \cf8 From:
+\f3\b0 \'a0Douglas Yu <{\field{\*\fldinst{HYPERLINK "mailto:dougwyu@mac.com"}}{\fldrslt \cf6 \ul \ulc6 \strokec6 dougwyu@mac.com}}>\
+
+\f4\b Sent:
+\f3\b0 \'a0Monday, May 18, 2020 11:42 AM\
+
+\f4\b To:
+\f3\b0 \'a0Tosa, Marie I <{\field{\*\fldinst{HYPERLINK "mailto:marie.tosa@oregonstate.edu"}}{\fldrslt \cf6 \ul \ulc6 \strokec6 marie.tosa@oregonstate.edu}}>\
+
+\f4\b Cc:
+\f3\b0 \'a0Taal Levi <{\field{\*\fldinst{HYPERLINK "mailto:thetaaltree@gmail.com"}}{\fldrslt \cf6 \ul \ulc6 \strokec6 thetaaltree@gmail.com}}>; Yin2 Qiu1 \uc0\u23395 \u21535 \u31179  Ji4 <{\field{\*\fldinst{HYPERLINK "mailto:jiyinqiu@hotmail.com"}}{\fldrslt \cf6 \ul \ulc6 \strokec6 jiyinqiu@hotmail.com}}>; Li Yuanheng <{\field{\*\fldinst{HYPERLINK "mailto:li_yuanheng_eco@126.com"}}{\fldrslt \cf6 \ul \ulc6 \strokec6 li_yuanheng_eco@126.com}}>; Ming2 Jie3 Luo2 <{\field{\*\fldinst{HYPERLINK "mailto:LoreMJ@163.com"}}{\fldrslt \cf6 \ul \ulc6 \strokec6 LoreMJ@163.com}}>\
+
+\f4\b Subject:
+\f3\b0 \'a0Re: Novogene and Kelpie samples\
+\pard\pardeftab720\sl280\partightenfactor0
+
+\f1\fs24 \cf8 \'a0\
+yes, we have to interpret and label everything. \'a0we've been just getting the code to install and run (and the package itself is in active development, so it's a moving target)\
+\
+sorry, yes, the blue lines are negatively correlated after correcting for environmental preferences (i.e. blue lines mean that they are not found together and them not being found together isn't explained by divergent env variables). \'a0the yellows are positively correlated after correcting for environmental preferences.\
+\
+as for the env variables themselves, the model selection process using something called regularisation, which is explained to me as setting a strong prior of 0 for all variables and only allowing very strong effects to be retained. \'a0as a result, there's no effect of collinearity. \'a0first time i've heard of it.\
+\
+somehow have to turn all of this into maps. \'a0what i don't know how to do is to cluster sites, as one does for NMDS. \'a0this is very species-centric code.\'a0\
+\
+doug\
+\
+\
+\pard\pardeftab720\sl220\partightenfactor0
+
+\f5\fs20 \cf8 --\'a0\
+Prof. Douglas W. Yu\
+School of Biological Sciences, University of East Anglia,\'a0Norwich, Norfolk\'a0 NR4 7TJ \'a0UK, \'a0mob +44-7510-308-272
+\fs24 \
+
+\fs20 Kunming Institute of Zoology, 21 Qingsong Lu, Kunming, Yunnan 650201 China \uc0\u20013 \u22269 \u20113 \u21335 \u26118 \u26126 \u24066 \u30424 \u40857 \u21306 \u33576 \u22365 \u38738 \u26494 \u36335 21\u21495 , ofc +86-871-519 9178, mob +86 183 138 29970
+\f1\fs24 \
+\pard\pardeftab720\sl220\partightenfactor0
+{\field{\*\fldinst{HYPERLINK "https://people.uea.ac.uk/en/persons/douglas-yu"}}{\fldrslt 
+\f5\fs20 \cf6 \ul \ulc6 \strokec6 people.uea.ac.uk/en/persons/douglas-yu}}
+\f5\fs20 ,\'a0{\field{\*\fldinst{HYPERLINK "http://eastanglia.academia.edu/DouglasYu/Papers"}}{\fldrslt \cf6 \ul \ulc6 \strokec6 eastanglia.academia.edu/DouglasYu/Papers}}\'a0for pdfs
+\f1\fs24 \
+\
+\pard\pardeftab720\sl280\partightenfactor0
+\cf9 \strokec9 On 18 May 2020, at 19:29, Tosa, Marie I <{\field{\*\fldinst{HYPERLINK "mailto:marie.tosa@oregonstate.edu"}}{\fldrslt \cf6 \ul \ulc6 \strokec6 marie.tosa@oregonstate.edu}}> wrote:\
+\
+\pard\pardeftab720\sl380\partightenfactor0
+
+\f3\fs32 \cf9 This is pretty cool to see. I'm surprised that the species are responding to so many environmental variables, since at least a few of these are strongly correlated to each other.\
+\
+I'm a little confused about this: "
+\fs30 \cf7 \cb4 \strokec7 The blue lines mean that the linked species are positively correlated\'a0
+\f7\i after
+\f3\i0 \'a0correcting for shared environmental preferences. \'a0there is one very abundant species that is negatively correlated with several other species."\'a0
+\fs32 \cf9 \cb1 \strokec9 \
+\pard\pardeftab720\sl360\partightenfactor0
+
+\fs30 \cf7 \strokec7 \
+\pard\pardeftab720\sl380\partightenfactor0
+
+\fs32 \cf9 \strokec9 Seems like the blue lines are strongly negatively correlated species and the yellow lines are strongly positively correlated species.\
+\
+Is there any chance you could label the species involved in the lines?\'a0\
+\
+Would be great to have a meeting this week. I'm generally free Tuesday and Thursday mornings.\
+\
+Thanks,\
+Marie\
+\
+\pard\pardeftab720\sl320\partightenfactor0
+
+\f6\fs26 \cf9 Marie Tosa\
+PhD student\
+Department of Fisheries and Wildlife\
+Oregon State University\
+\pard\pardeftab720\sl320\partightenfactor0
+{\field{\*\fldinst{HYPERLINK "mailto:tosam@oregonstate.edu"}}{\fldrslt \cf6 \ul \ulc6 \strokec6 tosam@oregonstate.edu}}\
+\pard\pardeftab720\sl280\partightenfactor0
+
+\f1\fs24 \cf9 \
+\pard\pardeftab720\sl360\partightenfactor0
+
+\f4\b\fs29\fsmilli14667 \cf9 From:
+\f3\b0 \'a0Douglas Yu <{\field{\*\fldinst{HYPERLINK "mailto:dougwyu@mac.com"}}{\fldrslt \cf6 \ul \ulc6 \strokec6 dougwyu@mac.com}}>\
+
+\f4\b Sent:
+\f3\b0 \'a0Monday, May 18, 2020 11:15 AM\
+
+\f4\b To:
+\f3\b0 \'a0Tosa, Marie I <{\field{\*\fldinst{HYPERLINK "mailto:marie.tosa@oregonstate.edu"}}{\fldrslt \cf6 \ul \ulc6 \strokec6 marie.tosa@oregonstate.edu}}>\
+
+\f4\b Cc:
+\f3\b0 \'a0Taal Levi <{\field{\*\fldinst{HYPERLINK "mailto:thetaaltree@gmail.com"}}{\fldrslt \cf6 \ul \ulc6 \strokec6 thetaaltree@gmail.com}}>; Yin2 Qiu1 \uc0\u23395 \u21535 \u31179  Ji4 <{\field{\*\fldinst{HYPERLINK "mailto:jiyinqiu@hotmail.com"}}{\fldrslt \cf6 \ul \ulc6 \strokec6 jiyinqiu@hotmail.com}}>; Li Yuanheng <{\field{\*\fldinst{HYPERLINK "mailto:li_yuanheng_eco@126.com"}}{\fldrslt \cf6 \ul \ulc6 \strokec6 li_yuanheng_eco@126.com}}>; Ming2 Jie3 Luo2 <{\field{\*\fldinst{HYPERLINK "mailto:LoreMJ@163.com"}}{\fldrslt \cf6 \ul \ulc6 \strokec6 LoreMJ@163.com}}>\
+
+\f4\b Subject:
+\f3\b0 \'a0Re: Novogene and Kelpie samples\
+\pard\pardeftab720\sl280\partightenfactor0
+
+\f1\fs24 \cf9 \'a0\
+Yuanheng has gotten the sjSDM code running, and we're waiting on a point update to include spatial information in the model and generate some variation partitioning figures.\
+\
+here is one of the outputs. the species are arranged in a circle, and each species is associated with the environmental variable that has its strongest effect on that species. \'a0As you can see, lots of different env variables are involved. The blue lines mean that the linked species are positively correlated\'a0
+\f8\i after
+\f1\i0 \'a0correcting for shared environmental preferences. \'a0there is one very abundant species that is negatively correlated with several other species. \'a0i'm guessing that this is one of the wasp species. \'a0\
+\
+maybe we can have a chat this week about where to go with the analyses?\
+\
+doug\
+\
+\
+\
+\
+\pard\pardeftab720\sl220\partightenfactor0
+
+\f5\fs20 \cf9 --\'a0\
+Prof. Douglas W. Yu\
+School of Biological Sciences, University of East Anglia,\'a0Norwich, Norfolk\'a0 NR4 7TJ \'a0UK, \'a0mob +44-7510-308-272
+\fs24 \
+
+\fs20 Kunming Institute of Zoology, 21 Qingsong Lu, Kunming, Yunnan 650201 China \uc0\u20013 \u22269 \u20113 \u21335 \u26118 \u26126 \u24066 \u30424 \u40857 \u21306 \u33576 \u22365 \u38738 \u26494 \u36335 21\u21495 , ofc +86-871-519 9178, mob +86 183 138 29970
+\f1\fs24 \
+\pard\pardeftab720\sl220\partightenfactor0
+{\field{\*\fldinst{HYPERLINK "https://people.uea.ac.uk/en/persons/douglas-yu"}}{\fldrslt 
+\f5\fs20 \cf6 \ul \ulc6 \strokec6 people.uea.ac.uk/en/persons/douglas-yu}}
+\f5\fs20 ,\'a0{\field{\*\fldinst{HYPERLINK "http://eastanglia.academia.edu/DouglasYu/Papers"}}{\fldrslt \cf6 \ul \ulc6 \strokec6 eastanglia.academia.edu/DouglasYu/Papers}}\'a0for pdfs
+\f1\fs24 \
+\
+On 18 May 2020, at 17:02, Tosa, Marie I <{\field{\*\fldinst{HYPERLINK "mailto:marie.tosa@oregonstate.edu"}}{\fldrslt \cf6 \ul \ulc6 \strokec6 marie.tosa@oregonstate.edu}}> wrote:\
+\
+\pard\pardeftab720\sl380\partightenfactor0
+
+\f3\fs32 \cf9 Thanks Doug. I'll start downloading these today.\
+\
+Dave Bell just uploaded some of the LiDAR rasters, so I'll get those extracted for our sites and to you today.\
+\
+Best,\
+Marie\
+\
+\pard\pardeftab720\sl320\partightenfactor0
+
+\f6\fs26 \cf9 Marie Tosa\
+PhD student\
+Department of Fisheries and Wildlife\
+Oregon State University\
+\pard\pardeftab720\sl320\partightenfactor0
+{\field{\*\fldinst{HYPERLINK "mailto:tosam@oregonstate.edu"}}{\fldrslt \cf6 \ul \ulc6 \strokec6 tosam@oregonstate.edu}}\
+\pard\pardeftab720\sl280\partightenfactor0
+
+\f1\fs24 \cf9 \
+\pard\pardeftab720\sl360\partightenfactor0
+
+\f4\b\fs29\fsmilli14667 \cf9 From:
+\f3\b0 \'a0Douglas Yu <{\field{\*\fldinst{HYPERLINK "mailto:dougwyu@mac.com"}}{\fldrslt \cf6 \ul \ulc6 \strokec6 dougwyu@mac.com}}>\
+
+\f4\b Sent:
+\f3\b0 \'a0Monday, May 18, 2020 2:01 AM\
+
+\f4\b To:
+\f3\b0 \'a0Taal Levi <{\field{\*\fldinst{HYPERLINK "mailto:thetaaltree@gmail.com"}}{\fldrslt \cf6 \ul \ulc6 \strokec6 thetaaltree@gmail.com}}>; Tosa, Marie I <{\field{\*\fldinst{HYPERLINK "mailto:marie.tosa@oregonstate.edu"}}{\fldrslt \cf6 \ul \ulc6 \strokec6 marie.tosa@oregonstate.edu}}>\
+
+\f4\b Cc:
+\f3\b0 \'a0Yin2 Qiu1 \uc0\u23395 \u21535 \u31179  Ji4 <{\field{\*\fldinst{HYPERLINK "mailto:jiyinqiu@hotmail.com"}}{\fldrslt \cf6 \ul \ulc6 \strokec6 jiyinqiu@hotmail.com}}>\
+
+\f4\b Subject:
+\f3\b0 \'a0Re: Novogene and Kelpie samples\
+\pard\pardeftab720\sl280\partightenfactor0
+
+\f1\fs24 \cf9 \'a0\
+The scat shotgun samples are available for download from my Amazon S3 account (it took me a while to get into my office after downloading the files from Yinqiu's cloud drive). so these files will have travelled from China to the UK to Ireland (Amazon) to Oregon by the time it's all done)\
+\
+run this to download\
+\
+\pard\pardeftab720\sl280\partightenfactor0
+
+\f9 \cf9 wget\'a0{\field{\*\fldinst{HYPERLINK "https://amazon-oregon-douglasyu.s3.eu-west-1.amazonaws.com/HJA_soilscats_20200517.tar"}}{\fldrslt \cf6 \ul \ulc6 \strokec6 https://amazon-oregon-douglasyu.s3.eu-west-1.amazonaws.com/HJA_soilscats_20200517.tar}}
+\f1 \
+\
+74.6 GB\'a0\
+\
+to check if your download was uncorrupted, run this:\
+\
+
+\f9 md5sum HJA_soilscats_20200517.tar > HJA_soilscats_20200517.tar.md5 # takes ~ 1 hr
+\f1 \
+\
+You should get\'a0
+\f9 707e5d7a4ddab6f4dd64ca9f1baac480
+\f1 \
+\
+it's available for 59 more days before being archived to Amazon's deep glacier archive.\'a0\
+\
+please download soon!\
+\
+doug\
+\
+\pard\pardeftab720\sl220\partightenfactor0
+
+\f5\fs20 \cf9 --\'a0\
+Prof. Douglas W. Yu\
+School of Biological Sciences, University of East Anglia,\'a0Norwich, Norfolk\'a0 NR4 7TJ \'a0UK, \'a0mob +44-7510-308-272
+\fs24 \
+
+\fs20 Kunming Institute of Zoology, 21 Qingsong Lu, Kunming, Yunnan 650201 China \uc0\u20013 \u22269 \u20113 \u21335 \u26118 \u26126 \u24066 \u30424 \u40857 \u21306 \u33576 \u22365 \u38738 \u26494 \u36335 21\u21495 , ofc +86-871-519 9178, mob +86 183 138 29970
+\f1\fs24 \
+\pard\pardeftab720\sl220\partightenfactor0
+{\field{\*\fldinst{HYPERLINK "https://people.uea.ac.uk/en/persons/douglas-yu"}}{\fldrslt 
+\f5\fs20 \cf6 \ul \ulc6 \strokec6 people.uea.ac.uk/en/persons/douglas-yu}}
+\f5\fs20 ,\'a0{\field{\*\fldinst{HYPERLINK "http://eastanglia.academia.edu/DouglasYu/Papers"}}{\fldrslt \cf6 \ul \ulc6 \strokec6 eastanglia.academia.edu/DouglasYu/Papers}}\'a0for pdfs
+\f1\fs24 \
+\
+On 7 May 2020, at 15:43, Taal Levi <{\field{\*\fldinst{HYPERLINK "mailto:thetaaltree@gmail.com"}}{\fldrslt \cf6 \ul \ulc6 \strokec6 thetaaltree@gmail.com}}> wrote:\
+\
+Woohoo!\
+\
+On Thu, May 7, 2020 at 5:21 AM \uc0\u23395  \u21535 \u31179  <{\field{\*\fldinst{HYPERLINK "mailto:jiyinqiu@hotmail.com"}}{\fldrslt \cf6 \ul \ulc6 \strokec6 jiyinqiu@hotmail.com}}> wrote:\
+\pard\pardeftab720\sl380\partightenfactor0
+
+\f3\fs32 \cf9 Hi,\
+\
+I just got the data of first 11 testing samples from Novogene. I'm uploading the data to Baidu Cloud, which will take a few days.\
+\
+I'll let you know how to download the data when it's finished.\
+\
+Yinqiu\
+\pard\pardeftab720\sl280\partightenfactor0
+
+\f1\fs24 \cf9 \
+\pard\pardeftab720\sl380\partightenfactor0
+
+\f3\fs32 \cf9 \
+\pard\pardeftab720\sl360\partightenfactor0
+
+\f4\b\fs29\fsmilli14667 \cf9 \uc0\u21457 \u20214 \u20154 :
+\f3\b0 \'a0\uc0\u23395  \u21535 \u31179  <{\field{\*\fldinst{HYPERLINK "mailto:jiyinqiu@hotmail.com"}}{\fldrslt \cf6 \ul \ulc6 \strokec6 jiyinqiu@hotmail.com}}>\
+
+\f4\b \uc0\u21457 \u36865 \u26102 \u38388 :
+\f3\b0 \'a02020\uc0\u24180 4\u26376 17\u26085  15:16\
+
+\f4\b \uc0\u25910 \u20214 \u20154 :
+\f3\b0 \'a0{\field{\*\fldinst{HYPERLINK "mailto:dougwyu@mac.com"}}{\fldrslt \cf6 \ul \ulc6 \strokec6 dougwyu@mac.com}}\'a0<{\field{\*\fldinst{HYPERLINK "mailto:dougwyu@mac.com"}}{\fldrslt \cf6 \ul \ulc6 \strokec6 dougwyu@mac.com}}>; Taal Levi <{\field{\*\fldinst{HYPERLINK "mailto:thetaaltree@gmail.com"}}{\fldrslt \cf6 \ul \ulc6 \strokec6 thetaaltree@gmail.com}}>\
+
+\f4\b \uc0\u20027 \u39064 :
+\f3\b0 \'a0\uc0\u22238 \u22797 : Novogene and Kelpie samples\
+\pard\pardeftab720\sl280\partightenfactor0
+
+\f1\fs24 \cf9 \'a0\
+\pard\pardeftab720\sl380\partightenfactor0
+
+\f3\fs32 \cf9 I have asked Novogene. Our first 11 soil/scat samples are being sequenced now. I'll let you know as soon as I get the data.\
+\
+Yinqiu\
+\pard\pardeftab720\sl280\partightenfactor0
+
+\f1\fs24 \cf9 \
+\pard\pardeftab720\sl380\partightenfactor0
+
+\f3\fs32 \cf9 \
+\pard\pardeftab720\sl360\partightenfactor0
+
+\f4\b\fs29\fsmilli14667 \cf9 \uc0\u21457 \u20214 \u20154 :
+\f3\b0 \'a0{\field{\*\fldinst{HYPERLINK "mailto:dougwyu@mac.com"}}{\fldrslt \cf6 \ul \ulc6 \strokec6 dougwyu@mac.com}}\'a0<{\field{\*\fldinst{HYPERLINK "mailto:dougwyu@mac.com"}}{\fldrslt \cf6 \ul \ulc6 \strokec6 dougwyu@mac.com}}>\
+
+\f4\b \uc0\u21457 \u36865 \u26102 \u38388 :
+\f3\b0 \'a02020\uc0\u24180 4\u26376 17\u26085  4:37\
+
+\f4\b \uc0\u25910 \u20214 \u20154 :
+\f3\b0 \'a0Taal Levi <{\field{\*\fldinst{HYPERLINK "mailto:thetaaltree@gmail.com"}}{\fldrslt \cf6 \ul \ulc6 \strokec6 thetaaltree@gmail.com}}>\
+
+\f4\b \uc0\u25220 \u36865 :
+\f3\b0 \'a0Yin2 Qiu1 \uc0\u23395 \u21535 \u31179  Ji4 <{\field{\*\fldinst{HYPERLINK "mailto:jiyinqiu@hotmail.com"}}{\fldrslt \cf6 \ul \ulc6 \strokec6 jiyinqiu@hotmail.com}}>\
+
+\f4\b \uc0\u20027 \u39064 :
+\f3\b0 \'a0Re: Novogene and Kelpie samples\
+\pard\pardeftab720\sl280\partightenfactor0
+
+\f1\fs24 \cf9 \'a0\
+is it sequenced yet? \'a0i think they deliver as a hard drive.\'a0\
+\
+Yinqiu, do you know when we get the scar data?\
+On 16 Apr 2020, 18:30 +0100, Taal Levi <{\field{\*\fldinst{HYPERLINK "mailto:thetaaltree@gmail.com"}}{\fldrslt \cf6 \ul \ulc6 \strokec6 thetaaltree@gmail.com}}>, wrote:\
+Howdy Doug, is there a link for us to download the data from Novogene?\'a0\
+Lidar coming soon.\'a0\
+\
+T\
+\
+On Wed, Apr 15, 2020 at 1:51 AM Douglas Yu <{\field{\*\fldinst{HYPERLINK "mailto:dougwyu@mac.com"}}{\fldrslt \cf6 \ul \ulc6 \strokec6 dougwyu@mac.com}}> wrote:\
+Thanks very much Marie!\
+\
+Yuanheng, Mingjie, and I will see what we get. \'a0\
+\
+Taal wrote earlier about Lidar data possibly on the way too, which will be cool.\
+\
+doug\
+\
+\pard\pardeftab720\sl220\partightenfactor0
+
+\f5\fs20 \cf9 --\'a0\
+Prof. Douglas W. Yu\
+School of Biological Sciences, University of East Anglia,\'a0Norwich, Norfolk\'a0 NR4 7TJ \'a0UK, \'a0mob +44-7510-308-272
+\fs24 \
+
+\fs20 Kunming Institute of Zoology, 21 Qingsong Lu, Kunming, Yunnan 650201 China \uc0\u20013 \u22269 \u20113 \u21335 \u26118 \u26126 \u24066 \u30424 \u40857 \u21306 \u33576 \u22365 \u38738 \u26494 \u36335 21\u21495 , ofc +86-871-519 9178, mob +86 183 138 29970
+\f1\fs24 \
+\pard\pardeftab720\sl220\partightenfactor0
+{\field{\*\fldinst{HYPERLINK "https://people.uea.ac.uk/en/persons/douglas-yu"}}{\fldrslt 
+\f5\fs20 \cf6 \ul \ulc6 \strokec6 people.uea.ac.uk/en/persons/douglas-yu}}
+\f5\fs20 ,\'a0{\field{\*\fldinst{HYPERLINK "http://eastanglia.academia.edu/DouglasYu/Papers"}}{\fldrslt \cf6 \ul \ulc6 \strokec6 eastanglia.academia.edu/DouglasYu/Papers}}\'a0for pdfs
+\f1\fs24 \
+\
+On 13 Apr 2020, at 22:04, Tosa, Marie I <{\field{\*\fldinst{HYPERLINK "mailto:marie.tosa@oregonstate.edu"}}{\fldrslt \cf6 \ul \ulc6 \strokec6 marie.tosa@oregonstate.edu}}> wrote:\
+\
+\pard\pardeftab720\sl380\partightenfactor0
+
+\f3\fs32 \cf9 Hi Doug,\
+\
+Ran into a few struggles with the multispectral images, but Matt Gregory at Oregon State was able to help me out. Here are Landsat8 variables extracted for each of our biodiversity sites. I've attached a text file that explains the column naming scheme. During the time we set the malaise traps, there were 4 good Landsat 8 images. The resolution for these images is 30m x 30m. I extracted information for all the bands in addition to the calculated metrics (NDVI, EVI, and tasseled cap indices) because the raw band information may be better at capturing differences in biotic distributions. I believe Matt Betts has a paper about this, but I can't seem to find it.\
+\
+Matt, could you send the paper for this?\
+\
+In addition to the Landsat 8 imagery, there are also Sentinel-2 images that are collected at higher resolution (10m x 10m). These images are taken every 5 days compared to Landsat 8 which is taken every 8 days. It might be worth taking a look at the Sentinel-2 images, but I figured I would send these data over now.\
+\
+Let me know if you have any questions,\
+Marie\
+\
+\pard\pardeftab720\sl320\partightenfactor0
+
+\f6\fs26 \cf9 Marie Tosa\
+PhD student\
+Department of Fisheries and Wildlife\
+Oregon State University\
+\pard\pardeftab720\sl320\partightenfactor0
+{\field{\*\fldinst{HYPERLINK "mailto:tosam@oregonstate.edu"}}{\fldrslt \cf6 \ul \ulc6 \strokec6 tosam@oregonstate.edu}}\
+\pard\pardeftab720\sl280\partightenfactor0
+
+\f1\fs24 \cf9 \
+\pard\pardeftab720\sl360\partightenfactor0
+
+\f4\b\fs29\fsmilli14667 \cf9 From:
+\f3\b0 \'a0Douglas Yu <{\field{\*\fldinst{HYPERLINK "mailto:dougwyu@mac.com"}}{\fldrslt \cf6 \ul \ulc6 \strokec6 dougwyu@mac.com}}>\
+
+\f4\b Sent:
+\f3\b0 \'a0Thursday, March 26, 2020 7:56 AM\
+
+\f4\b To:
+\f3\b0 \'a0Tosa, Marie I <{\field{\*\fldinst{HYPERLINK "mailto:marie.tosa@oregonstate.edu"}}{\fldrslt \cf6 \ul \ulc6 \strokec6 marie.tosa@oregonstate.edu}}>\
+
+\f4\b Cc:
+\f3\b0 \'a0Taal Levi <{\field{\*\fldinst{HYPERLINK "mailto:thetaaltree@gmail.com"}}{\fldrslt \cf6 \ul \ulc6 \strokec6 thetaaltree@gmail.com}}>; Allen, Jennifer M <{\field{\*\fldinst{HYPERLINK "mailto:allejenn@oregonstate.edu"}}{\fldrslt \cf6 \ul \ulc6 \strokec6 allejenn@oregonstate.edu}}>; Yin2 Qiu1 \uc0\u23395 \u21535 \u31179  Ji4 <{\field{\*\fldinst{HYPERLINK "mailto:jiyinqiu@hotmail.com"}}{\fldrslt \cf6 \ul \ulc6 \strokec6 jiyinqiu@hotmail.com}}>; Eriksson, Charlotte Ellinor <{\field{\*\fldinst{HYPERLINK "mailto:charlotte.eriksson@oregonstate.edu"}}{\fldrslt \cf6 \ul \ulc6 \strokec6 charlotte.eriksson@oregonstate.edu}}>; Damon Lesmeister <{\field{\*\fldinst{HYPERLINK "mailto:dlesmeister@fs.fed.us"}}{\fldrslt \cf6 \ul \ulc6 \strokec6 dlesmeister@fs.fed.us}}>; Ming2 Jie3 Luo2 <{\field{\*\fldinst{HYPERLINK "mailto:LoreMJ@163.com"}}{\fldrslt \cf6 \ul \ulc6 \strokec6 LoreMJ@163.com}}>; Dziedzic, Emily Howard <{\field{\*\fldinst{HYPERLINK "mailto:emily.dziedzic@oregonstate.edu"}}{\fldrslt \cf6 \ul \ulc6 \strokec6 emily.dziedzic@oregonstate.edu}}>; Betts, Matthew <{\field{\*\fldinst{HYPERLINK "mailto:matt.betts@oregonstate.edu"}}{\fldrslt \cf6 \ul \ulc6 \strokec6 matt.betts@oregonstate.edu}}>; Li Yuanheng <{\field{\*\fldinst{HYPERLINK "mailto:li_yuanheng_eco@126.com"}}{\fldrslt \cf6 \ul \ulc6 \strokec6 li_yuanheng_eco@126.com}}>\
+
+\f4\b Subject:
+\f3\b0 \'a0Re: Novogene and Kelpie samples\
+\pard\pardeftab720\sl280\partightenfactor0
+
+\f1\fs24 \cf9 \'a0\
+Thank you Marie.\
+\
+The satellite data are of course low priority compared to kid care at the same as everything else.\'a0\
+\
+But if it can be done, my lab group are sitting in China where things are calm. (although, can they ever relax their quarantine?)\
+\
+doug\
+\
+\pard\pardeftab720\sl220\partightenfactor0
+
+\f5\fs20 \cf9 --\'a0\
+Prof. Douglas W. Yu\
+School of Biological Sciences, University of East Anglia,\'a0Norwich, Norfolk\'a0 NR4 7TJ \'a0UK, \'a0mob +44-7510-308-272
+\fs24 \
+
+\fs20 Kunming Institute of Zoology, 21 Qingsong Lu, Kunming, Yunnan 650201 China \uc0\u20013 \u22269 \u20113 \u21335 \u26118 \u26126 \u24066 \u30424 \u40857 \u21306 \u33576 \u22365 \u38738 \u26494 \u36335 21\u21495 , ofc +86-871-519 9178, mob +86 183 138 29970
+\f1\fs24 \
+\pard\pardeftab720\sl220\partightenfactor0
+{\field{\*\fldinst{HYPERLINK "https://people.uea.ac.uk/en/persons/douglas-yu"}}{\fldrslt 
+\f5\fs20 \cf6 \ul \ulc6 \strokec6 people.uea.ac.uk/en/persons/douglas-yu}}
+\f5\fs20 ,\'a0{\field{\*\fldinst{HYPERLINK "http://eastanglia.academia.edu/DouglasYu/Papers"}}{\fldrslt \cf6 \ul \ulc6 \strokec6 eastanglia.academia.edu/DouglasYu/Papers}}\'a0for pdfs
+\f1\fs24 \
+\
+On 26 Mar 2020, at 14:17, Tosa, Marie I <{\field{\*\fldinst{HYPERLINK "mailto:marie.tosa@oregonstate.edu"}}{\fldrslt \cf6 \ul \ulc6 \strokec6 marie.tosa@oregonstate.edu}}> wrote:\
+\
+Hi Doug,\
+\
+Dave Bell from the Forest Service is working on this, but is trying to figure out child care and working from home.\
+\
+I've been looking into some multispectral imaging from Landsat 8. Hope to get some variables together by the end of the week for those.\
+\
+Hope you are doing well.\
+\
+Marie\
+\
+\pard\pardeftab720\sl240\partightenfactor0
+
+\fs20\fsmilli10200 \cf10 \strokec10 Sent from my Samsung Galaxy smartphone.\
+\pard\pardeftab720\sl280\partightenfactor0
+
+\fs24 \cf9 \strokec9 \
+\
+\
+-------- Original message --------\
+From: Douglas Yu <{\field{\*\fldinst{HYPERLINK "mailto:dougwyu@mac.com"}}{\fldrslt \cf6 \ul \ulc6 \strokec6 dougwyu@mac.com}}>\
+Date: 3/26/20 04:45 (GMT-08:00)\'a0\
+To: Taal Levi <{\field{\*\fldinst{HYPERLINK "mailto:thetaaltree@gmail.com"}}{\fldrslt \cf6 \ul \ulc6 \strokec6 thetaaltree@gmail.com}}>\
+Cc: "Allen, Jennifer M" <{\field{\*\fldinst{HYPERLINK "mailto:allejenn@oregonstate.edu"}}{\fldrslt \cf6 \ul \ulc6 \strokec6 allejenn@oregonstate.edu}}>, Yin2 Qiu1 \uc0\u23395 \u21535 \u31179  Ji4 <{\field{\*\fldinst{HYPERLINK "mailto:jiyinqiu@hotmail.com"}}{\fldrslt \cf6 \ul \ulc6 \strokec6 jiyinqiu@hotmail.com}}>, "Eriksson, Charlotte Ellinor" <{\field{\*\fldinst{HYPERLINK "mailto:charlotte.eriksson@oregonstate.edu"}}{\fldrslt \cf6 \ul \ulc6 \strokec6 charlotte.eriksson@oregonstate.edu}}>, "Tosa, Marie I" <{\field{\*\fldinst{HYPERLINK "mailto:marie.tosa@oregonstate.edu"}}{\fldrslt \cf6 \ul \ulc6 \strokec6 marie.tosa@oregonstate.edu}}>, Damon Lesmeister <{\field{\*\fldinst{HYPERLINK "mailto:dlesmeister@fs.fed.us"}}{\fldrslt \cf6 \ul \ulc6 \strokec6 dlesmeister@fs.fed.us}}>, Ming2 Jie3 Luo2 <{\field{\*\fldinst{HYPERLINK "mailto:LoreMJ@163.com"}}{\fldrslt \cf6 \ul \ulc6 \strokec6 LoreMJ@163.com}}>, "Dziedzic, Emily Howard" <{\field{\*\fldinst{HYPERLINK "mailto:emily.dziedzic@oregonstate.edu"}}{\fldrslt \cf6 \ul \ulc6 \strokec6 emily.dziedzic@oregonstate.edu}}>, "Betts, Matthew" <{\field{\*\fldinst{HYPERLINK "mailto:matt.betts@oregonstate.edu"}}{\fldrslt \cf6 \ul \ulc6 \strokec6 matt.betts@oregonstate.edu}}>, Li Yuanheng <{\field{\*\fldinst{HYPERLINK "mailto:li_yuanheng_eco@126.com"}}{\fldrslt \cf6 \ul \ulc6 \strokec6 li_yuanheng_eco@126.com}}>\
+Subject: Re: Novogene and Kelpie samples\'a0\
+\
+Hi all,\
+\
+we're now starting on Hmsc and s-jSDM analyses (both are joint species distribution model software packages). \'a0\
+\
+I don't know where you all are with covidchaos, but if it is possible to get us the lidar data, we are able to start using them now.\'a0\
+\
+if not, not. there are more important things, and we will carry on with the other environmental variables for now. \'a0\
+\
+doug\
+\
+\pard\pardeftab720\sl220\partightenfactor0
+
+\f5\fs20 \cf9 --\'a0\
+Prof. Douglas W. Yu\
+School of Biological Sciences, University of East Anglia,\'a0Norwich, Norfolk\'a0 NR4 7TJ \'a0UK, \'a0mob +44-7510-308-272
+\fs24 \
+
+\fs20 Kunming Institute of Zoology, 21 Qingsong Lu, Kunming, Yunnan 650201 China \uc0\u20013 \u22269 \u20113 \u21335 \u26118 \u26126 \u24066 \u30424 \u40857 \u21306 \u33576 \u22365 \u38738 \u26494 \u36335 21\u21495 , ofc +86-871-519 9178, mob +86 183 138 29970
+\f1\fs24 \
+\pard\pardeftab720\sl220\partightenfactor0
+{\field{\*\fldinst{HYPERLINK "https://people.uea.ac.uk/en/persons/douglas-yu"}}{\fldrslt 
+\f5\fs20 \cf6 \ul \ulc6 \strokec6 people.uea.ac.uk/en/persons/douglas-yu}}
+\f5\fs20 ,\'a0{\field{\*\fldinst{HYPERLINK "http://eastanglia.academia.edu/DouglasYu/Papers"}}{\fldrslt \cf6 \ul \ulc6 \strokec6 eastanglia.academia.edu/DouglasYu/Papers}}\'a0for pdfs
+\f1\fs24 \
+\
+On 13 Feb 2020, at 15:50, thetaaltree <{\field{\*\fldinst{HYPERLINK "mailto:thetaaltree@gmail.com"}}{\fldrslt \cf6 \ul \ulc6 \strokec6 thetaaltree@gmail.com}}> wrote:\
+\
+Nice to see this. There are apparently about 5000 invertebrates at HJA. There is a 4400 species list.\'a0\
+\
+Matt, are your Lidar metrics available in Willamette National Forest as well?\
+\
+Damon suggested that we meet\'a0\
+to decide which Lidar metrics to produce from the point cloud. Damon, for now, could we use the same metrics as in your recent owl paper or is the diversity of options that high? Are those readily available? Or do you have other suggestions?\
+\
+Marie, we do want covariates asap to consult with statisticians in Germany. Probably the more the better for now. I think you have a bunch of those already. Let's see what you have and what we need to produce.\
+\
+Doug, I haven't heard of any hyperspectral imaging available but I'll check\
+\
+Taal\
+\
+\
+\
+\
+T\
+\
+\
+-------- Original message --------\
+From: Douglas Yu <{\field{\*\fldinst{HYPERLINK "mailto:dougwyu@mac.com"}}{\fldrslt \cf6 \ul \ulc6 \strokec6 dougwyu@mac.com}}>\
+Date: 2/13/20 06:50 (GMT-08:00)\'a0\
+To: Taal Levi <{\field{\*\fldinst{HYPERLINK "mailto:thetaaltree@gmail.com"}}{\fldrslt \cf6 \ul \ulc6 \strokec6 thetaaltree@gmail.com}}>\
+Cc: Jennifer M Allen <{\field{\*\fldinst{HYPERLINK "mailto:allejenn@oregonstate.edu"}}{\fldrslt \cf6 \ul \ulc6 \strokec6 allejenn@oregonstate.edu}}>, Yin2 Qiu1 \uc0\u23395 \u21535 \u31179  Ji4 <{\field{\*\fldinst{HYPERLINK "mailto:jiyinqiu@hotmail.com"}}{\fldrslt \cf6 \ul \ulc6 \strokec6 jiyinqiu@hotmail.com}}>, "Eriksson, Charlotte Ellinor" <{\field{\*\fldinst{HYPERLINK "mailto:charlotte.eriksson@oregonstate.edu"}}{\fldrslt \cf6 \ul \ulc6 \strokec6 charlotte.eriksson@oregonstate.edu}}>, Marie Tosa <{\field{\*\fldinst{HYPERLINK "mailto:marie.tosa@oregonstate.edu"}}{\fldrslt \cf6 \ul \ulc6 \strokec6 marie.tosa@oregonstate.edu}}>, Damon Lesmeister <{\field{\*\fldinst{HYPERLINK "mailto:dlesmeister@fs.fed.us"}}{\fldrslt \cf6 \ul \ulc6 \strokec6 dlesmeister@fs.fed.us}}>, Ming2 Jie3 Luo2 <{\field{\*\fldinst{HYPERLINK "mailto:LoreMJ@163.com"}}{\fldrslt \cf6 \ul \ulc6 \strokec6 LoreMJ@163.com}}>, Emily Howard Dziedzic <{\field{\*\fldinst{HYPERLINK "mailto:emily.dziedzic@oregonstate.edu"}}{\fldrslt \cf6 \ul \ulc6 \strokec6 emily.dziedzic@oregonstate.edu}}>, "Betts, Matthew" <{\field{\*\fldinst{HYPERLINK "mailto:matt.betts@oregonstate.edu"}}{\fldrslt \cf6 \ul \ulc6 \strokec6 matt.betts@oregonstate.edu}}>\
+Subject: Re: Novogene and Kelpie samples\'a0\
+\
+Here is the first look at the dataset (still needs to be checked).\'a0 Top two figures are geographic maps of the samples.\'a0 On the left (NMDS 1), the samples are coloured by their left-right position on the NMDS plot (below).\'a0 ON the right, the samples are coloured by their up-down position.\'a0\
+\
+Focusing on NMDS 1, we can see that samples in the west and east are differentiated from each other, which makes sense. \'a0\
+\
+This says to me that there is ecological signal in the dataset.\
+\
+(no idea what NMDS 2 is saying)\
+\
+Next step is to rerun with the final version of Kelpie (2.0.6) which i expect to pick up 25% more species than the previous run (based on some test runs) and to regenerate the datasets.\'a0 Should be fairly straightforward; \'a0all the code is written.\
+\
+Then, we want to do some matching of the OTU names to the HJ Andrews species lists, so that we can maybe assign some general trophic categories (e.g. saprotroph).\
+\
+\pard\pardeftab720\sl280\partightenfactor0
+
+\f2\b \cf9 To do this, we need metadata! \'a0 Lidar, silvicultural treatment history, etc. \'a0
+\f1\b0 \
+\
+Taal is coming to Leipzig in mid-March. I'm very much hoping that we have a full dataset ready by then to look at and to discuss next steps on (since we will have a room full of statisticians)\'a0\
+\
+(all assuming that covid19 doesn't spread too far, which, to be honest, i'm personally expecting will turn into a pandemic.)\
+\
+doug\
+\
+\
+\
+\
+\
+\
+\
+<biodiversity_site_info_multispectral_vars_2020-04-13.txt><biodiversity_site_info_multispectral_2020-04-13.txt>\
+\
+\
+\
+--\
+Taal Levi\
+Associate Professor\
+Oregon State University\
+ph: 831-332-7873\
+\pard\pardeftab720\sl280\partightenfactor0
+{\field{\*\fldinst{HYPERLINK "http://people.oregonstate.edu/~levit/"}}{\fldrslt \cf6 \ul \ulc6 \strokec6 http://people.oregonstate.edu/~levit/}}\
+\
+\
+\
+\
+\
+--\'a0\
+Taal Levi\
+Associate Professor\
+Oregon State University\
+ph: 831-332-7873\
+{\field{\*\fldinst{HYPERLINK "http://people.oregonstate.edu/~levit/"}}{\fldrslt \cf6 \ul \ulc6 \strokec6 http://people.oregonstate.edu/~levit/}}\
+\pard\pardeftab720\sl280\partightenfactor0
+\cf5 \strokec5 \
+<biodiversity_site_info_lidar_2020-05-18.txt>\
+\pard\pardeftab720\sl280\partightenfactor0
+\cf3 \strokec3 \
+}
