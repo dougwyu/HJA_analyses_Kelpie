@@ -16,3 +16,5 @@ HJA_scripts/5_taxonomy/.Rproj.user/5543A3F/sources/prop/INDEX
 HJA_scripts/5_taxonomy/.Rproj.user/shared/notebooks/222A7010-R_command_history/1/s/chunks.json
 HJA_scripts/5_taxonomy/.Rproj.user/shared/notebooks/paths
 sjSDM/R-git/R/result/s-jSDM_tune_s1_m1_spike.relAbun.RDS
+sjSDM/R-git/R/result/s-jSDM_tune_s2_m1_spike.relAbun.RDS
+sjSDM/R-git/R/result/s-jSDM_tune_best_s2_m1_spike.relAbun.RDS
