@@ -17,5 +17,4 @@ com$corr_acc(getCov(m3))
 ```
 
 
-```
 
