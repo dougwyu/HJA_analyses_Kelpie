@@ -1,0 +1,142 @@
+
+```{r setup}
+lapply(c('reticulate', 'sjSDM', 'here', 'tidyverse', 'ggcorrplot', 'conflicted'), library,  character.only=T)
+
+conflict_prefer("filter", "dplyr")
+conflict_prefer("select", "dplyr")
+
+here::here()
+getwd()
+```
+
+```{r load files, echo=FALSE}
+otu.env1.spike.present = read.csv(here('formatted_data', 'present2_mulspec_sample_by_species_corr_table_F2308_minimap2_20200221_kelpie20200214.csv'), header=T, sep=',', stringsAsFactors = F, na.strings='NA')
+	
+# subset of session 1, malaise trap 1
+dataI.1.spike.present = subset(otu.env1.spike.present, session == 'S1' & trap == 'M1' )
+
+# delete OTUs that are not present in S1 & M1
+b = data.frame(otu=colnames(select(dataI.1.spike.present, contains('__'))),  zero=apply(select(dataI.1.spike.present, contains('__')), 2, sum)==0)
+
+b$otu=as.character(b$otu)
+dim(b)
+	
+dataI.1.spike.present2 = select(dataI.1.spike.present, 
+                                -contains('__'), 
+                                b$otu[b$zero==F]
+                                )
+dim(dataI.1.spike.present2)
+
+dataI.1.spike.present2[1:5, 34:40]
+```
+
+
+```{r sjsdm-model-spatial}
+# ... session 1, Malaise I, spike, present ...
+# exploring spatial function
+# . sjSDM-version = ‘0.0.2.9000’, but updated that spatial is available in 'sjSDM_cv'
+# scale.env1 = dataI.1.spike.present2[ , c('elevation.scale','canopy.ht.scale','min.T.scale','max.T.scale','precipitation.scale','metre.road.scale','metre.stream.scale','yrs.disturb.min.scale')]
+
+scale.env1 <- dataI.1.spike.present2 %>%
+  select(elevation.scale, 
+         canopy.ht.scale, 
+         min.T.scale, 
+         max.T.scale,
+         precipitation.scale, 
+         metre.road.scale, 
+         metre.stream.scale,
+         yrs.disturb.min.scale
+         )
+str(scale.env1)
+	
+otu.data = as.data.frame(select(dataI.1.spike.present2, contains('__')))
+str(otu.data)
+rowSums(otu.data)
+
+# make smaller OTU dataset for debugging
+# otu.data <- otu.data[ , 1:20]
+# rowSums(otu.data)
+
+XY = as.data.frame(select(dataI.1.spike.present2, starts_with('UTM_')) %>% scale)
+hist(XY$UTM_E)
+hist(XY$UTM_N)
+plot(XY$UTM_E, XY$UTM_N)
+
+hyper.s1_m1_spike.present.space = sjSDM_cv(
+	Y = as.matrix(otu.data),
+	env = as.matrix(scale.env1),
+	spatial = linear(XY, ~UTM_E:UTM_N),
+	# spatial = as.matrix(XY),
+	biotic = bioticStruct(on_diag=FALSE), 
+	tune='random', 
+	n_cores = NULL,
+	CV=3L, 
+	tune_steps = 20L, 
+	iter = 60L,
+	link = "probit" # our data are quasiprob or pres/abs. should link be used?
+	)
+# saveRDS(hyper.s1_m1_spike.present.space, file = here('result','s-jSDM_tune_s1_m1_present.space_V0.0.2.9000_2.RDS') )
+# hyper.s1_m1_spike.present.space = readRDS(here('result','s-jSDM_tune_s1_m1_present.space_V0.0.2.9000_2.RDS') )
+
+# visualize tuning and best points:
+# doesn't work! i think because of spatial info ???
+best = plot(hyper.s1_m1_spike.present.space, perf = "AUC")
+
+
+a = as.data.frame(summary(hyper.s1_m1_spike.present.space))
+
+best = a[which(a$'AUC_test'==max(a$'AUC_test')), ]
+# extract hyperparameters that have largest AUC value
+
+sjsdm.s1_m1_spike.present.space = sjSDM(
+  Y = as.matrix(otu.data),
+	iter = 60L, 
+	step_size = 27L, 
+	link = "probit",
+	env = linear(data = as.matrix(scale.env1), 
+	             formula = ~ elevation.scale + canopy.ht.scale+ min.T.scale + 
+	               max.T.scale + precipitation.scale + metre.road.scale +
+	               metre.stream.scale + yrs.disturb.min.scale,
+	             lambda = best[["lambda_coef"]], 
+	             alpha = best[["alpha_coef"]]
+	             ), 
+	spatial = linear(data=XY, ~UTM_E:UTM_N, 
+	                 lambda = best[["lambda_spatial"]], 
+	                 alpha = best[["alpha_spatial"]]
+	                 ), 
+	biotic = bioticStruct(lambda = best[["lambda_cov"]], 
+	                      alpha = best[["alpha_cov"]], 
+	                      on_diag = FALSE # is this default now?
+	                      )
+	)
+
+logLik = logLik(sjsdm.s1_m1_spike.present.space)
+
+p = getSe(sjsdm.s1_m1_spike.present.space)
+summary.p <- summary(p)
+
+plot(sjsdm.s1_m1_spike.present.space$history) # check iter
+
+#save result
+#saveRDS(sjsdm.s1_m1_spike.present.space, file = here('result','model_sjSDM_s1_m1_present.space_V0.0.2.9000.RDS'))
+	
+result = list(beta = coef(sjsdm.s1_m1_spike.present.space), 
+              sigma = getCov(sjsdm.s1_m1_spike.present.space), 
+              history = sjsdm.s1_m1_spike.present.space$history, 
+              p = p, 
+              logLik=logLik
+              )
+	
+# saveRDS(result, file = here('result','sjSDM_s1_m1_present.space_V0.0.2.9000.RDS')) 
+# sjsdm.s1_m1_spike.present.space = readRDS(here('result','model_sjSDM_s1_m1_present.space_V0.0.2.9000.RDS'))
+# result = readRDS(here('result','sjSDM_s1_m1_present.space_V0.0.2.9000.RDS')) 
+```
+
+```{r}
+imp <- importance(sjsdm.s1_m1_spike.present.space)
+plot(imp)
+
+an <- anova(sjsdm.s1_m1_spike.present.space, cv = 2L)
+plot(an)
+```
+
