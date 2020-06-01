@@ -94,13 +94,15 @@ sjsdm.s1_m1_spike.present.space = sjSDM(
 	step_size = 27L, 
 	link = "probit",
 	env = linear(data = as.matrix(scale.env1), 
-	             formula = ~ elevation.scale + canopy.ht.scale+ min.T.scale + 
-	               max.T.scale + precipitation.scale + metre.road.scale +
-	               metre.stream.scale + yrs.disturb.min.scale,
+	             formula = ~ elevation.scale + canopy.ht.scale +
+	               min.T.scale + max.T.scale + precipitation.scale + 
+	               metre.road.scale + metre.stream.scale +
+	               yrs.disturb.min.scale,
 	             lambda = best[["lambda_coef"]], 
 	             alpha = best[["alpha_coef"]]
 	             ), 
-	spatial = linear(data=XY, ~UTM_E:UTM_N, 
+	spatial = linear(data=XY, 
+	                 ~UTM_E:UTM_N, 
 	                 lambda = best[["lambda_spatial"]], 
 	                 alpha = best[["alpha_spatial"]]
 	                 ), 
