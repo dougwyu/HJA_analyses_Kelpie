@@ -237,7 +237,6 @@ otu.env1.spike.present = read.csv(here('kelpie','formatted_data','present_mulspe
 otu.env1.spike.rel.abun = read.csv(here('kelpie','formatted_data','relAbun_mulspec_sample_by_species_corr_table_F2308_minimap2_20200221_kelpie20200214.csv'), header=T, sep=',', stringsAsFactors = F, na.strings='NA')
 
 range(otu.env1.spike.rel.abun[,37:800])
-	
 ```
 
 ```{r explore remote sensing data }
@@ -327,35 +326,81 @@ str(scale.env)
 	
 scale.env1 = dataII.1.spike.rel.abun2[,c('elevation.scale','canopy.ht.scale','min.T.scale','max.T.scale','precipitation.scale','metre.road.scale','metre.stream.scale','yrs.disturb.min.scale')]
 str(scale.env1)
-	
+
+# start here
+# after Max's suggestions on how to write the sjSDM_cv() code
+# remove species that occur only once
+Y = as.matrix(as.data.frame(dplyr::select(dataII.1.spike.rel.abun2, contains('__'))))
+dim(Y)
+Y <- Y[ , vegan::specnumber(Y, MARGIN = 2) > 1] 
+
 hyper.s2_m1_spike.relAbun = sjSDM_cv(
-	Y = as.matrix(as.data.frame(dplyr::select(dataII.1.spike.rel.abun2, contains('__')))),
-	env = as.matrix(scale.env1),
-	biotic = bioticStruct(on_diag=FALSE), tune='random', n_cores = NULL,
-	CV=3L, tune_steps = 20L, iter = 60L 
+	Y = as.matrix(Y),
+	env = linear(as.matrix(scale.env1)),
+	# spatial = linear(xy, formula = ~0 + x:y), #xy is the spatial data object
+	biotic = bioticStruct(on_diag=FALSE), 
+	tune='random', 
+	link = "linear",
+	CV = 5L, 
+	n_cores = NULL,
+	iter = 200L, 
+	tune_steps = 40L, # 60L if we also fit space
 	# iter -> optimization step; lambda -> regularization strength (multiplied constant)
 	)
- saveRDS(hyper.s2_m1_spike.relAbun, file = here('R','result','s-jSDM_tune_s2_m1_spike.relAbun.RDS') )
+
+#DY instead of saving all the individual results object, wait to the end, put all objects into one list, and save the list as an RDS
+# saveRDS(hyper.s2_m1_spike.relAbun, file = here('R','result','s-jSDM_tune_s2_m1_spike.relAbun.RDS') )
 	
 # visualize tuning and best points:
-best = plot(hyper.s2_m1_spike.relAbun, perf = "AUC")
-	
-saveRDS(best, file = here('R','result','s-jSDM_tune_best_s2_m1_spike.relAbun.RDS'))
+best = plot(hyper.s2_m1_spike.relAbun, perf = "logLik") # perf = "AUC"
+# pdf(file="best.pdf")
+# plot(tune_results, perf = "logLik")
+# dev.off()
+
+# saveRDS(best, file = here('R','result','s-jSDM_tune_best_s2_m1_spike.relAbun.RDS'))
 	
 ## print overall results:
 #hyper.s1_m1_spike.relAbun
 ## summary (mean values over CV for each tuning step)
 #summary(hyper.s1_m1_spike.relAbun)
-	
+
 sjsdm.s2_m1_spike.relAbun = sjSDM(
-	Y = as.matrix(as.data.frame(dplyr::select(dataII.1.spike.rel.abun2, contains('__')))),
-	iter = 60L, step_size = 27L, link = "probit",
-	env = linear(data = as.matrix(scale.env1), formula = ~ elevation.scale+canopy.ht.scale+min.T.scale+max.T.scale+precipitation.scale+metre.road.scale+metre.stream.scale+yrs.disturb.min.scale,
-	lambda = best[["lambda_coef"]], alpha = best[["alpha_coef"]]
+	Y = Y,
+	iter = 60L, 
+	learning_rate = 0.003,
+	link = "linear",
+	env = linear(data = as.matrix(scale.env1), 
+	             formula = ~.,
+	             # formula = ~ elevation.scale + canopy.ht.scale + min.T.scale +
+	             #   max.T.scale + precipitation.scale + metre.road.scale +
+	             #   metre.stream.scale + yrs.disturb.min.scale,
+	lambda = best[["lambda_coef"]], 
+	alpha = best[["alpha_coef"]]
 	), 
-	biotic = bioticStruct(lambda = best[["lambda_cov"]], alpha = best[["alpha_cov"]], on_diag = FALSE
+# when there are spatial data in object xy
+# 	spatial = linear( 
+#     data = xy, 
+#     formula = ~0 + x:y,
+#     lambda = best[["lambda_spatial"]],
+#     alpha = best[["alpha_spatial"]]
+# 	),
+	biotic = bioticStruct(
+	  lambda = best[["lambda_cov"]], 
+	  alpha = best[["alpha_cov"]], 
+	  on_diag = FALSE
 	)
 )
+
+# old code
+# sjsdm.s2_m1_spike.relAbun = sjSDM(
+# 	Y = as.matrix(as.data.frame(dplyr::select(dataII.1.spike.rel.abun2, contains('__')))),
+# 	iter = 60L, step_size = 27L, link = "probit",
+# 	env = linear(data = as.matrix(scale.env1), formula = ~ elevation.scale+canopy.ht.scale+min.T.scale+max.T.scale+precipitation.scale+metre.road.scale+metre.stream.scale+yrs.disturb.min.scale,
+# 	lambda = best[["lambda_coef"]], alpha = best[["alpha_coef"]]
+# 	), 
+# 	biotic = bioticStruct(lambda = best[["lambda_cov"]], alpha = best[["alpha_cov"]], on_diag = FALSE
+# 	)
+# )
 
 #summary(model)
 # calculate post-hoc p-values:
@@ -364,17 +409,34 @@ p = getSe(sjsdm.s2_m1_spike.relAbun)
 #summary.p=summary(p)
 #plot(sjsdm.s1_m1_spike.relAbun$history)
 #save result
-result = list(beta = coef(sjsdm.s2_m1_spike.relAbun), sigma = getCov(sjsdm.s2_m1_spike.relAbun), history = sjsdm.s2_m1_spike.relAbun$history, p = p, logLik=logLik(sjsdm.s2_m1_spike.relAbun))
+result = list(beta = coef(sjsdm.s2_m1_spike.relAbun), 
+              sigma = getCov(sjsdm.s2_m1_spike.relAbun), 
+              history = sjsdm.s2_m1_spike.relAbun$history, 
+              p = p, 
+              logLik=logLik(sjsdm.s2_m1_spike.relAbun)
+              )
 
 #VP for test
-imp =importance(sjsdm.s2_m1_spike.relAbun)
+imp = importance(sjsdm.s2_m1_spike.relAbun)
 plot(imp)
-an = anova(sjsdm.s2_m1_spike.relAbun, cv = 2L)
-#print(an)
-plot(an)
+Rsquared2(sjsdm.s2_m1_spike.relAbun)
+Rsquared2(sjsdm.s2_m1_spike.relAbun, individual = FALSE)
 
-saveRDS(result, file = here('R','result','sjSDM_s2_m1_spike.relAbun_V0.0.2.9000.RDS')) 
+an <- anova(sjsdm.s2_m1_spike.relAbun, cv = FALSE)
+# print(an)
+plot(an)
+plot(an, percent = FALSE)
+
+# an_cv <- anova(sjsdm.s2_m1_spike.relAbun, cv = 5L)
+# # print(an)
+# plot(an_cv)
+# plot(an_cv, percent = FALSE)
+
+# saveRDS(result, file = here('R','result','sjSDM_s2_m1_spike.relAbun_V0.0.2.9000.RDS')) 
 	
+## End here
+
+
 
 # ... session 2, Malaise I, spike, 0/1 ...
 # . sjSDM-version = ‘0.0.2.9000’
