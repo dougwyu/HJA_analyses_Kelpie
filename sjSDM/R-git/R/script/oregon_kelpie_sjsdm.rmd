@@ -337,10 +337,10 @@ Y <- Y[ , vegan::specnumber(Y, MARGIN = 2) > 1]
 hyper.s2_m1_spike.relAbun = sjSDM_cv(
 	Y = as.matrix(Y),
 	env = linear(as.matrix(scale.env1)),
-	# spatial = linear(xy, formula = ~0 + x:y), #xy is the spatial data object
+	# spatial = linear(xy, formula = ~0 + x:y), #xy is the spatial data object, ~0 removes the intercept from the spatial model
 	biotic = bioticStruct(on_diag=FALSE), 
 	tune='random', 
-	link = "linear",
+	link = "probit", # for both p/a and quasiprob data
 	CV = 5L, 
 	n_cores = NULL,
 	iter = 200L, 
@@ -368,7 +368,7 @@ sjsdm.s2_m1_spike.relAbun = sjSDM(
 	Y = Y,
 	iter = 60L, 
 	learning_rate = 0.003,
-	link = "linear",
+	link = "probit", # for both p/a and quasiprob data
 	env = linear(data = as.matrix(scale.env1), 
 	             formula = ~.,
 	             # formula = ~ elevation.scale + canopy.ht.scale + min.T.scale +
@@ -380,7 +380,7 @@ sjsdm.s2_m1_spike.relAbun = sjSDM(
 # when there are spatial data in object xy
 # 	spatial = linear( 
 #     data = xy, 
-#     formula = ~0 + x:y,
+#     formula = ~0 + x:y, # ~0 removes the intercept from the spatial model
 #     lambda = best[["lambda_spatial"]],
 #     alpha = best[["alpha_spatial"]]
 # 	),
