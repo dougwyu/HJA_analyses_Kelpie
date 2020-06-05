@@ -69,9 +69,9 @@ plot(XY$UTM_E, XY$UTM_N)
 tune_results = sjSDM_cv(
 	Y = as.matrix(otu.data),
 	env = linear(as.matrix(scale.env1)),
-	spatial = linear(XY, ~0 + UTM_E:UTM_N),
+	spatial = linear(XY, ~ 0 + UTM_E:UTM_N),
 	biotic = bioticStruct(on_diag=FALSE), 
-	tune='random',
+	tune = "random",
 	link = "probit", # for both p/a and quasiprob data
 	CV=5L, 
 	n_cores = NULL,
