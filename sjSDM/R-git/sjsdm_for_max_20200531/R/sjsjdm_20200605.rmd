@@ -101,7 +101,7 @@ model <-  sjSDM(
 	             ), 
 	spatial = linear(
     data = XY,
-    formula = ~0 + UTM_E:UTM_N, # ~0 removes intercept from the spatial model
+    formula = ~ 0 + UTM_E:UTM_N, # ~0 removes intercept from the spatial model
     lambda = best[["lambda_spatial"]],
     alpha = best[["alpha_spatial"]]
     ),
