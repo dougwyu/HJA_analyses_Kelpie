@@ -53,9 +53,10 @@ str(scale.env1)
 # species data
 otu.data = as.data.frame(select(dataI.1.spike.present2, contains('__')))
 # remove species that occur only once
-otu.data <- otu.data[ , vegan::specnumber(otu.data, MARGIN = 2) >= 5] # with ">1" the model finds no biotic covariances (ternary plot )
+minocc <- 5
+otu.data <- otu.data[ , vegan::specnumber(otu.data, MARGIN = 2) >= minocc] # with ">1" the model finds no biotic covariances (ternary plot )
 str(otu.data)
-colSums(otu.data)
+otu.data %>% select(which(map_lgl(., ~sum(.x) < minocc))) # should have 0 columns
 
 # make smaller OTU dataset for debugging
 # otu.data <- otu.data[ , 1:10]
