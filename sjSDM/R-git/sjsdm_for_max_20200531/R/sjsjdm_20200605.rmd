@@ -1,7 +1,7 @@
 
 
 ```{r setup}
-lapply(c('reticulate', 'sjSDM', 'here', 'tidyverse', 'ggcorrplot', 'conflicted'), library,  character.only=T)
+lapply(c('reticulate', 'sjSDM', 'here', 'tidyverse', 'ggcorrplot', 'vegan', 'conflicted'), library,  character.only=T)
 
 conflict_prefer("filter", "dplyr")
 conflict_prefer("select", "dplyr")
@@ -53,7 +53,7 @@ str(scale.env1)
 # species data
 otu.data = as.data.frame(select(dataI.1.spike.present2, contains('__')))
 # remove species that occur only once
-otu.data <- otu.data[ , vegan::specnumber(otu.data, MARGIN = 2) > 1] 
+otu.data <- otu.data[ , vegan::specnumber(otu.data, MARGIN = 2) >= 5] # with ">1" the model finds no biotic covariances (ternary plot )
 str(otu.data)
 colSums(otu.data)
 
@@ -91,11 +91,11 @@ model <-  sjSDM(
 	learning_rate = 0.003,
 	link = "probit", # for both p/a and quasiprob data
 	env = linear(data = as.matrix(scale.env1), 
-	             formula = ~.,
-	             # formula = ~ elevation.scale + canopy.ht.scale +
-               # min.T.scale + max.T.scale + precipitation.scale + 
-               # metre.road.scale + metre.stream.scale +
-               # yrs.disturb.min.scale,
+	             # formula = ~.,
+	             formula = ~ elevation.scale + canopy.ht.scale + 
+	               min.T.scale + max.T.scale + precipitation.scale + 
+	               metre.road.scale + metre.stream.scale + 
+	               yrs.disturb.min.scale,
 	             lambda = best[["lambda_coef"]], 
 	             alpha = best[["alpha_coef"]]
 	             ), 
