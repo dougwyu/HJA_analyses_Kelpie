@@ -53,7 +53,7 @@ str(scale.env1)
 # species data
 otu.data = as.data.frame(select(dataI.1.spike.present2, contains('__')))
 # remove species that occur only once
-minocc <- 5
+minocc <- 3
 otu.data <- otu.data[ , vegan::specnumber(otu.data, MARGIN = 2) >= minocc] # with ">1" the model finds no biotic covariances (ternary plot )
 str(otu.data)
 otu.data %>% select(which(map_lgl(., ~sum(.x) < minocc))) # should have 0 columns
@@ -80,6 +80,10 @@ tune_results = sjSDM_cv(
 	tune_steps = 60L, 
 	)
 
+here()
+# saveRDS(tune_results, here("results", "sjsdm_tune_results_HJA_20200608.RDS"))
+# readRDS(here("results", "sjsdm_tune_results_HJA_20200608.RDS"))
+
 # visualize tuning and best points:
 best = plot(tune_results, perf = "logLik") # perf = "AUC"
 # pdf(file="best.pdf")
@@ -88,21 +92,21 @@ best = plot(tune_results, perf = "logLik") # perf = "AUC"
 
 model <-  sjSDM(
 	Y = as.matrix(otu.data),
-	iter = 60L, 
-	learning_rate = 0.003,
+	iter = 100L, 
+	learning_rate = 0.003, # 0.01 default, but 0.003 recommended for high species number
 	link = "probit", # for both p/a and quasiprob data
 	env = linear(data = as.matrix(scale.env1), 
-	             # formula = ~.,
-	             formula = ~ elevation.scale + canopy.ht.scale + 
-	               min.T.scale + max.T.scale + precipitation.scale + 
-	               metre.road.scale + metre.stream.scale + 
-	               yrs.disturb.min.scale,
+	             formula = ~.,
+	             # formula = ~ elevation.scale + canopy.ht.scale + 
+	             #   min.T.scale + max.T.scale + precipitation.scale + 
+	             #   metre.road.scale + metre.stream.scale + 
+	             #   yrs.disturb.min.scale,
 	             lambda = best[["lambda_coef"]], 
 	             alpha = best[["alpha_coef"]]
 	             ), 
 	spatial = linear(
     data = XY,
-    formula = ~ 0 + UTM_E:UTM_N, # ~0 removes intercept from the spatial model
+    formula = ~0 + UTM_E:UTM_N, # ~0 removes intercept from the spatial model
     lambda = best[["lambda_spatial"]],
     alpha = best[["alpha_spatial"]]
     ),
@@ -128,16 +132,19 @@ result = list(beta = coef(model),
               logLik=logLik(model)
               )
 
+# saveRDS(result, here("results", "sjsdm_results_HJA_20200608.RDS"))
+# readRDS(here("results", "sjsdm_results_HJA_20200608.RDS"))
+
 #VP for test
 imp = importance(model)
 plot(imp)
-Rsquared2(model)
 Rsquared2(model, individual = FALSE)
+# Rsquared2(model)
 
 an <- anova(model, cv = FALSE)
 # print(an)
-plot(an)
 plot(an, percent = FALSE)
+plot(an)
 
 # an_cv <- anova(model, cv = 5L)
 # # print(an)
