@@ -53,7 +53,7 @@ str(scale.env1)
 # species data
 otu.data = as.data.frame(select(dataI.1.spike.present2, contains('__')))
 # remove species that occur only once
-minocc <- 3
+minocc <- 20 # set to high number (e.g. 20) for testing
 otu.data <- otu.data[ , vegan::specnumber(otu.data, MARGIN = 2) >= minocc] # with ">1" the model finds no biotic covariances (ternary plot )
 str(otu.data)
 otu.data %>% select(which(map_lgl(., ~sum(.x) < minocc))) # should have 0 columns
@@ -74,13 +74,13 @@ tune_results = sjSDM_cv(
 	biotic = bioticStruct(on_diag=FALSE), 
 	tune = "random",
 	link = "probit", # for both p/a and quasiprob data
-	CV=5L, 
+	CV=2L, # 5L is better if there are enough samples (rows)
 	n_cores = NULL,
 	iter = 200L,
 	tune_steps = 60L, 
 	)
 
-here()
+# here()
 # saveRDS(tune_results, here("results", "sjsdm_tune_results_HJA_20200608.RDS"))
 # tune_results <- readRDS(here::here("results", "sjsdm_tune_results_HJA_20200608.RDS"))
 
@@ -93,7 +93,7 @@ best = plot(tune_results, perf = "logLik") # perf = "AUC"
 model <-  sjSDM(
 	Y = as.matrix(otu.data),
 	iter = 100L, 
-	learning_rate = 0.003, # 0.01 default, but 0.003 recommended for high species number
+	learning_rate = 0.01, # 0.01 default, but 0.003 recommended for high species number
 	link = "probit", # for both p/a and quasiprob data
 	env = linear(data = as.matrix(scale.env1), 
 	             formula = ~.,
@@ -132,10 +132,10 @@ result = list(beta = coef(model),
               logLik=logLik(model)
               )
 
-saveRDS(model, here("results", "sjsdm_model_HJA_20200608.RDS"))
+# saveRDS(model, here("results", "sjsdm_model_HJA_20200608.RDS"))
 # saveRDS(result, here("results", "sjsdm_results_HJA_20200608.RDS"))
-result <- readRDS(here::here("results", "sjsdm_results_HJA_20200608.RDS"))
-model <- readRDS(here::here("results", "sjsdm_model_HJA_20200608.RDS"))
+# result <- readRDS(here::here("results", "sjsdm_results_HJA_20200608.RDS"))
+# model <- readRDS(here::here("results", "sjsdm_model_HJA_20200608.RDS"))
 
 #VP for test
 imp = importance(model)
