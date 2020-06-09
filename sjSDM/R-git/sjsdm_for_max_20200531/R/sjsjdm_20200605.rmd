@@ -82,7 +82,7 @@ tune_results = sjSDM_cv(
 
 here()
 # saveRDS(tune_results, here("results", "sjsdm_tune_results_HJA_20200608.RDS"))
-# readRDS(here("results", "sjsdm_tune_results_HJA_20200608.RDS"))
+# tune_results <- readRDS(here::here("results", "sjsdm_tune_results_HJA_20200608.RDS"))
 
 # visualize tuning and best points:
 best = plot(tune_results, perf = "logLik") # perf = "AUC"
@@ -132,8 +132,10 @@ result = list(beta = coef(model),
               logLik=logLik(model)
               )
 
+saveRDS(model, here("results", "sjsdm_model_HJA_20200608.RDS"))
 # saveRDS(result, here("results", "sjsdm_results_HJA_20200608.RDS"))
-# readRDS(here("results", "sjsdm_results_HJA_20200608.RDS"))
+result <- readRDS(here::here("results", "sjsdm_results_HJA_20200608.RDS"))
+model <- readRDS(here::here("results", "sjsdm_model_HJA_20200608.RDS"))
 
 #VP for test
 imp = importance(model)
