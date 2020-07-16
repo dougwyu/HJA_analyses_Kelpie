@@ -11,16 +11,18 @@ set -o pipefail
 # on HPC
 ssh b042@ada.uea.ac.uk
 # create a large interactive job
-interactive
-# or
 srun -n4 -p compute -J interactive --time=04:00:00 --mem=6G --pty bash
+# or
+interactive
+squeue -u b042
 
 # set paths and add modules
 PATH=$PATH:~/scripts/vsearch-2.15.0-linux-x86_64/bin/ # downloaded 12 Jul 2020 from github
 PATH=$PATH:~/scripts/parallel-20170722/bin/ # GNU Parallel
 PATH=$PATH:~/scripts/seqkitdir/ # downloaded 12 Dec 2019 from github
-# PATH=$PATH:~/scripts/swarm-3.0.0-linux-x86_64/bin # downloaded 16 Dec 2019 from github
-module add Sumaclust/1.0.34
+# clustering methods not used
+    # PATH=$PATH:~/scripts/swarm-3.0.0-linux-x86_64/bin # downloaded 16 Dec 2019 from github
+    # module add Sumaclust/1.0.34 # not avail on ada
 
 # go to correct folder
 HOMEFOLDER="/gpfs/home/b042/_Oregon/2019Sep_shotgun/" # should be ~/_Oregon/2019Sep_shotgun/
@@ -37,7 +39,7 @@ find ./ -maxdepth 3 -mindepth 3 -type f -name "*.fas" | sort > fastalist.txt # f
 sed -i '/discards/d' ./fastalist.txt  # -i save output back to the input file. remove discards.fas
 sed -i '/derep/d' ./fastalist.txt  # -i save output back to the input file. remove derep.fas
 cat fastalist.txt
-cat fastalist.txt | sort | uniq | wc -l # 242 fasta files
+cat fastalist.txt | sort | uniq | wc -l # should see 242 fasta files
 
 # concatenate the fasta files into a single large fasta file
 timestamp="20200715_LERAYFOL" # e.g. 20200715_LERAYFOL
