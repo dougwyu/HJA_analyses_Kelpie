@@ -1,0 +1,22 @@
+#!/bin/sh
+#SBATCH -t 36:00:00 # 36 hours
+#SBATCH -p compute # -p for 'partition name', where partition is the queue
+     # compute 24 hrs default, 7 d max, 24 cores max, 4 GB per core
+     # hmem 24 hrs default, 7 d max, 24 cores max, 32GB per core
+#SBATCH -o klplp.out # 10 chars
+#SBATCH -e klplp.err # 10 chars
+#SBATCH --mail-type=BEGIN # options NONE, BEGIN, END, FAIL, ALL
+#SBATCH --mail-type=END # options NONE, BEGIN, END, FAIL, ALL
+#SBATCH --mail-user=dougwyu@mac.com #sends email to me
+#SBATCH --mem 4G # default 4G, units specified using [K|M|G|T], # Kelpie typically uses < 1 GB, max mem on compute nodes is 96 GB
+#SBATCH --ntasks=12 # number of slots == number of cores. 24 is the max per node
+#SBATCH --job-name=klplp # job name, 8 chars
+
+module purge
+PATH=$PATH:~/scripts/vsearch-2.15.0-linux-x86_64/bin/ # downloaded 12 Jul 2020 from github
+PATH=$PATH:~/scripts/Kelpie_v2.0.8/ubuntu-16.04/
+PATH=$PATH:~/scripts/parallel-20170722/bin/ # GNU Parallel
+PATH=$PATH:~/scripts/FilterReads/ubuntu-16.04/
+
+# upload _parallel_kelpie_YYYYMMDD.sub and _parallel_kelpie_YYYYMMDD.sh *into* ~/_Oregon/2019Sep_shotgun/2.trimmeddata/
+bash _parallel_kelpie_20200716.sh # this runs Kelpie

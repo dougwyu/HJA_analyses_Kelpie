@@ -9,16 +9,17 @@ set -o pipefail
 ##################################################################################################
 
 # on HPC
-ssh hpc
+ssh b042@ada.uea.ac.uk
 # create a large interactive job
-# interactive -x -R "rusage[mem=20000]" -M 20000
-interactive -R "rusage[mem=8000]" -M 8000
+interactive
+# or
+srun -n4 -p compute -J interactive --time=04:00:00 --mem=6G --pty bash
 
 # set paths and add modules
-PATH=$PATH:~/scripts/vsearch-2.14.1-linux-x86_64/bin # downloaded 10 Dec 2019 from github
+PATH=$PATH:~/scripts/vsearch-2.15.0-linux-x86_64/bin/ # downloaded 12 Jul 2020 from github
 PATH=$PATH:~/scripts/parallel-20170722/bin/ # GNU Parallel
 PATH=$PATH:~/scripts/seqkitdir/ # downloaded 12 Dec 2019 from github
-PATH=$PATH:~/scripts/swarm-3.0.0-linux-x86_64/bin # downloaded 16 Dec 2019 from github
+# PATH=$PATH:~/scripts/swarm-3.0.0-linux-x86_64/bin # downloaded 16 Dec 2019 from github
 module add Sumaclust/1.0.34
 
 # go to correct folder
@@ -39,17 +40,17 @@ cat fastalist.txt
 cat fastalist.txt | sort | uniq | wc -l # 242 fasta files
 
 # concatenate the fasta files into a single large fasta file
-timestamp="20200214_BF3BR2" # e.g. 20200214_BF3BR2
+timestamp="20200715_LERAYFOL" # e.g. 20200715_LERAYFOL
 echo $timestamp
 cat $(grep -v '^#' fastalist.txt) > kelpie_${timestamp}.fas
 ls
 # https://stackoverflow.com/questions/11619500/how-to-cat-multiple-files-from-a-list-of-files-in-bash
 
-# filter out sequences < 400 bp
+# filter out sequences < 300 bp
 seqkit stats kelpie_${timestamp}.fas # 625,646 seqs 2.0.4, 590,200 seqs 2.0.6
-seqkit seq -m 400 kelpie_${timestamp}.fas -o kelpie_${timestamp}_min400.fas
+seqkit seq -m 300 kelpie_${timestamp}.fas -o kelpie_${timestamp}_min300.fas
 seqkit stats kelpie_${timestamp}_min400.fas kelpie_${timestamp}.fas # 625,646 to 625,592 seqs 2.0.4, 590,200 to 590,166 2.0.6
-mv kelpie_${timestamp}_min400.fas kelpie_${timestamp}.fas
+mv kelpie_${timestamp}_min300.fas kelpie_${timestamp}.fas
 seqkit stats kelpie_${timestamp}.fas
 
 # a problem is that the amplicon names are reused across multiple samples (e.g. >R1 is used in each sample fasta)
@@ -84,7 +85,7 @@ ls
 # cleanup, uncomment when ready to run
 find ./ -maxdepth 3 -mindepth 3 -type f -name "*.fas" # check that i list only the fasta files 3 levels down
 find ./ -maxdepth 3 -mindepth 3 -type f -name "*.fas" | wc -l # should be twice the number of samples
-find ./ -maxdepth 3 -mindepth 3 -type f -name "*a.fas" | xargs rm # rm those files
+# find ./ -maxdepth 3 -mindepth 3 -type f -name "*.fas" | xargs rm # rm those files
 find ./ -maxdepth 3 -mindepth 3 -type f -name "*.fas" # should return only discards
 find ./ -maxdepth 3 -mindepth 3 -type f -name "*.fas" | wc -l # should be the number of samples (242)
 find ./ -maxdepth 3 -mindepth 3 -type f -name "*.fas" | sort > discard_fastalist.txt # make list of discard fastas
@@ -98,12 +99,12 @@ cat discard_fastalist.txt | sort | uniq | wc -l # 242 fasta files
 
 
 # concatenate the discard fasta files into a single large fasta file
-timestamp="20200214_BF3BR2_discards" # e.g. 20200214_BF3BR2_discards
+timestamp="20200715_LERAYFOL_discards" # e.g. 20200715_LERAYFOL_discards
 echo $timestamp
 cat $(grep -v '^#' discard_fastalist.txt) > kelpie_${timestamp}.fas
 ls
 head kelpie_${timestamp}.fas
-head kelpie_20200214_BF3BR2_discards.fas
+head kelpie_20200715_LERAYFOL_discards.fas
 grep "D1" kelpie_${timestamp}.fas # duplicates have new names, plus the original name info
 
 # cleanup, uncomment when ready to run
