@@ -75,7 +75,7 @@ genomecovfile <- paste0("*", samtoolsfilter, "_", samtoolsqual, "_sorted_genomec
     # e.g. ""*F2308_f0x2_q1_sorted_genomecov_d\\.txt\\.gz""
 # choose the filename pattern to match the desired samtools filter. precede with * as a wildcard for the sample names (e.g. Sample_IPO3916_A10_).      
 
-samplemetadatafolder <- "../8_reference_sequences_datasets/"  # this is the enclosing folder around the sample metadata spreadsheet
+samplemetadatafolder <- "../08_reference_sequences_datasets/"  # this is the enclosing folder around the sample metadata spreadsheet
 
 samplemetadatafilename <- "shotgun_samples_HJAndrews_Malaisetraps_20200108.xlsx"
 ```
@@ -631,8 +631,9 @@ coispike <- idx_meta_genomecov %>%
   group_by(site_trap_period) %>% 
   summarise(mapped_reads = sum(mapped_reads))
 
-idx_meta_genomecov_sp <- idx_meta_genomecov %>% 
-  filter(COI_Species == "Oregon_Species")
+# changed code to keep the 2 spike-ins in the dataset, so that they can be used downstream. idx_meta_genomecov_corr still corrects the OTUs by the sum of the spike-ins per sample, but if we want, we retain option to do a different correction. 
+idx_meta_genomecov_sp <- idx_meta_genomecov 
+# idx_meta_genomecov_sp <- idx_meta_genomecov %>% filter(COI_Species == "Oregon_Species")
 
 idx_meta_genomecov_corr <- idx_meta_genomecov_sp %>% 
   left_join(coispike, by = "site_trap_period") %>% 
@@ -656,7 +657,8 @@ idxstats_by_site_trap_period <- idx_meta_genomecov_corr %>%
     dplyr::count() %>% 
     dplyr::arrange(desc(n)); View(idxstats_by_site_trap_period)
 
-# ideally, there should be 1211 in all rows of column "n"
+# ideally, there should be 1213 in all rows of column "n" 
+# 1213 == 1211 species + 2 spike-in species
 idxstats_by_mitogenome <- idx_meta_genomecov_corr %>% 
     dplyr::group_by(site_trap_period) %>% 
     dplyr::distinct(mitogenome) %>% 
@@ -664,7 +666,7 @@ idxstats_by_mitogenome <- idx_meta_genomecov_corr %>%
     dplyr::arrange(desc(n)); View(idxstats_by_mitogenome)
 
 # F2308 samtools filter
-# write_tsv(idx_meta_genomecov_corr, gzfile(file.path("..", "..", "Kelpie_maps", outputidxstatstabulatefolder, "idx_meta_genomecov_corr_F2308_minimap_20200221_kelpie20200214.txt.gz"))) # output file
+# write_tsv(idx_meta_genomecov_corr, gzfile(file.path("..", "..", "Kelpie_maps", outputidxstatstabulatefolder, "idx_meta_genomecov_corr_F2308_minimap_20200221_kelpie20200723.txt.gz"))) # output file
 # F2308 f0x2 samtools filter
 # write_tsv(idx_meta_genomecov_corr, gzfile(file.path("..", "..", "Kelpie_maps", outputidxstatstabulatefolder, "idx_meta_genomecov_corr_F2308_f0x2_minimap_20200221_kelpie20200214.txt.gz"))) # output file
 
@@ -751,7 +753,7 @@ add Marie Tosa's environmental data to idx_meta_genomecov_corr_filtered_wide and
 
 envdataTosa column descriptions are in "8_reference_sequences_datasets/biodiversity_site_info_vars_descriptions_20200214.xlsx"
 ```{r sample by species tables}
-envdataTosa <- read_csv(file.path("..", "8_reference_sequences_datasets", "biodiversity_site_info_vars_20200220.csv"))
+envdataTosa <- read_csv(file.path("..", "08_reference_sequences_datasets", "biodiversity_site_info_vars_20200220.csv"))
 
 envdataTosa <- envdataTosa %>% 
   mutate(
@@ -777,16 +779,18 @@ idx_meta_genomecov_corr_filtered_wide <- envdataTosa %>%
 
 # write output
 # F2308 samtools filter
-# write_csv(idx_meta_genomecov_corr_filtered_wide, file.path("..", "..", "Kelpie_maps", outputidxstatstabulatefolder, "sample_by_species_corr_table_F2308_minimap2_20200221_kelpie20200214.csv"))
+# write_csv(idx_meta_genomecov_corr_filtered_wide, file.path("..", "..", "Kelpie_maps", outputidxstatstabulatefolder, "sample_by_species_corr_table_F2308_minimap2_20200221_kelpie20200723.csv"))
 # F2308 f0x2 samtools filter
 # write_csv(idx_meta_genomecov_corr_filtered_wide, file.path("..", "..", "Kelpie_maps", outputidxstatstabulatefolder, "sample_by_species_corr_table_F2308_f0x2_minimap2_20200221_kelpie20200214.csv"))
 
 # read_csv() commands 
   # mapped_reads_corr
     # F2308 samtools filter
-    # idx_meta_genomecov_corr_filtered_wide <- read_csv(file.path("..", "..", "Kelpie_maps", outputidxstatstabulatefolder, "sample_by_species_corr_table_F2308_minimap2_20200221_kelpie20200214.csv"))
+    # idx_meta_genomecov_corr_filtered_wide <- read_csv(file.path("..", "..", "Kelpie_maps", outputidxstatstabulatefolder, "sample_by_species_corr_table_F2308_minimap2_20200221_kelpie20200723.csv"))
     # F2308 f0x2 samtools filter
     # not yet created
+
+
 
 # mapped_reads only
 # join idx_meta_genomecov_filtered_wide and envdataTosa
@@ -804,14 +808,14 @@ species <- select(idx_meta_genomecov_filtered_wide, starts_with(c("R1343_86", "R
 
 # write output
 # F2308 samtools filter
-# write_csv(idx_meta_genomecov_filtered_wide, file.path("..", "..", "Kelpie_maps", outputidxstatstabulatefolder, "sample_by_species_table_F2308_minimap2_20200221_kelpie20200214.csv"))
+# write_csv(idx_meta_genomecov_filtered_wide, file.path("..", "..", "Kelpie_maps", outputidxstatstabulatefolder, "sample_by_species_table_F2308_minimap2_20200221_kelpie20200723.csv"))
 # F2308 f0x2 samtools filter
   # write_csv(idx_meta_genomecov_filtered_wide, file.path("..", "..", "Kelpie_maps", outputidxstatstabulatefolder, "sample_by_species_table_F2308_minimap2_20200221_kelpie20200214.csv"))
 
   # read_csv() commands
       # mapped_reads
       # F2308 samtools filter
-      # idx_meta_genomecov_filtered_wide <- read_csv(file.path("..", "..", "Kelpie_maps", outputidxstatstabulatefolder, "sample_by_species_table_F2308_minimap2_20200221_kelpie20200214.csv"))
+      # idx_meta_genomecov_filtered_wide <- read_csv(file.path("..", "..", "Kelpie_maps", outputidxstatstabulatefolder, "sample_by_species_table_F2308_minimap2_20200221_kelpie20200723.csv"))
     
       # F2308 f0x2 samtools filter
       # not yet created
