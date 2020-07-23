@@ -20,8 +20,8 @@ PATH=$PATH:~/scripts/parallel-20170722/bin/
 ############# copy the kelpie2 shell and bsub scripts into each BWA folder and edit the jobIDs
 # cd ~/_Oregon/2019Sep_shotgun/testkelpie/; ls
 cd ~/_Oregon/2019Sep_shotgun/2.trimmeddata/; ls
-KELPIE2_SUB="_parallel_kelpie_20200716.sub"; head -n 20 ${KELPIE2_SUB}
-KELPIE2_SH="_parallel_kelpie_20200716.sh"; head ${KELPIE2_SH}
+KELPIE2_SUB="_parallel_kelpie_20200717.sub"; head -n20 ${KELPIE2_SUB}
+KELPIE2_SH="_parallel_kelpie_20200717.sh"; head -n60 ${KELPIE2_SH}
 
 parallel cp ${KELPIE2_SUB} BWA{} ::: 01 02 03 04 05 06 07 08 09 10
 parallel cp ${KELPIE2_SH} BWA{} ::: 01 02 03 04 05 06 07 08 09 10

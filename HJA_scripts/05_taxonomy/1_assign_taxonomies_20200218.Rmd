@@ -8,8 +8,16 @@ output: html_document
 on macOS
 download kelpie_${timestamp}_derep.fas from hpc
 
+if > 900 seqs, use seqkit split -s 900 to split into subfiles with <=900 seqs
+```{bash}
+# send to terminal:  cmd-alt-numeric_keypad_enter
+cd /Users/Negorashi2011/Dropbox/Working_docs/Luo_Mingjie_Oregon/HJA_scripts/5_taxonomy
+cd kelpie_20200717_BF3BR2
+seqkit split -s 900 kelpie_20200717_BF3BR2_derep.fas 
+```
+
 upload kelpie_${timestamp}_derep.fas to https://www.gbif.org/tools/sequence-id
-download csv file, which will be called blastresult.csv
+download csv file(s), which will be called blastresult.csv
     There is probably a programmatic way to do this....
 
 rename blastresult.csv to something memorable, e.g.  blastresult_GBIF_sequence_id_20200214.csv and save to HJA_scripts/5_taxonomy
@@ -17,6 +25,7 @@ rename blastresult.csv to something memorable, e.g.  blastresult_GBIF_sequence_i
 ```{r setup}
 library(tidyverse)
 library(seqinr)
+library(here)
 library(conflicted)
   conflict_prefer("mutate", "dplyr", quiet = TRUE)
   conflict_prefer("select", "dplyr", quiet = TRUE)
@@ -44,8 +53,19 @@ writeFasta <- function(data, filename){
 
 
 ```{r import and reformat}
-gbifresult <- "blastresult_GBIF_sequence_id_20200214"
-gbifdf <- read_csv(paste0(gbifresult, ".csv"))
+here()
+gbifresultlist <- list()
+# set n, gbifotufolder, and gbifresult
+n <- 5 # number of GBIF output files
+for(i in 1:n){
+  gbifotufolder <- "kelpie_20200717_BF3BR2"
+  gbifresult <- paste0("blastresult_GBIF_sequence_id_20200717_", i, ".csv")
+  gbifresultlist[[i]] <- read.csv(here(gbifotufolder, gbifresult))
+}
+
+gbifdf <- bind_rows(gbifresultlist)
+rm(gbifresultlist)
+
 gbifdf <- gbifdf %>% 
     separate(occurrenceId, c("seqID", "OTUsize"), sep = ";", remove = FALSE) %>% 
     mutate(
@@ -64,6 +84,7 @@ gbifdf <- gbifdf %>%
     filter(matchType != "BLAST_NO_MATCH") %>% 
     filter(Class %in% c("Insecta", "Arachnida"))
 # 20200214:  5291 to 5221 seqs (70 seqs removed) 
+# 20200716:  3215 to 3199 seqs
 ```
 
 Create consensusClassification following GBIF's recommendations on the website:
@@ -84,32 +105,73 @@ gbifdf <- gbifdf %>%
     select(occurrenceId, OTUsize, identity, consensusClassification, matchType, everything())
 ```
 
-
-Next, I import into Geneious and align the sequences using Translation Align (MAFFT Alignment option, frame 2, invertebrate mitochondrial code). I then translated the alignment to amino acids to look for stop codons and to see the amino-acid alignment coloured for hydrophobicity (as a way of checkking for outlier sequences after translation)
-
-1 sequence was very short, and i removed it. 
-">R3997_19;size=1"
-"AATAAATAATATAAGATTTTGATTACTA"
-
-1 sequence was very long, had stop codons, and was not alignable (500 nts), and i removed it.
-R3590_9;size=3
-
-Four other sequences also had some stop codons (and low copy number).  However, after inspection, i can't see the indels, so i have kept them, although they are likely Numts. 
-R1343_86;size=8
-R904_134;size=5
-R2320_84;size=2
-R2352_82;size=1
-
-Update: R1343_86 and R904_134 got mapped reads from multiple samples. The other two did not
-
+Save the sequences as a fasta file
 ```{r}
-# from 5221 to 5219 sequences after Geneious filtering
-gbifdf <- gbifdf %>% 
-    filter(!(occurrenceId %in% c("R3997_19;size=1", "R3590_9;size=3")))
+kelpie_otus <- gbifdf %>% 
+  unite(col = name1, seqID, consensusClassification, sep = "_") %>%
+  mutate(
+    name1 = str_c(name1, ";size=")
+  ) %>% 
+  unite(col = name, name1, OTUsize, sep = "") %>% 
+  mutate(
+    name = str_replace(name, "BOLD:", "BOLD_"),
+    name = str_replace(name, " ", "_")
+  ) %>% 
+    select(name, seq = sequence)
+
+# write to working directory
+writeFasta(kelpie_otus, paste0("kelpie_20200717_BF3BR2/kelpie_20200717_BF3BR2_derep_filter1", ".fas"))
 ```
 
+The next stage is to curate the Kelpie output to remove sequences that contain errors. Note that we have only dereplicated the sequences, so in theory, we could use OTU clustering to remove many erroneous sequences, but in our opinion, it is better to identify and remove errors before clustering, in the sense that the resulting OTUs will be more likely to represent true biological species. The removed sequences are usually rare (size<10) and have low-resolution taxonomic assignments. The bias at this stage should be to remove all false sequences even at the expense of some true ones. This bias is acceptable because true species are more likely be represented by other sequences in the dataset. 
 
-In previous runs through this pipeline, i have hand-corrected indels in some OTU sequences, which means that they need to have their taxonomies re-assigned. In that case, i upload to GBIF again, download the CSV file, and re-run the above script. In the 20200214 Kelpie run, I only deleted two OTU sequences, so i do not need to re-assign taxonomies, and i just run the next two chunks to remove the two deleted sequences from the gbifid file and create a new OTU sequence file.
+The steps of this stage are:
+
+1. align the sequencing by amino-acid sequence (i.e. 'translation align'). This can be done in Geneious' function of the same name or in TranslatorX (http://translatorx.co.uk) (Use MAFFT or Muscle alignment option, frame 2, invertebrate mitochondrial code). 
+
+```{bash translatorX}
+fastafile="kelpie_20200717_BF3BR2_derep_filter1.fas"
+
+perl ~/src/translatorx/translatorx_vLocal.pl -i ${fastafile} -o trx.out -p M -c 5 -t T 
+```
+
+Following this step, 
+
+if using Geneious, colour the sequences by translation and (1) fix obvious indels, which can be generated by homopolymer errors in Illumina sequencing, (2) remove all sequences that contain stop codons or that fail to align well with the others, these being more likely to be nuclear mitochondrial insertions (NUMTs), (3) re-align to remove gaps, and (4) trim to correct max length (313 or 418). 
+
+if using TranslatorX, follow with (1) 'seqkit translate -f 2 -T 5' to translate to amino acids and 'seqkit grep -v -s -p '*'' to remove sequences with stop codons. (To inspect the removed sequences, remove the -v from seqkit grep and direct to a different output fasta)
+
+```{bash}
+seqkit translate -f 2 -T 5 kelpie_20200717_BF3BR2_derep_filter1.fas | seqkit grep -v -s -p '*' > kelpie_20200717_BF3BR2_derep_filter1_aa_nostops.fas
+
+seqkit translate -f 2 -T 5 kelpie_20200717_BF3BR2_derep_filter1.fas | seqkit grep -s -p '*' > kelpie_20200717_BF3BR2_derep_filter1_aa_stops.fas
+```
+
+Then, open in JALview to fix obvious indels caused by homopolymer errors, remove all sequences that fail to align well, re-align with TranslatorX to remove gaps, and trim to correct max length (313 or 418).
+
+(Geneious is easier to use)
+
+After curation in Geneious or TranslatorX/JALview, save the new fasta file (e.g. kelpie_20200716_LERAYFOL_derep_filter12.fasta) and use grep to create a text file with just the header lines of the retained sequences. 
+
+```{bash}
+grep '^>' kelpie_20200717_BF3BR2_derep_filter12.fasta | sed 's/>//g' > kelpie_20200717_BF3BR2_derep_filter12.txt
+```
+
+Read in the text file as a vector
+```{r}
+kelpie_20200716_LERAYFOL_derep_filter12 <- scan("kelpie_20200716_LERAYFOL/kelpie_20200716_LERAYFOL_derep_filter12.txt", what = "character")
+
+length(kelpie_20200716_LERAYFOL_derep_filter12) # check against output below
+class(kelpie_20200716_LERAYFOL_derep_filter12) # character
+```
+
+```{r}
+# filter the gbifdf file to retain only the sequences that were retained after filtering:  3168 seqs
+gbifdf <- gbifdf %>% 
+    filter((occurrenceId %in% kelpie_20200716_LERAYFOL_derep_filter12))
+```
+
+In previous runs through this pipeline, i have hand-corrected indels in some OTU sequences, which means that you might want to re-assign taxonomies by re-uploading to GBIF, downloading the CSV file, and re-running the above script. 
 
 Save the sequences as a fasta file
 ```{r}
@@ -126,39 +188,70 @@ kelpie_otus <- gbifdf %>%
     select(name, seq = sequence)
 
 # write to working directory
-writeFasta(kelpie_otus, paste0("kelpie_20200214_BF3BR2_derep_filtered_geneious", ".fas"))
+writeFasta(kelpie_otus, paste0("kelpie_20200716_LERAYFOL/kelpie_20200716_LERAYFOL_derep_filtered", ".fas"))
 ```
 
 
-Cluster the sequences.  This is not a fully resolved problem because even with 97% and 96% clustering, there are still some size=1 OTUs that receive the same species ID as larger OTUs. I can use vsearch97_min2 (minsize = 2), which has 1,211 OTUs or vsearch96_min1, which has 1,171 OTUs, or vsearch96_min2, which has 1,149 OTUs. Not a huge amount of difference amongst them
+Cluster the sequences and add the spike-in sequences.  This is not a fully resolved problem because even with 97% and 96% clustering, there are still some size=1 OTUs that receive the same species ID as larger OTUs. I can use vsearch97_min2 (minsize = 2), which has 1,211 OTUs or vsearch96_min1, which has 1,171 OTUs, or vsearch96_min2, which has 1,149 OTUs. Not a huge amount of difference amongst them
 ```{bash}
-# send to terminal:  cmd-alt-numeric_keypad_enter
-cd "/Users/Negorashi2011/Dropbox/Working_docs/Luo_Mingjie_Oregon/HJA_scripts/5_taxonomy"
+# send to terminal:  cmd-opt-fn-return (or cmd-opt-numeric_keypad_enter)
+cd /Users/Negorashi2011/Dropbox/Working_docs/Luo_Mingjie_Oregon/HJA_analyses_Kelpie/HJA_scripts/05_taxonomy/
 
-timestamp="20200214"
-echo $timestamp
-head kelpie_${timestamp}_BF3BR2_derep_filtered_geneious.fas
-vsearch --cluster_size kelpie_${timestamp}_BF3BR2_derep_filtered_geneious.fas --sizein --sizeout --id 0.97 --sizeorder --centroids kelpie_${timestamp}_BF3BR2_derep_filtered_geneious_vsearch97.fas --uc kelpie_${timestamp}_BF3BR2_derep_filtered_geneious_vsearch97clusters.uc
+datestamp="20200716"
+primer="LERAYFOL"
+echo kelpie_${datestamp}_${primer}
+cd kelpie_${datestamp}_${primer}
 
-seqkit stats kelpie_${timestamp}_BF3BR2_derep_filtered_geneious_vsearch97.fas
-# 1,246 OTUs, min 403, avg 417.9, max 437
+head kelpie_${datestamp}_${primer}_derep_geneious_filtered.fas
 
-vsearch --sortbysize kelpie_${timestamp}_BF3BR2_derep_filtered_geneious_vsearch97.fas --minsize 2 --output kelpie_${timestamp}_BF3BR2_derep_filtered_geneious_vsearch97_min2.fas
+# 97% OTUs
+vsearch --version # v2.15.0
+vsearch --cluster_size kelpie_${datestamp}_${primer}_derep_geneious_filtered.fas --sizein --sizeout --id 0.97 --sizeorder --centroids kelpie_${datestamp}_${primer}_derep_geneious_filtered_vsearch97.fas --uc kelpie_${datestamp}_${primer}_derep_geneious_filtered_vsearch97_clusters.uc
 
-seqkit stats kelpie_${timestamp}_BF3BR2_derep_filtered_geneious_vsearch97_min2.fas
-# 1,211 OTUs, min 403, avg 417.9, max 437
+seqkit stats kelpie_${datestamp}_${primer}_derep_geneious_filtered_vsearch97.fas
+# 1,346 OTUs, min 300, avg 312.9, max 317
 
+vsearch --sortbysize kelpie_${datestamp}_${primer}_derep_geneious_filtered_vsearch97.fas --minsize 2 --output kelpie_${datestamp}_${primer}_derep_geneious_filtered_vsearch97_min2.fas
 
-# 96%
-vsearch --cluster_size kelpie_${timestamp}_BF3BR2_derep_filtered_geneious.fas --sizein --sizeout --id 0.96 --sizeorder --centroids kelpie_${timestamp}_BF3BR2_derep_filtered_geneious_vsearch96.fas --uc kelpie_${timestamp}_BF3BR2_derep_filtered_geneious_vsearch96clusters.uc
+seqkit stats kelpie_${datestamp}_${primer}_derep_geneious_filtered_vsearch97_min2.fas
+# 1,213 OTUs, min 300, avg 312.9, max 317
 
-seqkit stats kelpie_${timestamp}_BF3BR2_derep_filtered_geneious_vsearch96.fas
-# 1,171 OTUs, min 403, avg 417.9, max 437
-
-vsearch --sortbysize kelpie_${timestamp}_BF3BR2_derep_filtered_geneious_vsearch96.fas --minsize 2 --output kelpie_${timestamp}_BF3BR2_derep_filtered_geneious_vsearch96_min2.fas
-seqkit stats kelpie_${timestamp}_BF3BR2_derep_filtered_geneious_vsearch96_min2.fas
-# 1,149 OTUs, min 403, avg 417.9, max 437
+cat ../../08_reference_sequences_datasets/assembled_plasmids.fasta kelpie_${datestamp}_${primer}_derep_geneious_filtered_vsearch97_min2.fas  > kelpie_${datestamp}_${primer}_derep_geneious_filtered_vsearch97_min2_spikes.fas
+cat kelpie_${datestamp}_${primer}_derep_geneious_filtered_vsearch97_min2_spikes.fas | less
+# check that the first two sequences are separated correctly from the OTU seqs
 ```
+
+NEXT STEP
+Use kelpie_${datestamp}_${primer}_derep_geneious_filtered_vsearch97_min2_spikes.fas as the mapping target to generate the OTU table
+
+# END
+
+
+
+
+
+
+
+
+Below is deprecated code.
+
+```{bash vsearch 96%}
+# 96% OTUs
+vsearch --cluster_size kelpie_${datestamp}_${primer}_derep_geneious_filtered.fas --sizein --sizeout --id 0.96 --sizeorder --centroids kelpie_${datestamp}_${primer}_derep_geneious_filtered_vsearch96.fas --uc kelpie_${datestamp}_${primer}_derep_geneious_filtered_vsearch96_clusters.uc
+
+seqkit stats kelpie_${datestamp}_${primer}_derep_geneious_filtered_vsearch96.fas
+# 1,219 OTUs, min 300, avg 312.9, max 317
+
+vsearch --sortbysize kelpie_${datestamp}_${primer}_derep_geneious_filtered_vsearch96.fas --minsize 2 --output kelpie_${datestamp}_${primer}_derep_geneious_filtered_vsearch96_min2.fas
+
+seqkit stats kelpie_${datestamp}_${primer}_derep_geneious_filtered_vsearch96_min2.fas
+# 1,124 OTUs, min 300, avg 312.9, max 317
+
+cat ../../08_reference_sequences_datasets/assembled_plasmids.fasta kelpie_${datestamp}_${primer}_derep_geneious_filtered_vsearch96_min2.fas  > kelpie_${datestamp}_${primer}_derep_geneious_filtered_vsearch96_min2_spikes.fas
+cat kelpie_${datestamp}_${primer}_derep_geneious_filtered_vsearch96_min2_spikes.fas | less
+# check that the first two sequences are separated correctly from the OTU seqs
+```
+
 
 Read in kelpie_${timestamp}_BF3BR2_derep_filtered_geneious_vsearch97_min2.fas and the two COI spike sequences from 8_reference_sequences/assembled_plasmids.fasta. Add together
 ```{r}
@@ -193,15 +286,6 @@ kelpie_otus_and_spikes <- bind_rows(coispikesdf, kelpie_otusdf)
 writeFasta(kelpie_otus_and_spikes, paste0("kelpie_", timestamp, "_BF3BR2_derep_filtered_geneious_vsearch97_min2_spikes.fas"))
 ```
 
-NEXT STEP
-Use kelpie_20200214_BF3BR2_derep_filtered_geneious_vsearch97_min2_spikes.fas as the mapping target
-
-# END
-
-
-
-
-Below is archived code that used seqtk to generate the Geneious-filtered fasta file. Deprecated
 
 seqtk subseq list 
 ```{r}

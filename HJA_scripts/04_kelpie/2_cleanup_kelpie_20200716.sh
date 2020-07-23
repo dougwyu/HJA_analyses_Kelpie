@@ -42,17 +42,17 @@ cat fastalist.txt
 cat fastalist.txt | sort | uniq | wc -l # should see 242 fasta files
 
 # concatenate the fasta files into a single large fasta file
-timestamp="20200715_LERAYFOL" # e.g. 20200715_LERAYFOL
+timestamp="20200717_BF3BR2" # e.g. 20200715_LERAYFOL, 20200717_BF3BR2
 echo $timestamp
 cat $(grep -v '^#' fastalist.txt) > kelpie_${timestamp}.fas
 ls
 # https://stackoverflow.com/questions/11619500/how-to-cat-multiple-files-from-a-list-of-files-in-bash
 
 # filter out sequences < 300 bp
-seqkit stats kelpie_${timestamp}.fas # 625,646 seqs 2.0.4, 590,200 seqs 2.0.6
-seqkit seq -m 300 kelpie_${timestamp}.fas -o kelpie_${timestamp}_min300.fas
-seqkit stats kelpie_${timestamp}_min400.fas kelpie_${timestamp}.fas # 625,646 to 625,592 seqs 2.0.4, 590,200 to 590,166 2.0.6
-mv kelpie_${timestamp}_min300.fas kelpie_${timestamp}.fas
+seqkit stats kelpie_${timestamp}.fas # 625,646 BF3BR2 seqs 2.0.4, 590,200 BF3BR2 seqs 2.0.6, 360,852 Leray seqs 2.0.8 (w/out 1 sample), 606,517 BF3BR2 seqs 2.0.8
+seqkit seq -m 400 kelpie_${timestamp}.fas -o kelpie_${timestamp}_min400.fas
+seqkit stats kelpie_${timestamp}_min400.fas kelpie_${timestamp}.fas # 625,646 to 625,592 seqs 2.0.4, 590,200 to 590,166 2.0.6, 360,748 Leray seqs 2.0.8, 606,460 BF3BR2 seqs 2.0.8
+mv kelpie_${timestamp}_min400.fas kelpie_${timestamp}.fas
 seqkit stats kelpie_${timestamp}.fas
 
 # a problem is that the amplicon names are reused across multiple samples (e.g. >R1 is used in each sample fasta)
@@ -64,7 +64,7 @@ grep "R1$" kelpie_${timestamp}.fas | wc -l # should equal to number of samples
 seqkit rename kelpie_${timestamp}.fas > kelpie_${timestamp}_rename.fas # renames duplicate headers
 mv kelpie_${timestamp}_rename.fas kelpie_${timestamp}.fas # replace old with new, deduplicated version
 grep "R1$" kelpie_${timestamp}.fas # duplicates have new names, plus the original name info
-seqkit stats kelpie_${timestamp}.fas # 590,166 seqs
+seqkit stats kelpie_${timestamp}.fas # 360,748 seqs
 
 # dereplicate the fasta file
     # orig command
@@ -76,7 +76,7 @@ seqkit stats kelpie_${timestamp}.fas # 590,166 seqs
 # command formatted for input to swarm 3.0.0
 vsearch --derep_fulllength kelpie_${timestamp}.fas --sizeout --fasta_width 0 --threads 0 --output kelpie_${timestamp}_derep.fas # --relabel_sha1
 
-seqkit stats kelpie_${timestamp}_derep.fas # 4,849 unique seqs 2.0.4, 5,426 uniq seqs 2.0.6
+seqkit stats kelpie_${timestamp}_derep.fas # 4,849 BF3BR2 uniq seqs 2.0.4, 5,426 BF3BR2 uniq seqs 2.0.6, 3,215 uniq Leray seqs 2.0.8, 4,062 uniq BF3BR2 seqs 2.0.8
 
 # uncomment when ready to run
 # rm -f kelpie_${timestamp}.fas
@@ -87,10 +87,9 @@ ls
 # cleanup, uncomment when ready to run
 find ./ -maxdepth 3 -mindepth 3 -type f -name "*.fas" # check that i list only the fasta files 3 levels down
 find ./ -maxdepth 3 -mindepth 3 -type f -name "*.fas" | wc -l # should be twice the number of samples
-# find ./ -maxdepth 3 -mindepth 3 -type f -name "*.fas" | xargs rm # rm those files
-find ./ -maxdepth 3 -mindepth 3 -type f -name "*.fas" # should return only discards
-find ./ -maxdepth 3 -mindepth 3 -type f -name "*.fas" | wc -l # should be the number of samples (242)
-find ./ -maxdepth 3 -mindepth 3 -type f -name "*.fas" | sort > discard_fastalist.txt # make list of discard fastas
+find ./ -maxdepth 3 -mindepth 3 -type f -name "*_discards.fas" # should return only discards
+find ./ -maxdepth 3 -mindepth 3 -type f -name "*_discards.fas" | wc -l # should be the number of samples (242)
+find ./ -maxdepth 3 -mindepth 3 -type f -name "*_discards.fas" | sort > discard_fastalist.txt # make list of discard fastas
 head discard_fastalist.txt; tail discard_fastalist.txt
 cat discard_fastalist.txt | sort | uniq | wc -l # 242 fasta files
 # https://stackoverflow.com/questions/11619500/how-to-cat-multiple-files-from-a-list-of-files-in-bash
@@ -101,22 +100,23 @@ cat discard_fastalist.txt | sort | uniq | wc -l # 242 fasta files
 
 
 # concatenate the discard fasta files into a single large fasta file
-timestamp="20200715_LERAYFOL_discards" # e.g. 20200715_LERAYFOL_discards
+timestamp="20200717_BF3BR2" # e.g. 20200716_LERAYFOL_discards
 echo $timestamp
-cat $(grep -v '^#' discard_fastalist.txt) > kelpie_${timestamp}.fas
+cat $(grep -v '^#' discard_fastalist.txt) > kelpie_${timestamp}_discards.fas
 ls
-head kelpie_${timestamp}.fas
-head kelpie_20200715_LERAYFOL_discards.fas
-grep "D1" kelpie_${timestamp}.fas # duplicates have new names, plus the original name info
+head kelpie_${timestamp}_discards.fas
+grep "D1" kelpie_${timestamp}_discards.fas # duplicates have new names, plus the original name info
 
 # cleanup, uncomment when ready to run
 # find ./ -maxdepth 3 -mindepth 3 -type f -name "*discards.fas" # check that i list only the fasta files 3 levels down
 # find ./ -maxdepth 3 -mindepth 3 -type f -name "*discards.fas" | wc -l # should be twice the number of samples
 # find ./ -maxdepth 3 -mindepth 3 -type f -name "*discards.fas" | xargs rm # rm those files
-# rm -f kelpie_${timestamp}.fas
-# rm -f folderlist.txt
-# rm -f fastalist.txt
-# rm -f discard_fastalist.txt
+# find ./ -maxdepth 3 -mindepth 3 -type f -name "*.fas" | wc -l # should be twice the number of samples
+# find ./ -maxdepth 3 -mindepth 3 -type f -name "*.fas" | xargs rm # rm those files
+rm -f kelpie_${timestamp}.fas
+rm -f folderlist.txt
+rm -f fastalist.txt
+rm -f discard_fastalist.txt
 ls
 
 # END
