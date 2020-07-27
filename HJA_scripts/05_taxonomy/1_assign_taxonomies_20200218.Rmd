@@ -10,7 +10,8 @@ download kelpie_${timestamp}_derep.fas from hpc
 
 if > 900 seqs, use seqkit split -s 900 to split into subfiles with <=900 seqs
 ```{bash}
-# send to terminal:  cmd-alt-numeric_keypad_enter
+# send to terminal:  cmd-alt-fn-return
+# or cmd-alt-numeric_keypad_enter
 cd /Users/Negorashi2011/Dropbox/Working_docs/Luo_Mingjie_Oregon/HJA_scripts/5_taxonomy
 cd kelpie_20200717_BF3BR2
 seqkit split -s 900 kelpie_20200717_BF3BR2_derep.fas 
