@@ -1,0 +1,1156 @@
+---
+---
+
+```{r setup}
+setwd("/Volumes/Orange WD/yuanheng")
+#setwd("/media/yuanheng/SD-64g2/files/Projects/Oregon/R-git")
+	
+lapply(c("ggplot2",'vegan', 'tidyverse','gridBase', 'grid', 'ggcorrplot','here', 'conflicted','reticulate','sjSDM','mgsub','vcd','RColorBrewer'), library, character.only=T)
+# "gridExtra",'scatterplot3d', 'labdsv',
+	
+conflict_prefer("filter", "dplyr")
+conflict_prefer("select", "dplyr")
+conflict_prefer("importance", "sjSDM")
+	
+dr_here()
+	
+source(here("R", "source", "sjsdm_function.r"))
+source(here("R", "source", "sjsdm-analyse-functions.r"))
+	
+```
+
+```{r convert data (go directly to 'load files'), eval=FALSE, include=FALSE}
+# for backup, converted data are saved
+
+# format OTU data, combine with lidar data 
+#dy not lidar data. it's landsat data.  there will be lidar data later, so must name it correctly
+# (remote sensing data)
+mulspec.env = read.csv(here('..','..','HJA_scripts','10_eo_data','biodiversity_site_info_multispectral_2020-04-13.txt'), header=T, sep=',', stringsAsFactors = F, na.strings='NA')
+str(mulspec.env)
+	
+# ('HJA_analyses_Kelpie/Kelpie_maps' folder) 
+otu.env1.noS = read.csv(here('..','..','Kelpie_maps', 'outputs_minimap2_20200221_F2308_f0x2_q48_kelpie20200214_vsearch97','sample_by_species_table_F2308_minimap2_20200221_kelpie20200214.csv'), header=T, sep=',', stringsAsFactors = F, na.strings='NA')
+	
+otu.env1.spike = read.csv(here('..','..','Kelpie_maps', 'outputs_minimap2_20200221_F2308_f0x2_q48_kelpie20200214_vsearch97', 'sample_by_species_corr_table_F2308_minimap2_20200221_kelpie20200214.csv'), header=T, sep=',', stringsAsFactors = F, na.strings='NA')
+	
+print(c(dim(otu.env1.spike), dim(otu.env1.noS)))
+# 1173-26, more otus
+	
+names(otu.env1.noS)[1:26] == names(otu.env1.spike)[1:26]
+	
+names(otu.env1.noS)[1:26]=c('SiteName', 'UTM_E','UTM_N','old.growth.str', 'yrs.disturb','point.ID','poly.ID','AGENCY','unit.log', 'name.log','log.yr','yrs.log.2018','log.treat','yrs.disturb.level', 'elevation','canopy.ht','min.T','max.T', 'precipitation','metre.road', 'metre.stream', 'yrs.disturb.min','hja','trap','session','site_trap_period')
+names(otu.env1.spike)[1:26]=names(otu.env1.noS)[1:26]
+	
+str(otu.env1.spike[,1:27])
+	
+
+# ........ format mulspec.env .......
+sort(mulspec.env$SiteName) == sort(unique(otu.env1.spike$SiteName))
+	
+#NDVI - normalized difference vegetation index (calculated using bands 4 and 5): NDVI = (NearIR-Red)/(NearIR+Red)
+#       these values should range between -1 and 1. Values in these columns should be divided by 1000
+#EVI - enhanced vegetation index (calculated using bands 4, 5, and 2):  2.5 * ((Band 5 – Band 4) / (Band 5 + 6 * Band 4 – 7.5 * Band 2 + 1))
+#      the values in these columns should be divided by 1000
+names(mulspec.env)   #sort()
+# 4 NDVI, 4 EVI
+
+data.frame(mulspec.env$NDVI_20180717, mulspec.env$EVI_20180818)
+	
+a = mulspec.env %>% select(starts_with('NDVI'), starts_with('EVI')) %>% rename(nor.NDVI_20180717=1, nor.EVI_20180717=5, nor.NDVI_20180726=2, nor.EVI_20180726=6, nor.NDVI_20180802=3, nor.EVI_20180802=7, nor.NDVI_20180818=4, nor.EVI_20180818=8)/1000
+#13,14,27,28,41,42,55,56
+	
+a[,c(1,3,5,7)]
+# mean of all 4 NDVI, EVI
+mulspec.env= cbind(mulspec.env,a)
+str(mulspec.env)
+	
+mulspec.env$mean.NDVI = base::rowMeans(select(mulspec.env, starts_with('nor.NDVI_')))
+mulspec.env$mean.EVI = base::rowMeans(select(mulspec.env, starts_with('nor.EVI_')))
+mulspec.env[,c(60,62,64,66,68)]
+head(mulspec.env[,c(61,63,65,67,69)])
+	
+# ... calculate mean B, G, W values
+# B -> Tasseled cap brightness; "G" -> Tasseled cap greenness; "W" -> Tasseled cap wetness
+mulspec.env$mean.bright = base::rowMeans(select(mulspec.env, starts_with('B_')))
+mulspec.env$mean.green = base::rowMeans(select(mulspec.env, starts_with('G_')))
+mulspec.env$mean.wet = base::rowMeans(select(mulspec.env, starts_with('W_')))
+	
+# pdf(here('R','graph','describe_spec_indices.pdf'), height=5, width=5)
+	
+range(select(mulspec.env, starts_with('B_'), starts_with('G_'), starts_with('W_')))
+plot(1:96, mulspec.env$B_20180818,ylim=c(-1519,3505),type='l', main='solid - brightness, dash - wetness, dotted - greenness', col='black')
+lines(1:length(mulspec.env$SiteName), mulspec.env$B_20180717, col='black')
+lines(1:length(mulspec.env$SiteName), mulspec.env$B_20180726, col='black')
+lines(1:length(mulspec.env$SiteName), mulspec.env$B_20180802, col='black')
+	
+lines(1:length(mulspec.env$SiteName), mulspec.env$W_20180818, lty=2, col='black')
+lines(1:length(mulspec.env$SiteName), mulspec.env$W_20180717, lty=2, col='red')
+lines(1:length(mulspec.env$SiteName), mulspec.env$W_20180726, lty=2, col='blue')
+lines(1:length(mulspec.env$SiteName), mulspec.env$W_20180802, lty=2, col='green')
+	
+lines(1:length(mulspec.env$SiteName), mulspec.env$G_20180818, lty=3, col='green')
+lines(1:length(mulspec.env$SiteName), mulspec.env$G_20180717, lty=3, col='green')
+lines(1:length(mulspec.env$SiteName), mulspec.env$G_20180726, lty=3, col='green')
+lines(1:length(mulspec.env$SiteName), mulspec.env$G_20180802, lty=3, col='green')
+	
+# dev.off()
+	
+
+# ... explore OTU reads ...
+names(otu.env1.spike)[1:27]
+	
+hist(otu.env1.spike[,30])
+sort(unique(otu.env1.noS[,30]))
+	
+which(is.na(otu.env1.noS[,28]))#:dim(otu.env1.noS)[2]
+which(is.na(otu.env1.noS[,29]))
+# 181 237
+	
+table(is.na(otu.env1.noS[c(181,237),27:1173]))
+	
+table(is.na(otu.env1.spike[c(181,237),27:1173]))
+	
+otu.env1.noS$SiteName[c(181,237)]
+	
+# delete row 181, 237 -> "HOBO-040", "290415" 
+dim(otu.env1.noS)
+	
+otu.env1.noS = otu.env1.noS[-c(181,237),]
+	
+dim(otu.env1.spike)
+	
+otu.env1.spike = otu.env1.spike[-c(181,237),]
+	
+
+# ....... scale variables .......
+names(otu.env1.spike)[15:22]
+	
+a = select(otu.env1.spike,15:22)%>%rename(elevation.scale=1,canopy.ht.scale=2,min.T.scale=3, max.T.scale=4, precipitation.scale=5, metre.road.scale=6, metre.stream.scale=7, yrs.disturb.min.scale=8)%>% scale()
+	
+otu.env1.spike = cbind(otu.env1.spike[,1:26], data.frame(a), otu.env1.spike[,27:dim(otu.env1.spike)[2]])
+dim(otu.env1.spike)
+	
+names(otu.env1.spike)[26:34]
+	
+otu.env1.noS = dplyr::left_join(otu.env1.noS, select(otu.env1.spike,'site_trap_period',ends_with('.scale')), by=c('site_trap_period', 'site_trap_period'), copy=F)
+dim(otu.env1.noS)
+names(otu.env1.noS)[1174:1194]
+	
+otu.env1.noS = otu.env1.noS[,c(1:26,1174:1181,27:1173)]
+str(otu.env1.noS[,1:34])
+	
+
+# ..... combine multispectral-data .....
+str(mulspec.env)
+	
+par(mfrow=c(1,2))
+	
+hist(mulspec.env$mean.NDVI)
+hist(mulspec.env$mean.EVI)
+	
+par(mfrow=c(1,3))
+	
+hist(mulspec.env$mean.green)
+hist(mulspec.env$mean.bright)
+hist(mulspec.env$mean.wet)
+	
+names(mulspec.env)[68:69]
+	
+a = select(mulspec.env,"mean.NDVI", "mean.EVI",'mean.green','mean.bright','mean.wet') %>% rename(mean.NDVI.scale=1,mean.EVI.scale=2, mean.green.scale=3,mean.bright.scale=4,mean.wet.scale=5) %>% scale()
+mulspec.env = cbind(mulspec.env,data.frame(a))
+	
+par(mfrow=c(1,2))
+	
+hist(mulspec.env$mean.NDVI.scale)
+hist(mulspec.env$mean.EVI.scale)
+	
+par(mfrow=c(1,3))
+	
+hist(mulspec.env$mean.green.scale)
+hist(mulspec.env$mean.bright.scale)
+hist(mulspec.env$mean.wet.scale)
+	
+# row 181, 237 -> "HOBO-040", "290415" in OTU datasets
+sort(mulspec.env$SiteName) == sort(unique(otu.env1.spike$SiteName))
+	
+names(mulspec.env)[c(1,70:71)]
+	
+otu.env1.spike = dplyr::left_join(otu.env1.spike, dplyr::select(mulspec.env,'SiteName',ends_with('.scale')), by=c('SiteName', 'SiteName'), copy=F) 
+str(otu.env1.spike[,1:37])
+names(otu.env1.spike[,1182:1186])
+	
+otu.env1.spike = otu.env1.spike[,c(1:34,1182:1186,35:1181)]
+dim(otu.env1.spike)
+	
+otu.env1.noS = dplyr::left_join(otu.env1.noS, dplyr::select(mulspec.env,'SiteName',ends_with('.scale')), by=c('SiteName', 'SiteName'), copy=F) 
+dim(otu.env1.noS)
+	
+str(otu.env1.noS[,1:37])
+	
+otu.env1.noS = otu.env1.noS[,c(1:34,1182:1186,35:1181)]
+dim(otu.env1.noS)
+	
+# write.table(otu.env1.noS, here('kelpie','formatted_data','mulspec_sample_by_species_table_F2308_minimap2_20200221_kelpie20200214.csv'), row.names=F, sep=',')
+	
+# write.table(otu.env1.spike, here('kelpie','formatted_data','mulspec2_sample_by_species_corr_table_F2308_minimap2_20200221_kelpie20200214.csv'), row.names=F, sep=',')
+	
+# write.table(mulspec.env, here('kelpie','rs_data','sjsdm_biodiversity2_site_info_multispectral_2020-04-13.csv'), row.names= F, sep=',')
+	
+
+```
+
+```{r convert data2 (go directly to 'load files'), eval=FALSE, include=FALSE}
+# for backup, data are already saved
+# convert to present/rel.abun according to formatted data 
+# ( continue with 'convert data')
+
+# (remote sensing data, load data formatted for sjsdm)
+mulspec.env = read.csv(here('kelpie','rs_data','sjsdm_biodiversity2_site_info_multispectral_2020-04-13.csv'), header=T, sep=',', stringsAsFactors = F, na.strings='NA')
+str(mulspec.env)
+	
+# ('formatted_data' folder, load data formatted for sjsdm) 
+otu.env1.noS = read.csv(here('kelpie','formatted_data','mulspec_sample_by_species_table_F2308_minimap2_20200221_kelpie20200214.csv'), header=T, sep=',', stringsAsFactors = F, na.strings='NA')
+	
+otu.env1.spike = read.csv(here('kelpie','formatted_data','mulspec2_sample_by_species_corr_table_F2308_minimap2_20200221_kelpie20200214.csv'), header=T, sep=',', stringsAsFactors = F, na.strings='NA')
+	
+print(c(dim(otu.env1.spike), dim(otu.env1.noS)))
+	
+
+# ..... convert to presence/absence .....
+# . no spike
+names(otu.env1.noS)[1:37]
+	
+a = select(otu.env1.noS, contains('__'))
+dim(a)
+dim(otu.env1.noS)
+# 1147 + 36 = 1183
+	
+# !!! env.variables cannot have '__' in their names !!!
+a = data.frame(lapply(data.frame(select(otu.env1.noS, contains('__'))>0), as.numeric))
+otu.env1.noS.present = cbind(select(otu.env1.noS, -contains('__')), a)
+	
+
+#DY old code using base::scale()
+# a = data.frame(sapply(otu.env1.noSlogLik(sjsdm.s1_m1_spike.relAbun)[,-c(1:36)],function(x) scale(x,center=F)))
+
+#DY rescaling to quasi-probabilities, following Max's advice
+# sjsdm is a probit model, X needs to be [0,1]
+a = data.frame(sapply(select(otu.env1.noS, contains('__')),function(x) scales::rescale(log(x+0.001))))
+	
+# with log(), data points go towards either 0/1. is this better for a probit model ??? 
+par(mfrow=c(1,2))
+hist(a[,115])
+hist(otu.env1.noS[,115+36])
+	
+otu.env1.noS.rel.abun = cbind(select(otu.env1.noS, -contains('__')), a)
+	
+
+# . spike
+a = data.frame(lapply(data.frame(select(otu.env1.spike, contains('__'))>0), as.numeric))
+table(a[,111])
+otu.env1.spike.present = cbind(select(otu.env1.spike, -contains('__')), a)
+names(otu.env1.spike.present)[1:40]
+	
+# hist(otu.env1.spike$R200_218__Insecta_Diptera_Syrphidae_Blera_Blera_scitula_BOLD_ABY7981_size.595)
+
+
+#DY rescaling to quasi-probabilities, following Max's advice
+a = data.frame(sapply(select(otu.env1.spike, contains('__')), function(x) scales::rescale(log(x+0.001))))
+par(mfrow=c(1,2))
+hist(a[,115])
+hist(otu.env1.spike[,115+36])
+	
+otu.env1.spike.rel.abun = cbind(select(otu.env1.spike, -contains('__')), a)
+range(otu.env1.spike.rel.abun[,-c(1:39)])
+table(otu.env1.spike.rel.abun[,400])
+	
+
+#DY i usually comment out write.table() commands, to prevent running them incorrectly (e.g. when debugging)
+# write.table(otu.env1.noS.rel.abun, here('kelpie','formatted_data','relAbun_mulspec_sample_by_species_table_F2308_minimap2_20200221_kelpie20200214.csv'), row.names=F, sep=',')
+# write.table(otu.env1.noS.present, here('kelpie','formatted_data','present_mulspec_sample_by_species_table_F2308_minimap2_20200221_kelpie20200214.csv'), row.names=F, sep=',')
+	
+# 
+# write.table(otu.env1.spike.present, here('kelpie','formatted_data','present2_mulspec_sample_by_species_corr_table_F2308_minimap2_20200221_kelpie20200214.csv'), row.names=F, sep=',')
+# write.table(otu.env1.spike.rel.abun, here('kelpie','formatted_data','relAbun2_mulspec_sample_by_species_corr_table_F2308_minimap2_20200221_kelpie20200214.csv'), row.names=F, sep=',')
+	
+
+```
+
+
+```{r load files, echo=FALSE}
+# kelpie, remote sensing data 
+mulspec.env = read.csv(here('kelpie','rs_data','sjsdm_biodiversity2_site_info_multispectral_2020-04-13.csv'), header=T, sep=',', stringsAsFactors = F, na.strings='NA')
+str(mulspec.env)
+	
+# ('formatted_data' folder, load data formatted for sjsdm, present) 
+dataI.1.present.no2 = read.table(here('R','data','s1m1_present2_lidar_mulspec_sample_by_species_corr_table_F2308_minimap2_20200221_kelpie20200214.csv'), sep=',', header=T, na.strings='NA')
+dim(dataI.1.present.no2)
+	
+# use only 'spike' data for analysis. for 0/1 it's the same as not spiked, but order of rows&cols is consistent with spike rel.abun 
+otu.env1.present = read.csv(here('kelpie','formatted_data','present2_mulspec_sample_by_species_corr_table_F2308_minimap2_20200221_kelpie20200214.csv'), header=T, sep=',', stringsAsFactors = F, na.strings='NA')
+	
+otu.env1.rel.abun = read.csv(here('kelpie','formatted_data','relAbun2_mulspec_sample_by_species_corr_table_F2308_minimap2_20200221_kelpie20200214.csv'), header=T, sep=',', stringsAsFactors = F, na.strings='NA')
+range(otu.env1.rel.abun[,40:800])
+	
+#names(otu.env1.spike.present)[40:47]==names(otu.env1.spike)[27:34]
+#names(otu.env1.rel.abun)[40:47]==names(otu.env1.spike)[27:34]
+	
+```
+
+```{r explore remote sensing data }
+# pdf(here('R','graph','describe_EVI_NDVI.pdf'), height=5, width=5)
+	
+range(mulspec.env[,60:67])
+plot(1:96, mulspec.env[,61],ylim=c(0,3.3),type='l', main='solid - EVI, dash - NDVI')
+lines(1:96, mulspec.env[,63], col='red')
+lines(1:96, mulspec.env[,65], col='blue')
+lines(1:96, mulspec.env[,67], col='green')
+	
+lines(1:96, mulspec.env[,60], lty=2, col='black')
+lines(1:96, mulspec.env[,62], lty=2, col='red')
+lines(1:96, mulspec.env[,64], lty=2, col='blue')
+lines(1:96, mulspec.env[,66], lty=2, col='green')
+	
+# dev.off()
+	
+```
+
+```{r subsets of data}
+dataI.1.present = subset(otu.env1.present, session == 'S1' & trap == 'M1' )
+	
+dataII.1.present = subset(otu.env1.present, session == 'S2' & trap == 'M1' )
+	
+dataI.1.rel.abun = subset(otu.env1.rel.abun, session == 'S1' & trap == 'M1' )
+	
+dataII.1.rel.abun = subset(otu.env1.rel.abun, session == 'S2' & trap == 'M1' )
+	
+print(c(dim(dataI.1.rel.abun), dim(dataI.1.present)))
+	
+print(c(dim(dataII.1.rel.abun), dim(dataII.1.present)))
+	
+# .... if there's all zero OTUs ....
+# .... S1
+b = data.frame(otu=colnames(select(dataI.1.rel.abun, contains('__'))), zero=apply(select(dataI.1.rel.abun, contains('__')),2,sum)==0)
+b$otu=as.character(b$otu)
+table(b$zero)
+	
+dataI.1.rel.abun2 = dplyr::select(dataI.1.rel.abun, -contains('__'),b$otu[b$zero==F])
+dim(dataI.1.rel.abun2)
+dataI.1.rel.abun2[1:5,34:40]
+	
+b = data.frame(otu=colnames(select(dataI.1.present,contains('__'))), zero=apply(select(dataI.1.present,contains('__')),2,sum)==0)
+b$otu=as.character(b$otu)
+dim(b)
+	
+dataI.1.present2 = dplyr::select(dataI.1.present, -contains('__'),b$otu[b$zero==F])
+dim(dataI.1.present2)
+dataI.1.present2[1:5,34:40]
+	
+print(c(dim(dataI.1.rel.abun2), dim(dataI.1.present2)))
+	
+
+# ... session II
+b = data.frame(otu=colnames(select(dataII.1.present,contains('__'))), zero=apply(select(dataII.1.present,contains('__')),2,sum)==0)
+b$otu=as.character(b$otu)
+table(b$zero)
+	
+dataII.1.present2 = dplyr::select(dataII.1.present, -contains('__'),b$otu[b$zero==F])
+dim(dataII.1.present2)
+dataII.1.present2[1:5,34:40]
+	
+
+b = data.frame(otu=colnames(select(dataII.1.rel.abun,contains('__'))), zero=apply(select(dataII.1.rel.abun,contains('__')),2,sum)==0)
+b$otu=as.character(b$otu)
+table(b$zero)
+	
+dataII.1.rel.abun2 = dplyr::select(dataII.1.rel.abun, -contains('__'),b$otu[b$zero==F])
+dim(dataII.1.rel.abun2)
+dataII.1.rel.abun2[1:5,34:40]
+	
+print(c(dim(dataII.1.rel.abun2), dim(dataII.1.present2)))
+	
+```
+
+```{r delete-singleton-forSJSDM}
+# use OTUs that appears in at least 3 sites
+# ... session I
+# quasiprob
+data = dataI.1.rel.abun2
+dim(as.data.frame(select(data, -contains('__'))))
+dimotu=40
+	
+a = data.frame(index=dimotu:dim(data)[2], sel=specnumber(as.data.frame(select(data, contains('__'))), MARGIN=2) >2)
+str(a)
+	
+dataI.1.rel.abun.no2 = select(data, 1:(dimotu-1), a$index[a$sel==T])
+dim(dataI.1.rel.abun.no2)
+names(dataI.1.rel.abun.no2)[1:44]
+	
+rm(data,a,dimotu)
+	
+# present
+data = dataI.1.present2
+dim(as.data.frame(select(data, -contains('__'))))
+dimotu=40
+	
+a = data.frame(index=dimotu:dim(data)[2], sel=specnumber(as.data.frame(select(data, contains('__'))), MARGIN=2) >2)
+str(a)
+	
+dataI.1.present.no2 = select(data, 1:(dimotu-1), a$index[a$sel==T])
+dim(dataI.1.present.no2)
+names(dataI.1.present.no2)[1:44]
+	
+rm(data,a,dimotu)
+	
+
+```
+
+
+```{r sjsdm-model-space-no-sjsdmcv (0/1)}
+# . sjSDM-version = ‘0.0.7.9000’
+# 0/1, >2
+all.data = dataI.1.present.no2
+otu.data = as.data.frame(select(all.data, contains('__')))
+	
+scale.env1 = all.data[ ,c('elevation.scale','canopy.ht.scale','min.T.scale','max.T.scale','precipitation.scale','metre.road.scale','metre.stream.scale','yrs.disturb.min.scale')]
+str(scale.env1)
+	
+XY = as.data.frame(select(all.data, starts_with('UTM_')) %>% scale)
+	
+par(mfrow=c(2,2))
+	
+hist(all.data$UTM_E)
+hist(all.data$UTM_N)
+	
+hist(XY$UTM_E)
+hist(XY$UTM_N)
+	
+lrs = c(0.3, 0.5)
+		
+model = sjSDM( Y = as.matrix(otu.data),
+		   learning_rate = 0.01, iter = 100L, step_size = 27L, link='probit', sampling = 100L, 
+		   env = linear(data=scale.env1, formula = ~ elevation.scale + canopy.ht.scale+ min.T.scale + max.T.scale + precipitation.scale + metre.road.scale + metre.stream.scale + yrs.disturb.min.scale, 
+		   lambda=lrs[1], alpha=lrs[2] ),
+		   biotic = bioticStruct(lambda=lrs[1], alpha=lrs[2], on_diag=F),
+		   spatial = linear(data=as.matrix(XY), ~0+UTM_E:UTM_N, 
+					   lambda = lrs[1], alpha = lrs[2])
+		   )
+	
+loss=unlist(model$logLik)
+history=model$history
+p = getSe(model)
+result = list(regulation=c(lambda=lrs[1], alpha=lrs[2]), beta = coef(model), sigma = getCov(model),loss=loss,history=model$history, p=p, logLik=logLik(model))
+		  
+#saveRDS(model, file = here('R','result','s-jSDM_model_s1_m1_present_no2_0.0.7.RDS') )
+rm(model)
+#saveRDS(result, file = here('R','result','s-jSDM_result_s1_m1_present_no2_0.0.7.RDS') )
+	
+model = readRDS(here('R','result','s-jSDM_model_s1_m1_present_no2_0.0.7.RDS'))
+result = readRDS(here('R','result','s-jSDM_result_s1_m1_present_no2_0.0.7.RDS') )
+str(result)
+	
+summary(model)
+	
+summary.p=summary(result$p)
+str(summary.p)
+	
+# .. model with space
+# . plot variation partition
+imp =importance(model)
+names(imp)
+	
+#pdf(here('R','graph','sjsdm_s1_m1_present_no2', 'vari.par_sjSDM_s1_m1_present_no2_0.0.7.pdf'), width=5, height=5)
+	
+plot(imp, cex=.8) #from s-jSDM package
+title(paste('variation partition, ',ncol(result$sigma), ' OTUs', sep=''))
+	
+dev.off()
+	
+# differentiate order & family
+impD = data.frame(OTU=imp$names, imp$res$total)
+str(impD)
+	
+impD$order = sapply(strsplit(sapply(str_split(impD$OTU, '__'), function(a) a[2]), '_'), function(a) a[2])
+table(impD$order)
+# Diptera (true flies), Coleoptera (beetles, weevils), Lepidoptera (butterflies, moths)
+impD$family = sapply(strsplit(sapply(str_split(impD$OTU, '__'), function(a) a[2]), '_'), function(a) a[3])
+sort(table(impD$family))
+# 24 not defined
+# Muscidae (house flies), Geometridae (geometer moths), Cecidomyiidae (gall midges), Ichneumonidae (ichneumon wasps)
+	
+a = as.data.frame(impD %>% count(order))
+a = subset(a, n>9)
+impD = inner_join(impD, a, by=c('order'='order'))
+str(impD)
+	
+impD$order = mgsub(impD$order, c('Diptera', 'Coleoptera', 'Lepidoptera', 'Hemiptera', 'Hymenoptera'), c('True fly', 'Beetle & Weevil', 'Butterfly & Moth', 'True bug', 'Wasp & Bee'))
+impD$family = mgsub(impD$family, c('Muscidae', 'Geometridae', 'Cecidomyiidae', 'Ichneumonidae'), c('House fly', 'Geometer moth', 'Gall midge', 'Ichneumon wasp'))
+str(impD)
+	
+a = as.data.frame(impD %>% count(family))
+a = subset(a, n>9)
+impD2 = inner_join(impD, a, by=c('family'='family'))
+impD2 = subset(impD2, family!='BOLD' & family != 'NA')
+str(impD2)
+	
+#pdf(here('R','graph','sjsdm_s1_m1_present_no2', 'vari.family_sjSDM_s1_m1_present_no2_0.0.7.pdf'), width=8, height=5)
+	
+titleText=paste('variation partition, ',nrow(data), ' OTUs', sep='')
+legendText = 'Family (occurrence>9)'
+source(here("R", "source", "sjsdm-analyse-functions.r"))
+	
+#summary(cut(impD$spatial, breaks = seq(0,1,length.out = 12)))
+#summary(cut(impD$biotic, breaks = seq(0,1,length.out = 12)))
+#summary(cut(impD$env, breaks = seq(0,1,length.out = 12)))
+	
+vp.plot(data=impD2, ind=6, textM=titleText, textL=legendText)
+	
+dev.off()
+	
+#pdf(here('R','graph','sjsdm_s1_m1_present_no2', 'vari.order_sjSDM_s1_m1_present_no2_0.0.7.pdf'), width=8, height=5)
+	
+titleText=paste('variation partition, ',nrow(data), ' OTUs', sep='')
+legendText = 'Order (occurrence>9)'
+vp.plot(data=impD2, ind=5, textM=titleText, textL=legendText)
+	
+dev.off()
+	
+
+an = anova(model,cv = F)
+#saveRDS(an, file = here('R','result','sjSDM_anova_s1_m1_present_no2_0.0.7.RDS'))
+an = readRDS(here('R','result','sjSDM_anova_s1_m1_present_no2_0.0.7.RDS'))
+print(an)
+	
+#pdf(here('R','graph','sjsdm_s1_m1_present_no2','anova_sjSDM_s1_m1_present_no2_0.0.7.pdf'), width=5, height=5)
+	
+plot(an)
+title(paste('analysis of variance, ',ncol(result$sigma), ' OTUs', sep=''))
+	
+dev.off()
+	
+```
+
+```{r sjsdm-model-onlyEO (0/1)}
+# ... session 1, Malaise I, 0/1(>2) ...
+# ... with multispectral environmental data
+# . sjSDM-version = ‘0.0.7.9000’
+all.data = dataI.1.present.no2
+otu.data = as.data.frame(dplyr::select(all.data, contains('__')))
+	
+scale.env1 = data.frame(select(all.data, starts_with('mean.'), starts_with('l_'), -contains('_all')))
+str(scale.env1)
+	
+XY = as.data.frame(select(all.data, starts_with('UTM_')) %>% scale)
+	
+lrs = c(.3,.5)
+	
+model = sjSDM( Y = as.matrix(otu.data),
+			   learning_rate = 0.01, iter = 100L, step_size = 27L, link='probit', sampling = 100L, 
+			   env = linear(data=scale.env1, formula = ~ mean.NDVI.scale + mean.EVI.scale + mean.green.scale + mean.bright.scale + mean.wet.scale + l_Cover_2m_4m.scale + l_Cover_2m_max.scale + l_Cover_4m_16m.scale + l_p25.scale + l_p95.scale + l_rumple.scale,
+			   lambda=lrs[1], alpha=lrs[2] ),
+			   biotic = bioticStruct(lambda=lrs[1], alpha=lrs[2], on_diag=F),
+			   spatial = linear(data=as.matrix(XY), ~0+UTM_E:UTM_N, 
+					   lambda = lrs[1], alpha = lrs[2])
+			   )
+	
+loss=unlist(model$logLik)
+history=model$history
+p = getSe(model)
+result = list(regulation=c(lambda=lrs[1], alpha=lrs[2]), beta = coef(model), sigma = getCov(model),loss=loss,history=model$history, p=p, logLik=logLik(model))
+	
+saveRDS(model, file = here('R','result','s-jSDM_model_s1_m1_present_no2_eo_0.0.7.RDS') )
+#rm(model)
+saveRDS(result, file = here('R','result','s-jSDM_result_s1_m1_present_no2_eo_0.0.7.RDS') )
+	
+model = readRDS( here('R','result','s-jSDM_model_s1_m1_present_no2_eo_0.0.7.RDS') )
+result = readRDS( here('R','result','s-jSDM_result_s1_m1_present_no2_eo_0.0.7.RDS'))
+	
+
+# . plot variation partition
+#pdf(here('R','graph','sjsdm_s1_m1_present_no2', 'vari.par_sjSDM_s1_m1_present_no2_eo_0.0.7.pdf'), width=5, height=5)
+	
+imp =importance(model)
+names(imp)
+# differentiate order & family
+impD = data.frame(OTU=imp$names, imp$res$total)
+str(impD)
+	
+impD$order = sapply(strsplit(sapply(str_split(impD$OTU, '__'), function(a) a[2]), '_'), function(a) a[2])
+table(impD$order)
+	
+impD$family = sapply(strsplit(sapply(str_split(impD$OTU, '__'), function(a) a[2]), '_'), function(a) a[3])
+sort(table(impD$family))
+	
+a = as.data.frame(impD %>% count(order))
+a = subset(a, n>9)
+impD = inner_join(impD, a, by=c('order'='order'))
+str(impD)
+	
+impD$order = mgsub(impD$order, c('Diptera', 'Coleoptera', 'Lepidoptera', 'Hemiptera', 'Hymenoptera'), c('True fly', 'Beetle & Weevil', 'Butterfly & Moth', 'True bug', 'Wasp & Bee'))
+impD$family = mgsub(impD$family, c('Muscidae', 'Geometridae', 'Cecidomyiidae', 'Ichneumonidae'), c('House fly', 'Geometer moth', 'Gall midge', 'Ichneumon wasp'))
+str(impD)
+	
+a = as.data.frame(impD %>% count(family))
+a = subset(a, n>9)
+impD2 = inner_join(impD, a, by=c('family'='family'))
+impD2 = subset(impD2, family!='BOLD' & family != 'NA')
+str(impD2)
+	
+#pdf(here('R','graph','sjsdm_s1_m1_present_no2', 'vari.family_sjSDM_s1_m1_present_no2_eo_0.0.7.pdf'), width=8, height=5)
+	
+titleText=paste('variation partition, ',nrow(data), ' OTUs', sep='')
+legendText = 'Family (occurrence>9)'
+vp.plot(data=impD2, ind=6, textM=titleText, textL=legendText)
+	
+dev.off()
+	
+#pdf(here('R','graph','sjsdm_s1_m1_present_no2', 'vari.order_sjSDM_s1_m1_present_no2_eo_0.0.7.pdf'), width=8, height=5)
+	
+titleText=paste('variation partition, ',nrow(data), ' OTUs', sep='')
+legendText = 'Order (occurrence>9)'
+vp.plot(data=impD2, ind=5, textM=titleText, textL=legendText)
+	
+dev.off()
+	
+
+plot(imp, cex=.8) #from s-jSDM package
+title(paste('variation partition, ',ncol(result$sigma), ' OTUs', sep=''))
+	
+dev.off()
+	
+
+# anova plot
+an = anova(model,cv = F)
+#saveRDS(an, file = here('R','result','anova_sjSDM_s1_m1_present_no2_eo_0.0.7.9000.RDS'))
+an = readRDS(here('R','result','anova_sjSDM_s1_m1_present_no2_eo_0.0.7.9000.RDS'))
+	
+#pdf(here('R','graph','sjsdm_s1_m1_present_no2','anova_sjSDM_s1_m1_present_no2_eo_0.0.7.pdf'), width=5, height=5)
+	
+plot(an)
+title(paste('analysis of variance, ',ncol(result$sigma), ' OTUs', sep=''))
+	
+dev.off()
+	
+
+```
+
+```{r sjsdm-model-both (0/1)}
+# ... session 1, Malaise I, 0/1(>2) ...
+# ... with both
+# . sjSDM-version = ‘0.0.7.9000’
+
+all.data = dataI.1.present.no2
+otu.data = as.data.frame(dplyr::select(all.data, contains('__')))
+	
+scale.env1 = data.frame(select(all.data, ends_with('.scale'), -contains('_all')))
+str(scale.env1)
+	
+XY = as.data.frame(select(all.data, starts_with('UTM_')) %>% scale)
+	
+lrs = c(.3,.5)
+	
+model = sjSDM( Y = as.matrix(otu.data),
+			   learning_rate = 0.01, iter = 100L, step_size = 27L, link='probit', sampling = 100L, 
+			   env = linear(data=scale.env1, formula = ~ elevation.scale + canopy.ht.scale+ min.T.scale + max.T.scale + precipitation.scale + metre.road.scale + metre.stream.scale + yrs.disturb.min.scale + mean.NDVI.scale + mean.EVI.scale + mean.green.scale + mean.bright.scale + mean.wet.scale + l_Cover_2m_4m.scale + l_Cover_2m_max.scale + l_Cover_4m_16m.scale + l_p25.scale + l_p95.scale + l_rumple.scale,
+			   lambda=lrs[1], alpha=lrs[2] ),
+			   biotic = bioticStruct(lambda=lrs[1], alpha=lrs[2], on_diag=F),
+			   spatial = linear(data=as.matrix(XY), ~0+UTM_E:UTM_N, 
+					   lambda = lrs[1], alpha = lrs[2])
+			   )
+	
+loss=unlist(model$logLik)
+history=model$history
+p = getSe(model)
+result = list(regulation=c(lambda=lrs[1], alpha=lrs[2]), beta = coef(model), sigma = getCov(model),loss=loss,history=model$history, p=p, logLik=logLik(model))
+	
+saveRDS(model, file = here('R','result','s-jSDM_model_s1_m1_present_no2_eoG_0.0.7.RDS') )
+rm(model)
+saveRDS(result, file = here('R','result','s-jSDM_result_s1_m1_present_no2_eoG_0.0.7.RDS') )
+
+model3 = readRDS( here('R','result','s-jSDM_model_s1_m1_present_no2_eoG_0.0.7.RDS') )
+result = readRDS( here('R','result','s-jSDM_result_s1_m1_present_no2_eoG_0.0.7.RDS'))
+	
+
+# . plot variation partition
+#pdf(here('R','graph','sjsdm_s1_m1_present_no2', 'vari.par_sjSDM_s1_m1_present_no2_eoG_0.0.7.pdf'), width=5, height=5)
+	
+imp =importance(model3)
+names(imp)
+# differentiate order & family
+impD = data.frame(OTU=imp$names, imp$res$total)
+str(impD)
+	
+summary(cut(impD$spatial, breaks = seq(0,1,length.out = 12)))
+	
+impD$order = sapply(strsplit(sapply(str_split(impD$OTU, '__'), function(a) a[2]), '_'), function(a) a[2])
+table(impD$order)
+	
+impD$family = sapply(strsplit(sapply(str_split(impD$OTU, '__'), function(a) a[2]), '_'), function(a) a[3])
+sort(table(impD$family))
+	
+a = as.data.frame(impD %>% count(order))
+a = subset(a, n>9)
+impD = inner_join(impD, a, by=c('order'='order'))
+str(impD)
+	
+impD$order = mgsub(impD$order, c('Diptera', 'Coleoptera', 'Lepidoptera', 'Hemiptera', 'Hymenoptera'), c('True fly', 'Beetle & Weevil', 'Butterfly & Moth', 'True bug', 'Wasp & Bee'))
+impD$family = mgsub(impD$family, c('Muscidae', 'Geometridae', 'Cecidomyiidae', 'Ichneumonidae'), c('House fly', 'Geometer moth', 'Gall midge', 'Ichneumon wasp'))
+str(impD)
+	
+a = as.data.frame(impD %>% count(family))
+a = subset(a, n>9)
+impD2 = inner_join(impD, a, by=c('family'='family'))
+impD2 = subset(impD2, family!='BOLD' & family != 'NA')
+str(impD2)
+	
+#pdf(here('R','graph','sjsdm_s1_m1_present_no2', 'vari.family_sjSDM_s1_m1_present_no2_eoG_0.0.7.pdf'), width=8, height=5)
+	
+titleText=paste('variation partition, ',nrow(data), ' OTUs', sep='')
+legendText = 'Family (occurrence>9)'
+vp.plot(data=impD2, ind=6, textM=titleText, textL=legendText)
+	
+dev.off()
+	
+#pdf(here('R','graph','sjsdm_s1_m1_present_no2', 'vari.order_sjSDM_s1_m1_present_no2_eoG_0.0.7.pdf'), width=8, height=5)
+	
+titleText=paste('variation partition, ',nrow(data), ' OTUs', sep='')
+legendText = 'Order (occurrence>9)'
+vp.plot(data=impD2, ind=5, textM=titleText, textL=legendText)
+	
+dev.off()
+	
+
+plot(imp, cex=.8) #from s-jSDM package
+title(paste('variation partition, ',ncol(result$sigma), ' OTUs', sep=''))
+	
+dev.off()
+	
+
+
+
+
+
+an = anova(model3, cv = F)
+#saveRDS(an, file = here('R','result','anova_sjSDM_s1_m1_present_no2_eoG_0.0.7.9000.RDS'))
+	
+```
+
+```{r sjsdm-analysis-correlation-space-no-sjsdmcv (0/1)}
+# . sjSDM-version = ‘0.0.4.9000’
+# 0/1, >2
+scale.env1 = all.data[ ,c('elevation.scale','canopy.ht.scale','min.T.scale','max.T.scale','precipitation.scale','metre.road.scale','metre.stream.scale','yrs.disturb.min.scale')]
+str(scale.env1)
+	
+# . load result
+model = readRDS(here('R','result','s-jSDM_model_s1_m1_present_no2_0.0.7.RDS'))
+result = readRDS(here('R','result','s-jSDM_result_s1_m1_present_no2_0.0.7.RDS') )
+	
+summary(result)
+plot(result$history)
+	
+result$regulation
+	
+# ... correlation plot ...
+dim(result$sigma)# cov <- result$sigma 
+# [1] 437 437
+otu.table = as.data.frame(dplyr::select(all.data, contains('__')))
+str(otu.table[,1:5])
+	
+co.env.spp <- cov2cor(result$sigma)
+rownames(co.env.spp) <- 1:dim(result$sigma)[1]   #spp.names
+colnames(co.env.spp) <- 1:dim(result$sigma)[1]   #spp.names
+	
+range(co.env.spp)
+	
+cut.t = cut(co.env.spp, breaks = seq(-1,1,length.out = 12))
+summary(cut.t)
+	
+rm(cut.t)
+	
+# ... species correlation plot
+pdf(here('R','graph','sjsdm_s1_m1_present_no2', paste('species_correlation_', 'alpha', result$regulation[2], '_lambda', result$regulation[1],'.pdf', sep='')), height=12, width=12)
+	
+ggcorrplot(co.env.spp, hc.order = T, outline.color = "white", insig = "blank",sig.level = 0.05, lab_size = 1,show.legend=T, title=paste('sjSDM version: ',packageVersion('sjSDM'),', kelpie20200214, alpha: ', result$regulation[2],', lambda: ', result$regulation[1],sep=''))
+	
+dev.off()
+	
+
+# ..... Polygon Drawing .....
+# . species association .
+otu.tbl = as.data.frame(dplyr::select(all.data, contains('__')))
+number=10
+	
+sigma = re_scale(result$sigma)[order(apply(otu.tbl, 2, sum)), order(apply(otu.tbl, 2, sum))]
+	
+#pdf(here('R','graph','sjsdm_s1_m1_present_no2', paste('species_covariance_circular_', 'alpha', result$regulation[2],'_lambda', result$regulation[1],'.pdf', sep='')), height=8, width=8)
+	
+version.text = paste('sjSDM version: ',packageVersion('sjSDM'),', kelpie20200214, alpha: ', result$regulation[2],', lambda: ',result$regulation[1] ,sep='')
+otu.text = "sum of presence"
+	
+source(here("R", "source", "sjsdm-analyse-functions.r"))
+	
+cov.circle(version.text=version.text, otu.text=otu.text, sigma=sigma, otu.tbl=otu.tbl, result=result)
+	
+#dev.off()
+	
+
+# . graph of polygon with environmental factors
+#c('elevation.scale','canopy.ht.scale','min.T.scale','max.T.scale','precipitation.scale','metre.road.scale','metre.stream.scale','yrs.disturb.min.scale')]
+beta = as.matrix(data.frame(result$beta$env, result$beta$spatial)[,2:10])
+effects = apply(beta, 1, function(o) sum(abs(o)))
+str(effects)
+	
+n = ncol(result$sigma)# number of otus
+max_effects= apply(beta ,1, function(e) which.max(abs(e)))
+	
+effect_comb = data.frame(cbind(max_effects,sapply(1:n, function(i) beta[i,max_effects[i]] )))
+str(effect_comb)
+# variables index & value which has biggest coefficient
+	
+version.text = paste('sjSDM: ',packageVersion('sjSDM'),', kelpie20200214, alpha: ', result$regulation[2],', lambda: ', result$regulation[1], sep='')
+otu.text = "presence spp."
+	
+#c('elevation.scale','canopy.ht.scale','min.T.scale','max.T.scale','precipitation.scale','metre.road.scale','metre.stream.scale','yrs.disturb.min.scale')]
+evnames =c('ele', 'canopy','min.T', 'max.T', 'preci', 'road','stream','disturb','space')
+	
+# . plot of polygon with max envir factor
+#pdf(here('R','graph','sjsdm_s1_m1_present_no2','max_environ_spp_cov.pdf'), height=8, width=8)
+	
+source(here("R", "source", "sjsdm-analyse-functions.r"))
+	
+cov.circle.env(version.text=version.text, evnames=evnames, otu.text=otu.text,result=result, effect_comb=effect_comb, otu.tbl=otu.tbl)
+	
+#dev.off()
+	
+```
+
+```{r sjsdm-analysis-barplot-space-no-sjsdmcv (0/1)}
+# continue with previous chalk
+str(effect_comb)
+	
+str(otu.tbl)
+a = data.frame(sum=colSums(otu.tbl), otu=names(otu.tbl))
+a = a[order(a$sum, decreasing=T),]
+#a1 = a[c(1:10, (nrow(a)-9):nrow(a)), ]  
+#a1$rank=c(1:10,-10:-1) 
+a1 = a[c(1:20), ]
+a1$rank=c(1:20) 
+a1$otu = as.character(a1$otu)
+str(a1)
+	
+effect_comb$otu=names(otu.tbl)
+effect_ind = dplyr::inner_join(effect_comb, a1, by=c('otu'='otu'))
+effect_ind$name = sapply(strsplit(sapply(str_split(effect_ind$otu, '__'), function(a) a[2]), '_'), function(a) paste(a[2],'_',a[3],'_',a[4],'_',a[5],'_',a[6], sep=''))
+table(effect_ind$name)
+	
+beta1 = data.frame(result$beta$env, result$beta$spatial)[,2:10]
+names(beta1) = evnames
+beta1$otu = names(otu.tbl)
+effect_ind = inner_join(effect_ind, beta1, by=c('otu'='otu'))
+rm(beta1)
+	
+effect_ind$max_effects = as.character(effect_ind$max_effects)
+a=unique(effect_ind$max_effects)
+for (i in 1:length(a)) {effect_ind$max_effects = replace(effect_ind$max_effects, which(effect_ind$max_effects==a[i]), evnames[as.numeric(a[i])])}
+str(effect_ind)
+	
+effect_ind = as.data.frame(pivot_longer(effect_ind, evnames, names_to='factors',values_to='beta'))
+effect_ind$factors = factor(effect_ind$factors)
+effect_ind$max = NA
+effect_ind$max[effect_ind$max_effects==effect_ind$factors] = 'max'
+	
+effect_ind = effect_ind[order(effect_ind$rank),]
+str(effect_ind)
+	
+col = sample(viridis::viridis(length(unique(effect_ind$max_effects))))
+	
+#pdf(here('R','graph','sjsdm_s1_m1_present_no2','max_envir_max20spp_beta.pdf'), height=8, width=15)
+	
+source(here("R", "source", "sjsdm-analyse-functions.r"))
+	
+bar.coef(effect_ind=effect_ind)
+	
+dev.off()
+	
+```
+
+```{r sjsdm-analysis-correlation-onlyEO-NOsjsdmcv (0/1)}
+scale.env1 = data.frame(select(all.data, starts_with('mean.'), starts_with('l_'), -contains('_all')))
+str(scale.env1)
+	
+# . load result
+model = readRDS(here('R','result','s-jSDM_model_s1_m1_present_no2_eo_0.0.7.RDS'))
+result = readRDS( here('R','result','s-jSDM_result_s1_m1_present_no2_eo_0.0.7.RDS'))
+str(result)
+	
+summary(result)
+plot(result$history)
+	
+result$regulation
+	
+# ... correlation plot ...
+dim(result$sigma)# cov <- result$sigma 
+# [1] 437 437
+otu.table = as.data.frame(dplyr::select(all.data, contains('__')))
+str(otu.table[,1:5])
+	
+co.env.spp <- cov2cor(result$sigma)
+rownames(co.env.spp) <- 1:dim(result$sigma)[1]   #spp.names
+colnames(co.env.spp) <- 1:dim(result$sigma)[1]   #spp.names
+	
+range(co.env.spp)
+	
+cut.t = cut(co.env.spp, breaks = seq(-1,1,length.out = 12))
+summary(cut.t)
+rm(cut.t)
+	
+# ... species correlation plot
+#pdf(here('R','graph','sjsdm_s1_m1_present_no2', paste('species_correlation_no2_eo_', 'alpha', result$regulation[2], '_lambda', result$regulation[1],'.pdf', sep='')), height=12, width=12)
+	
+ggcorrplot(co.env.spp, hc.order = T, outline.color = "white", insig = "blank",sig.level = 0.05, lab_size = 1,show.legend=T, title=paste('sjSDM version: ',packageVersion('sjSDM'),', kelpie20200214, alpha: ', result$regulation[2],', lambda: ', result$regulation[1],sep=''))
+	
+dev.off()
+	
+
+# ..... Polygon Drawing .....
+# . species association .
+otu.tbl = as.data.frame(dplyr::select(all.data, contains('__')))
+number=10
+	
+sigma = re_scale(result$sigma)[order(apply(otu.tbl, 2, sum)), order(apply(otu.tbl, 2, sum))]
+	
+#pdf(here('R','graph','sjsdm_s1_m1_present_no2', paste('species_covariance_circular_no2_eo_', 'alpha', result$regulation[2],'_lambda', result$regulation[1],'.pdf', sep='')), height=8, width=8)
+	
+version.text = paste('sjSDM version: ',packageVersion('sjSDM'),', kelpie20200214, alpha: ', result$regulation[2],', lambda: ',result$regulation[1] ,sep='')
+otu.text = "sum of presence"
+	
+source(here("R", "source", "sjsdm-analyse-functions.r"))
+	
+cov.circle(version.text=version.text, otu.text=otu.text, sigma=sigma, otu.tbl=otu.tbl, result=result)
+	
+dev.off()
+	
+
+# . graph of polygon with environmental factors
+# mean.NDVI.scale + mean.EVI.scale + mean.green.scale + mean.bright.scale + mean.wet.scale + l_Cover_2m_4m.scale + l_Cover_2m_max.scale + l_Cover_4m_16m.scale + l_p25.scale + l_p95.scale + l_rumple.scale
+str(result$beta$env)
+beta = as.matrix(data.frame(result$beta$env, result$beta$spatial)[,2:13])
+effects = apply(beta, 1, function(o) sum(abs(o)))
+str(effects)
+	
+n = ncol(result$sigma)# number of otus
+max_effects= apply(beta ,1, function(e) which.max(abs(e)))
+	
+effect_comb = data.frame(cbind(max_effects,sapply(1:n, function(i) beta[i,max_effects[i]] )))
+str(effect_comb)
+# variables index & value which has biggest coefficient
+	
+version.text = paste('sjSDM: ',packageVersion('sjSDM'),', kelpie20200214, alpha: ', result$regulation[2],', lambda: ', result$regulation[1], sep='')
+otu.text = "presence spp."
+	
+# 
+evnames = c('NDVI', 'EVI','green', 'brightness', 'wetness', '2m-4m','2m_max','4m-16m','p25','p95','rumple','space')
+	
+# . plot of polygon with max envir factor
+#pdf(here('R','graph','sjsdm_s1_m1_present_no2','max_environ_spp_cov_no2_eo.pdf'), height=8, width=8)
+	
+source(here("R", "source", "sjsdm-analyse-functions.r"))
+	
+cov.circle.env(version.text=version.text, evnames=evnames, otu.text=otu.text,result=result, effect_comb=effect_comb, otu.tbl=otu.tbl)
+	
+dev.off()
+	
+```
+
+```{r sjsdm-analysis-barplot-EO-NOsjsdmcv (0/1)}
+# continue with previous chalk
+str(effect_comb)
+	
+str(otu.tbl)
+a = data.frame(sum=colSums(otu.tbl), otu=names(otu.tbl))
+a = a[order(a$sum, decreasing=T),]
+#a1 = a[c(1:10, (nrow(a)-9):nrow(a)), ]  
+#a1$rank=c(1:10,-10:-1) 
+a1 = a[c(1:20), ]
+a1$rank=c(1:20) 
+a1$otu = as.character(a1$otu)
+str(a1)
+	
+effect_comb$otu=names(otu.tbl)
+effect_ind = dplyr::inner_join(effect_comb, a1, by=c('otu'='otu'))
+effect_ind$name = sapply(strsplit(sapply(str_split(effect_ind$otu, '__'), function(a) a[2]), '_'), function(a) paste(a[2],'_',a[3],'_',a[4],'_',a[5],'_',a[6], sep=''))
+table(effect_ind$name)
+	
+beta1 = data.frame(result$beta$env, result$beta$spatial)[,2:13]
+names(beta1) = evnames
+beta1$otu = names(otu.tbl)
+effect_ind = inner_join(effect_ind, beta1, by=c('otu'='otu'))
+rm(beta1)
+	
+effect_ind$max_effects = as.character(effect_ind$max_effects)
+a=unique(effect_ind$max_effects)
+for (i in 1:length(a)) {effect_ind$max_effects = replace(effect_ind$max_effects, which(effect_ind$max_effects==a[i]), evnames[as.numeric(a[i])])}
+str(effect_ind)
+	
+effect_ind = as.data.frame(pivot_longer(effect_ind, evnames, names_to='factors',values_to='beta'))
+effect_ind$factors = factor(effect_ind$factors)
+effect_ind$max = NA
+effect_ind$max[effect_ind$max_effects==effect_ind$factors] = 'max'
+	
+effect_ind = effect_ind[order(effect_ind$rank),]
+str(effect_ind)
+	
+col = sample(viridis::viridis(length(unique(effect_ind$max_effects))))
+	
+#pdf(here('R','graph','sjsdm_s1_m1_present_no2','max_envir_eo_max20spp_beta.pdf'), height=8, width=15)
+	
+source(here("R", "source", "sjsdm-analyse-functions.r"))
+	
+bar.coef(effect_ind, .3)
+	
+dev.off()
+	
+```
+
+```{r sjsdm-analysis-correlation-both-NOsjsdmcv (0/1)}
+scale.env1 = data.frame(select(all.data, ends_with('.scale'), -contains('_all')))
+str(scale.env1)
+	
+# . load result
+model = readRDS(here('R','result','s-jSDM_model_s1_m1_present_no2_eoG_0.0.7.RDS'))
+result = readRDS( here('R','result','s-jSDM_result_s1_m1_present_no2_eoG_0.0.7.RDS'))
+str(result)
+	
+summary(result)
+plot(result$history)
+	
+result$regulation
+	
+# ... correlation plot ...
+dim(result$sigma)# cov <- result$sigma 
+# [1] 437 437
+otu.table = as.data.frame(dplyr::select(all.data, contains('__')))
+str(otu.table[,1:5])
+	
+co.env.spp <- cov2cor(result$sigma)
+rownames(co.env.spp) <- 1:dim(result$sigma)[1]   #spp.names
+colnames(co.env.spp) <- 1:dim(result$sigma)[1]   #spp.names
+	
+range(co.env.spp)
+	
+cut.t = cut(co.env.spp, breaks = seq(-1,1,length.out = 12))
+summary(cut.t)
+rm(cut.t)
+	
+# ... species correlation plot
+#pdf(here('R','graph','sjsdm_s1_m1_present_no2', paste('species_correlation_no2_eoG_', 'alpha', result$regulation[2], '_lambda', result$regulation[1],'.pdf', sep='')), height=12, width=12)
+	
+ggcorrplot(co.env.spp, hc.order = T, outline.color = "white", insig = "blank",sig.level = 0.05, lab_size = 1,show.legend=T, title=paste('sjSDM version: ',packageVersion('sjSDM'),', kelpie20200214, alpha: ', result$regulation[2],', lambda: ', result$regulation[1],sep=''))
+	
+dev.off()
+	
+
+# ..... Polygon Drawing .....
+# . species association .
+otu.tbl = as.data.frame(dplyr::select(all.data, contains('__')))
+number=10
+	
+sigma = re_scale(result$sigma)[order(apply(otu.tbl, 2, sum)), order(apply(otu.tbl, 2, sum))]
+	
+#pdf(here('R','graph','sjsdm_s1_m1_present_no2', paste('species_covariance_circular_no2_eoG_', 'alpha', result$regulation[2],'_lambda', result$regulation[1],'.pdf', sep='')), height=8, width=8)
+	
+version.text = paste('sjSDM version: ',packageVersion('sjSDM'),', kelpie20200214, alpha: ', result$regulation[2],', lambda: ',result$regulation[1] ,sep='')
+otu.text = "sum of presence"
+	
+source(here("R", "source", "sjsdm-analyse-functions.r"))
+	
+cov.circle(version.text=version.text, otu.text=otu.text, sigma=sigma, otu.tbl=otu.tbl, result=result)
+	
+#dev.off()
+	
+
+# . graph of polygon with environmental factors
+# elevation.scale + canopy.ht.scale+ min.T.scale + max.T.scale + precipitation.scale + metre.road.scale + metre.stream.scale + yrs.disturb.min.scale + mean.NDVI.scale + mean.EVI.scale + mean.green.scale + mean.bright.scale + mean.wet.scale + l_Cover_2m_4m.scale + l_Cover_2m_max.scale + l_Cover_4m_16m.scale + l_p25.scale + l_p95.scale + l_rumple.scale
+str(result$beta$env)
+	
+beta = as.matrix(data.frame(result$beta$env, result$beta$spatial)[,2:21])
+effects = apply(beta, 1, function(o) sum(abs(o)))
+str(effects)
+	
+n = ncol(result$sigma)# number of otus
+max_effects= apply(beta ,1, function(e) which.max(abs(e)))
+	
+effect_comb = data.frame(cbind(max_effects,sapply(1:n, function(i) beta[i,max_effects[i]] )))
+str(effect_comb)
+# variables index & value which has biggest coefficient
+	
+version.text = paste('sjSDM: ',packageVersion('sjSDM'),', kelpie20200214, alpha: ', result$regulation[2],', lambda: ', result$regulation[1], sep='')
+otu.text = "presence spp."
+	
+# 
+evnames = c('ele', 'canopy','min.T', 'max.T', 'preci', 'road','stream','disturb','NDVI', 'EVI','green', 'brightness', 'wetness', '2m-4m','2m_max','4m-16m','p25','p95','rumple','space')
+	
+# . plot of polygon with max envir factor
+#pdf(here('R','graph','sjsdm_s1_m1_present_no2','max_environ_spp_cov_no2_eoG.pdf'), height=8, width=8)
+	
+source(here("R", "source", "sjsdm-analyse-functions.r"))
+	
+cov.circle.env(version.text=version.text, evnames=evnames, otu.text=otu.text,result=result, effect_comb=effect_comb, otu.tbl=otu.tbl)
+	
+dev.off()
+	
+```
+
+```{r sjsdm-analysis-barplot-eoG-NOsjsdmcv (0/1)}
+# continue with previous chalk
+str(effect_comb)
+	
+str(otu.tbl)
+a = data.frame(sum=colSums(otu.tbl), otu=names(otu.tbl))
+a = a[order(a$sum, decreasing=T),]
+#a1 = a[c(1:10, (nrow(a)-9):nrow(a)), ]  
+#a1$rank=c(1:10,-10:-1) 
+a1 = a[c(1:20), ]
+a1$rank=c(1:20) 
+a1$otu = as.character(a1$otu)
+str(a1)
+	
+effect_comb$otu=names(otu.tbl)
+effect_ind = dplyr::inner_join(effect_comb, a1, by=c('otu'='otu'))
+effect_ind$name = sapply(strsplit(sapply(str_split(effect_ind$otu, '__'), function(a) a[2]), '_'), function(a) paste(a[2],'_',a[3],'_',a[4],'_',a[5],'_',a[6], sep=''))
+table(effect_ind$name)
+	
+# change name 2 'Diptera_Rhagionidae_NA_sp_BOLD'
+effect_ind$name[1] = paste(effect_ind$name[1],'_1',sep='')
+	
+beta1 = data.frame(result$beta$env, result$beta$spatial)[,2:21]
+names(beta1) = evnames
+beta1$otu = names(otu.tbl)
+effect_ind = inner_join(effect_ind, beta1, by=c('otu'='otu'))
+rm(beta1)
+	
+effect_ind$max_effects = as.character(effect_ind$max_effects)
+a=unique(effect_ind$max_effects)
+for (i in 1:length(a)) {effect_ind$max_effects = replace(effect_ind$max_effects, which(effect_ind$max_effects==a[i]), evnames[as.numeric(a[i])])}
+str(effect_ind)
+	
+effect_ind = as.data.frame(pivot_longer(effect_ind, evnames, names_to='factors',values_to='beta'))
+effect_ind$factors = factor(effect_ind$factors)
+effect_ind$max = NA
+effect_ind$max[effect_ind$max_effects==effect_ind$factors] = 'max'
+	
+effect_ind = effect_ind[order(effect_ind$rank),]
+str(effect_ind)
+	
+col = sample(viridis::viridis(length(unique(effect_ind$max_effects))))
+	
+#pdf(here('R','graph','sjsdm_s1_m1_present_no2','max_envir_eoG_max20spp_beta.pdf'), height=10, width=15)
+	
+source(here("R", "source", "sjsdm-analyse-functions.r"))
+	
+bar.coef(effect_ind, .93)
+	
+dev.off()
+	
+```
+
