@@ -53,7 +53,7 @@ str(scale.env1)
 # species data
 otu.data = as.data.frame(select(dataI.1.spike.present2, contains('__')))
 # remove species that occur only once
-minocc <- 20 # set to high number (e.g. 20) for testing
+minocc <- 5 # set to high number (e.g. 20) for testing
 otu.data <- otu.data[ , vegan::specnumber(otu.data, MARGIN = 2) >= minocc] # with ">1" the model finds no biotic covariances (ternary plot )
 str(otu.data)
 otu.data %>% select(which(map_lgl(., ~sum(.x) < minocc))) # should have 0 columns
@@ -66,7 +66,22 @@ XY = as.data.frame(select(dataI.1.spike.present2, starts_with('UTM_')) %>% scale
 hist(XY$UTM_E)
 hist(XY$UTM_N)
 plot(XY$UTM_E, XY$UTM_N)
+```
 
+
+```{r save files, eval=FALSE}
+# env data:  scale.env1
+write_csv(scale.env1, here("formatted_data", "scale.env1.csv"))
+
+# species data:  otu.data
+write_csv(otu.data, here("formatted_data", "otu.data.csv"))
+
+# XY data: XY
+write_csv(XY, here("formatted_data", "XY.csv"))
+```
+
+
+```{sjSDM_cv}
 tune_results = sjSDM_cv(
 	Y = as.matrix(otu.data),
 	env = linear(as.matrix(scale.env1)),
@@ -89,7 +104,10 @@ best = plot(tune_results, perf = "logLik") # perf = "AUC"
 # pdf(file="best.pdf")
 # plot(tune_results, perf = "logLik")
 # dev.off()
+```
 
+
+```{sjSDM}
 model <-  sjSDM(
 	Y = as.matrix(otu.data),
 	iter = 100L, 
