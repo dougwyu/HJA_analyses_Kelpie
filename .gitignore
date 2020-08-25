@@ -21,3 +21,4 @@ sjSDM/R-git/R/result/s-jSDM_tune_best_s2_m1_spike.relAbun.RDS
 HJA_scripts/08_reference_sequences_datasets/~$biodiversity_site_info_vars_descriptions_20200214.xlsx
 sjSDM/R-git/adagpu/results_20200823_cv5/sjsdm.err
 sjSDM/R-git/adagpu/results_20200823_cv5/sjsdm.out
+sjSDM/R-git/adagpu/results_20200823_44OTU_loocv/sjsdm_tune_results_HJA_20200823.RDS
