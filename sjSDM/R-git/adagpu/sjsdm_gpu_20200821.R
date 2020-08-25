@@ -16,8 +16,18 @@ library(sjSDM)
 library(here)
 library(tidyverse)
 
+# read in data
+# env data:  scale.env1
+scale.env1 <- read_csv(here("data", "scale.env1.csv"))
+
+# species data:  otu.data
+otu.data <- read_csv(here("data", "otu.data.csv"))
+
+# XY data: XY
+XY <- read_csv(here("data", "XY.csv"))
+
 # # read in cross-validation output from sjsdm_cv_gpu_20200821.R
-resultsfolder <- "results_20200823_275OTU_loocv"
+resultsfolder <- "results_20200824_275OTU_loocv"
 tune_results <- readRDS(here(resultsfolder, 
                              "sjsdm_tune_results_HJA_20200823.RDS"))
 best = plot(tune_results, perf = "logLik")
@@ -33,7 +43,7 @@ model <-  sjSDM(
   Y = as.matrix(otu.data),
   iter = 150L,
   learning_rate = 0.003, # 0.01 default, 0.003 recommended for high species number
-  link = "probit", # for both p/a and quasiprob data
+  family = stats::binomial("probit"), # for both p/a and quasiprob data, default
   env = linear(data = as.matrix(scale.env1),
                formula = ~.,
                # formula = ~ elevation.scale + canopy.ht.scale +
@@ -75,9 +85,9 @@ result = list(beta = coef(model),
               )
 
 saveRDS(model, here(resultsfolder, "sjsdm_model_HJA_202080824.RDS"))
-saveRDS(result, here(resultsfolder, "sjsdm_model_HJA_202080824.RDS"))
-# result <- readRDS(here(resultsfolder, "sjsdm_model_HJA_202080824.RDS"))
+saveRDS(result, here(resultsfolder, "sjsdm_result_HJA_202080824.RDS"))
 # model <- readRDS(here(resultsfolder, "sjsdm_model_HJA_202080824.RDS"))
+# result <- readRDS(here(resultsfolder, "sjsdm_result_HJA_202080824.RDS"))
 
 # #VP for test
 imp <- importance(model)
@@ -90,7 +100,7 @@ dev.off()
 
 an <- anova(model, cv = FALSE)
 # # print(an)
-pdf(file = here(resultsfolder, "importance.pdf"))
+pdf(file = here(resultsfolder, "anova.pdf"))
 plot(an, percent = FALSE)
 dev.off()
 
