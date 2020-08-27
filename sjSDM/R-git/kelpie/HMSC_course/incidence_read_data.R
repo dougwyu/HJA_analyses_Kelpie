@@ -13,7 +13,7 @@ is.P = F
 
 # READING IN SXY: study design (S) and/or covariates (X) and species data (Y) 
 
-SXY = read.csv('quasiP_lidar_mulspec_5_sample_by_species_corr_table_F2308_minimap2_20200221_kelpie20200723.csv', header=T, sep=',', stringsAsFactors = F, na.strings='NA') 
+SXY = read.csv('incidence_lidar_mulspec_5_sample_by_species_corr_table_F2308_minimap2_20200221_kelpie20200214.csv', header=T, sep=',', stringsAsFactors = F, na.strings='NA') 
 	
 # Modify the next three lines to split your SXY file to components that relate to
 
@@ -33,9 +33,9 @@ S$Route_y = S$UTM_N
 S$UTM_N = NULL
 S$UTM_E = NULL
 
-X=SXY[,c(4:12,16:55)]
+X=SXY[,c(4:12,16:53)]
 
-Y=SXY[,56:573]
+Y=SXY[,54:573]
 
 
 
