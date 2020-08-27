@@ -1,0 +1,43 @@
+here() starts at /gpfs/home/b042/sjSDM
+── Attaching packages ─────────────────────────────────────── tidyverse 1.3.0 ──
+✔ ggplot2 3.3.2     ✔ purrr   0.3.4
+✔ tibble  3.0.1     ✔ dplyr   1.0.0
+✔ tidyr   1.1.0     ✔ stringr 1.4.0
+✔ readr   1.3.1     ✔ forcats 0.5.0
+── Conflicts ────────────────────────────────────────── tidyverse_conflicts() ──
+✖ dplyr::filter() masks stats::filter()
+✖ dplyr::lag()    masks stats::lag()
+Parsed with column specification:
+cols(
+  elevation.scale = col_double(),
+  canopy.ht.scale = col_double(),
+  min.T.scale = col_double(),
+  max.T.scale = col_double(),
+  precipitation.scale = col_double(),
+  metre.road.scale = col_double(),
+  metre.stream.scale = col_double(),
+  yrs.disturb.min.scale = col_double()
+)
+Parsed with column specification:
+cols(
+  .default = col_double()
+)
+See spec(...) for full column specifications.
+Parsed with column specification:
+cols(
+  UTM_E = col_double(),
+  UTM_N = col_double()
+)
+Warning messages:
+1: In (function (..., no.readonly = FALSE)  :
+  graphical parameter "cin" cannot be set
+2: In (function (..., no.readonly = FALSE)  :
+  graphical parameter "cra" cannot be set
+3: In (function (..., no.readonly = FALSE)  :
+  graphical parameter "csi" cannot be set
+4: In (function (..., no.readonly = FALSE)  :
+  graphical parameter "cxy" cannot be set
+5: In (function (..., no.readonly = FALSE)  :
+  graphical parameter "din" cannot be set
+6: In (function (..., no.readonly = FALSE)  :
+  graphical parameter "page" cannot be set

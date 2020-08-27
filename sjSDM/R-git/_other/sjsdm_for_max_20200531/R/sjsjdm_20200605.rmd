@@ -1,0 +1,189 @@
+
+
+```{r setup}
+lapply(c('reticulate', 'sjSDM', 'here', 'tidyverse', 'ggcorrplot', 'vegan', 'conflicted'), library,  character.only=T)
+
+conflict_prefer("filter", "dplyr")
+conflict_prefer("select", "dplyr")
+conflict_prefer("importance", "sjSDM")
+
+here::here()
+getwd()
+```
+
+```{r load files, echo=FALSE}
+otu.env1.spike.present = read.csv(here('formatted_data', 'present2_mulspec_sample_by_species_corr_table_F2308_minimap2_20200221_kelpie20200214.csv'), header=T, sep=',', stringsAsFactors = F, na.strings='NA')
+	
+# subset of session 1, malaise trap 1
+dataI.1.spike.present = subset(otu.env1.spike.present, session == 'S1' & trap == 'M1' )
+
+# delete OTUs that are not present in S1 & M1
+b = data.frame(otu=colnames(select(dataI.1.spike.present, contains('__'))),  zero=apply(select(dataI.1.spike.present, contains('__')), 2, sum)==0)
+
+b$otu=as.character(b$otu)
+dim(b)
+	
+dataI.1.spike.present2 = select(dataI.1.spike.present, 
+                                -contains('__'), 
+                                b$otu[b$zero==F]
+                                )
+dim(dataI.1.spike.present2)
+
+dataI.1.spike.present2[1:5, 34:40]
+```
+
+
+```{r sjsdm-model-spatial}
+# ... session 1, Malaise I, spike, present ...
+# exploring spatial function
+
+# environmental variables
+scale.env1 <- dataI.1.spike.present2 %>%
+  select(elevation.scale, 
+         canopy.ht.scale, 
+         min.T.scale, 
+         max.T.scale,
+         precipitation.scale, 
+         metre.road.scale, 
+         metre.stream.scale,
+         yrs.disturb.min.scale
+         )
+str(scale.env1)
+
+# species data
+otu.data = as.data.frame(select(dataI.1.spike.present2, contains('__')))
+# remove species that occur only once
+minocc <- 5 # set to high number (e.g. 20) for testing
+otu.data <- otu.data[ , vegan::specnumber(otu.data, MARGIN = 2) >= minocc] # with ">1" the model finds no biotic covariances (ternary plot )
+str(otu.data)
+otu.data %>% select(which(map_lgl(., ~sum(.x) < minocc))) # should have 0 columns
+
+# make smaller OTU dataset for debugging
+# otu.data <- otu.data[ , 1:10]
+# rowSums(otu.data)
+
+XY = as.data.frame(select(dataI.1.spike.present2, starts_with('UTM_')) %>% scale)
+hist(XY$UTM_E)
+hist(XY$UTM_N)
+plot(XY$UTM_E, XY$UTM_N)
+```
+
+
+```{r save files, eval=FALSE}
+# env data:  scale.env1
+write_csv(scale.env1, here("formatted_data", "scale.env1.csv"))
+
+# species data:  otu.data
+write_csv(otu.data, here("formatted_data", "otu.data.csv"))
+
+# XY data: XY
+write_csv(XY, here("formatted_data", "XY.csv"))
+```
+
+
+```{sjSDM_cv}
+tune_results = sjSDM_cv(
+	Y = as.matrix(otu.data),
+	env = linear(as.matrix(scale.env1)),
+	spatial = linear(XY, ~ 0 + UTM_E:UTM_N),
+	biotic = bioticStruct(on_diag=FALSE), 
+	tune = "random",
+	link = "probit", # for both p/a and quasiprob data
+	CV=2L, # 5L is better if there are enough samples (rows)
+	n_cores = NULL,
+	iter = 200L,
+	tune_steps = 60L, 
+	)
+
+# here()
+# saveRDS(tune_results, here("results", "sjsdm_tune_results_HJA_20200608.RDS"))
+# tune_results <- readRDS(here::here("results", "sjsdm_tune_results_HJA_20200608.RDS"))
+
+# visualize tuning and best points:
+best = plot(tune_results, perf = "logLik") # perf = "AUC"
+# pdf(file="best.pdf")
+# plot(tune_results, perf = "logLik")
+# dev.off()
+```
+
+
+```{sjSDM}
+model <-  sjSDM(
+	Y = as.matrix(otu.data),
+	iter = 100L, 
+	learning_rate = 0.01, # 0.01 default, but 0.003 recommended for high species number
+	link = "probit", # for both p/a and quasiprob data
+	env = linear(data = as.matrix(scale.env1), 
+	             formula = ~.,
+	             # formula = ~ elevation.scale + canopy.ht.scale + 
+	             #   min.T.scale + max.T.scale + precipitation.scale + 
+	             #   metre.road.scale + metre.stream.scale + 
+	             #   yrs.disturb.min.scale,
+	             lambda = best[["lambda_coef"]], 
+	             alpha = best[["alpha_coef"]]
+	             ), 
+	spatial = linear(
+    data = XY,
+    formula = ~0 + UTM_E:UTM_N, # ~0 removes intercept from the spatial model
+    lambda = best[["lambda_spatial"]],
+    alpha = best[["alpha_spatial"]]
+    ),
+	biotic = bioticStruct(
+	  lambda = best[["lambda_cov"]], 
+	  alpha = best[["alpha_cov"]], 
+	  on_diag = FALSE
+	  )
+	)
+
+
+# summary(model)
+# calculate post-hoc p-values:
+p = getSe(model)
+(summary.p=summary(p))
+plot(model$history) # check iter
+
+#save result
+result = list(beta = coef(model), 
+              sigma = getCov(model), 
+              history = model$history, 
+              p = p, 
+              logLik=logLik(model)
+              )
+
+# saveRDS(model, here("results", "sjsdm_model_HJA_20200608.RDS"))
+# saveRDS(result, here("results", "sjsdm_results_HJA_20200608.RDS"))
+# result <- readRDS(here::here("results", "sjsdm_results_HJA_20200608.RDS"))
+# model <- readRDS(here::here("results", "sjsdm_model_HJA_20200608.RDS"))
+
+#VP for test
+imp = importance(model)
+plot(imp)
+Rsquared2(model, individual = FALSE)
+# Rsquared2(model)
+
+an <- anova(model, cv = FALSE)
+# print(an)
+plot(an, percent = FALSE)
+plot(an)
+
+# an_cv <- anova(model, cv = 5L)
+# # print(an)
+# plot(an_cv)
+# plot(an_cv, percent = FALSE)
+```
+
+
+
+#check
+<details><summary>Reproducibility receipt</summary>
+```{r}
+# datetime
+Sys.time()
+
+# repository
+git2r::repository()
+
+# session info
+sessionInfo()
+```
+
