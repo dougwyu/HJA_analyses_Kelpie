@@ -29,7 +29,7 @@ XY <- read_csv(here("data", "XY.csv"))
 # # read in cross-validation output from sjsdm_cv_gpu_20200821.R
 resultsfolder <- "results_20200824_275OTU_loocv"
 tune_results <- readRDS(here(resultsfolder, 
-                             "sjsdm_tune_results_HJA_20200823.RDS"))
+                             "sjsdm_model_HJA_20200823.RDS"))
 best = plot(tune_results, perf = "logLik")
 
 # # run sjSDM model

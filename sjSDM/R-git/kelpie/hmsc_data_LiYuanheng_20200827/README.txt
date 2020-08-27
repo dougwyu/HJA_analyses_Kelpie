@@ -58,7 +58,7 @@ precipitation (continuous): annual precipitation
 metre.road (continuous): distance to road (meter)
 metre.stream (continuous): distance to stream (meter)
 yrs.disturb.min (numeric): years since last disturbance
-hja (factor): inside or outside the official HJA Andrews Experimental forest border (all sites are in forest)
+hja (factor): inside or outside the official HJ Andrews Experimental forest border (all sites are in forest)
 The above covariates also have scaled version (e.g. elevation.scale)
 
 # multispectral covariates, correlated with vegetation condition and plant species composition
