@@ -10,7 +10,7 @@
 
 This README.text file includes the basic information about the dataset coded as
 
-Li_Yuanheng_Oregon #change this line!
+LiYuanheng_Oregon #change this line!
 
 
 
