@@ -1,0 +1,17 @@
+---
+title: "quasi-probabilities"
+author: "Douglas Yu"
+date: "13/05/2020"
+output: html_document
+---
+
+```{r test sjSDM with quasi-probabilities}
+library(sjSDM)
+com = simulate_SDM(response = "count", link = "log", species = 100L, sites = 200)
+Y2 = apply(log(com$response+0.001), 2, scales::rescale)
+Y3 = apply(com$response, 2, scales::rescale)
+m2 = sjSDM(Y2, com$env_weights, iter = 100L, learning_rate = 0.02, link = "probit")
+m3 = sjSDM(Y3, com$env_weights, iter = 100L, learning_rate = 0.02, link = "probit")
+com$corr_acc(getCov(m2))
+com$corr_acc(getCov(m3))
+```
