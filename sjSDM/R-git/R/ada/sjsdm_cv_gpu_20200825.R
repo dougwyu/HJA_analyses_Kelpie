@@ -16,15 +16,22 @@ library(sjSDM)
 library(here)
 library(tidyverse)
 library(fs)
+library(glue)
 
-dir_create("results") # create results/ directory, but only if the results/ directory does not already exist
+rundate <- 20200830 # run date
+minocc <- 5 # minimum occupancy (incidence) per OTU
+abund <- "pa" # "qp" # pa is 0/1 data, qp is quasiprob data
+resultsfolder <- glue("results_{rundate}_{minocc}minocc_{abund}_loocv")
+dir_create(resultsfolder) # create results/ directory, but only if the results/ directory does not already exist
 
 # read in data
 # env data:  scale.env1
 scale.env1 <- read_csv(here("data", "scale.env1.csv"))
 
 # species data:  otu.data
-otu.data <- read_csv(here("data", "otu.data.csv"))
+# comment in the dataset that i want to use. qp == quasiprob, pa == 0/1
+otu.data <- read_csv(here("data", "otu.data.pa.csv"))
+# otu.data <- read_csv(here("data", "otu.data.qp.csv"))
 
 # XY data: XY
 XY <- read_csv(here("data", "XY.csv"))
@@ -53,10 +60,11 @@ tune_results = sjSDM_cv(
 
 
 # save cross-validation results
-saveRDS(tune_results, here("results", "sjsdm_tune_results_HJA_20200823.RDS"))
+saveRDS(tune_results, here(resultsfolder, glue("sjsdm_tune_results_HJA_{rundate}.RDS")))
 
 # visualize tuning and best points:
-pdf(file = here("results", "best_20200823.pdf"))
+# pdf(file = here("results", "best_20200830.pdf"))
+pdf(file = here(resultsfolder, glue("best_{rundate}.pdf")))
 plot(tune_results, perf = "logLik")
 dev.off()
 # green points in the best plot are (close to) the best lambda and alpha values

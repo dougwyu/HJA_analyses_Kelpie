@@ -1,0 +1,115 @@
+---
+title: "dataprep"
+author: "Douglas Yu"
+date: "30/08/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r setup, eval=TRUE, include=TRUE}
+# copy the following into each script   
+knitr::opts_chunk$set(
+	message = FALSE,
+	warning = FALSE,
+	include = FALSE
+)
+
+# script-specific libraries
+suppressPackageStartupMessages({
+  library(vegan)
+})
+
+# general-use packages
+suppressPackageStartupMessages({
+  library(here)
+  library(fs)
+  library(glue)
+  library(tidyverse) # loads a bunch of packages (see below)
+  library(readxl)
+  library(cowplot)
+  library(lubridate)
+  library(patchwork)
+  library(broom)
+  library(ggeffects)
+  library(viridis)
+  library(arsenal) # for summary(comparedf())
+  library(sjmisc) # for rotate_df()
+  library(envDocument)
+  library(inspectdf)
+  library(conflicted)
+})
+
+conflict_prefer("filter", "dplyr", quiet = TRUE)
+conflict_prefer("mutate", "dplyr", quiet = TRUE)
+conflict_prefer("select", "dplyr", quiet = TRUE)
+conflict_prefer("summarise", "dplyr", quiet = TRUE)
+conflict_prefer("first", "dplyr", quiet = TRUE)
+conflict_prefer("here", "here", quiet = TRUE)
+conflict_prefer("separate", "tidyr", quiet = TRUE)
+conflict_prefer("unite", "tidyr", quiet = TRUE)
+conflict_prefer("intersect", "dplyr", quiet = TRUE)
+conflict_prefer("setdiff", "dplyr", quiet = TRUE) # w/out this, R crashes
+conflict_prefer("to_factor", "sjmisc", quiet = TRUE)
+conflict_prefer("trim", "glue", quiet = TRUE)
+
+# Provide real numbers, not scientific notation.
+options(scipen = 999)
+```
+
+
+```{r working directory}
+here() # "/Users/Negorashi2011/Dropbox/Working_docs/Luo_Mingjie_Oregon/HJA_analyses_Kelpie/sjSDM/R-git"
+```
+
+
+```{r read data files}
+scale.env1.csv <- read_csv(here("data", "kelpie_data", "for_adagpu", "quasiP_s1m1_env_5_sample_by_species_corr_table_F2308_minimap2_20200221_kelpie20200723.csv"))
+
+XY.csv <- read_csv(here("data", "kelpie_data", "for_adagpu", "quasiP_s1m1_spatial_5_sample_by_species_corr_table_F2308_minimap2_20200221_kelpie20200723.csv")) %>% 
+  select(UTM_E, UTM_N)
+
+otu.data.qp.csv <- read_csv(here("data", "kelpie_data", "for_adagpu", "quasiP_s1m1_otu_5_sample_by_species_corr_table_F2308_minimap2_20200221_kelpie20200723.csv"))
+
+# keep OTUs with >=5 incidences
+minocc <- 5 # set to high number (e.g. 20) for testing
+otu.data.qp.csv <- otu.data.qp.csv[ , specnumber(otu.data.qp.csv, MARGIN = 2) >= minocc]
+
+# convert to 0/1 data
+otu.data.pa.csv <- otu.data.qp.csv
+otu.data.pa.csv[otu.data.pa.csv > 0] <- 1
+```
+
+
+These files are used as input to the sjsdm_cv() and sjsdm() code
+```{r save data files}
+prepdate <- 20200830
+datafolder <- glue("data_{prepdate}")
+dir_create(here("data", "kelpie_data", "for_adagpu", datafolder))
+
+write_csv(scale.env1.csv, here("data", "kelpie_data", "for_adagpu", datafolder,  "scale.env1.csv"))
+
+write_csv(XY.csv, here("data", "kelpie_data", "for_adagpu", datafolder, "XY.csv"))
+
+write_csv(otu.data.qp.csv, here("data", "kelpie_data", "for_adagpu", datafolder,  "otu.data.qp.csv"))
+
+write_csv(otu.data.pa.csv, here("data", "kelpie_data", "for_adagpu", datafolder, "otu.data.pa.csv"))
+```
+
+
+
+<details><summary>Reproducibility receipt</summary>
+```{r}
+# datetime
+Sys.time()
+
+# repository
+git2r::repository(here::here())
+
+env_doc("table", git = FALSE)
+# this reports the R environment that you are using, especially the package and R versions. It is a good idea to include this information at the end of every report you generate, to document the details of your computing environment. If you want to really ensure replicable science, RStudio Desktop (not cloud) provides the {renv} package, which lets you create a private snapshot of packages inside your project folder. This is beyond the scope of this class, but at least you know about it now.
+# sessionInfo() # base R method
+# sessioninfo::session_info() # package sessioninfo method
+```

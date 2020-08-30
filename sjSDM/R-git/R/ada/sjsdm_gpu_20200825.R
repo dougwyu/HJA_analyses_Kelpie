@@ -15,21 +15,30 @@ Sys.setenv(RETICULATE_PYTHON="/gpfs/scratch/b042/sjSDM_env/bin/python")
 library(sjSDM)
 library(here)
 library(tidyverse)
+library(fs)
+library(glue)
+
+abund <- "pa" # "qp" # pa is 0/1 data, qp is quasiprob data
+rundate <- 20200830 # sjsdm_cv run date
+minocc <- 5 # minimum occupancy (incidence) per OTU, value from dataprep.Rmd
+resultsfolder <- glue("results_{rundate}_{minocc}minocc_{abund}_loocv")
 
 # read in data
 # env data:  scale.env1
 scale.env1 <- read_csv(here("data", "scale.env1.csv"))
 
 # species data:  otu.data
-otu.data <- read_csv(here("data", "otu.data.csv"))
+# comment in the dataset that i want to use. qp == quasiprob, pa == 0/1
+otu.data <- read_csv(here("data", "otu.data.pa.csv"))
+# otu.data <- read_csv(here("data", "otu.data.qp.csv"))
 
 # XY data: XY
 XY <- read_csv(here("data", "XY.csv"))
 
-# # read in cross-validation output from sjsdm_cv_gpu_20200821.R
-resultsfolder <- "results_20200824_275OTU_loocv"
+
+# read in cross-validation output from resultsfolder
 tune_results <- readRDS(here(resultsfolder, 
-                             "sjsdm_model_HJA_20200824.RDS"))
+                             glue("sjsdm_tune_results_HJA_{rundate}.RDS")))
 best = plot(tune_results, perf = "logLik")
 
 # # run sjSDM model
@@ -85,10 +94,10 @@ result = list(beta = coef(model),
               logLik=logLik(model)
               )
 
-saveRDS(model, here(resultsfolder, "sjsdm_model_HJA_202080824.RDS"))
-saveRDS(result, here(resultsfolder, "sjsdm_result_HJA_202080824.RDS"))
-# model <- readRDS(here(resultsfolder, "sjsdm_model_HJA_202080824.RDS"))
-# result <- readRDS(here(resultsfolder, "sjsdm_result_HJA_202080824.RDS"))
+saveRDS(model, here(resultsfolder, glue("sjsdm_model_HJA_{rundate}.RDS")))
+saveRDS(result, here(resultsfolder, glue("sjsdm_result_HJA_{rundate}.RDS")))
+# model <- readRDS(here(resultsfolder, glue("sjsdm_model_HJA_{rundate}.RDS")))
+# result <- readRDS(here(resultsfolder, glue("sjsdm_result_HJA_{rundate}.RDS")))
 
 # #VP for test
 imp <- importance(model)
