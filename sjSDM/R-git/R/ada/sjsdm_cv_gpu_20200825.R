@@ -18,8 +18,10 @@ library(tidyverse)
 library(fs)
 library(glue)
 
+# set variables
 rundate <- 20200830 # run date
 minocc <- 5 # minimum occupancy (incidence) per OTU
+
 abund <- "pa" # "qp" # pa is 0/1 data, qp is quasiprob data
 resultsfolder <- glue("results_{rundate}_{minocc}minocc_{abund}_loocv")
 dir_create(resultsfolder) # create results/ directory, but only if the results/ directory does not already exist
@@ -30,8 +32,8 @@ scale.env1 <- read_csv(here("data", "scale.env1.csv"))
 
 # species data:  otu.data
 # comment in the dataset that i want to use. qp == quasiprob, pa == 0/1
-otu.data <- read_csv(here("data", "otu.data.pa.csv"))
-# otu.data <- read_csv(here("data", "otu.data.qp.csv"))
+# otu.data.pa.csv, otu.data.qp.csv
+otu.data <- read_csv(here("data", glue("otu.data.{abund}.csv")))
 
 # XY data: XY
 XY <- read_csv(here("data", "XY.csv"))
@@ -54,6 +56,52 @@ tune_results = sjSDM_cv(
   iter = 150L, # 2L
   sampling = 5000L # default is 5000L
   )
+# https://rscs.uea.ac.uk/ada/using-ada/jobs/gpu
+# each gpu node has 2 NVIDIA Quadro P5000 cards, each with 2560 GPU cores
+# link = "probit", # not used in sjSDM_cv
+
+
+# save cross-validation results
+saveRDS(tune_results, here(resultsfolder, glue("sjsdm_tune_results_HJA_{rundate}.RDS")))
+
+# visualize tuning and best points:
+# pdf(file = here("results", "best_20200830.pdf"))
+pdf(file = here(resultsfolder, glue("best_{rundate}.pdf")))
+plot(tune_results, perf = "logLik")
+dev.off()
+# green points in the best plot are (close to) the best lambda and alpha values
+
+
+
+####
+# now run with qp data
+abund <- "qp" # "qp" # pa is 0/1 data, qp is quasiprob data
+resultsfolder <- glue("results_{rundate}_{minocc}minocc_{abund}_loocv")
+dir_create(resultsfolder) # create results/ directory, but only if the results/ directory does not already exist
+
+# species data:  otu.data
+# comment in the dataset that i want to use. qp == quasiprob, pa == 0/1
+# otu.data.pa.csv, otu.data.qp.csv
+otu.data <- read_csv(here("data", glue("otu.data.{abund}.csv")))
+
+# sjSDM_cv
+tune_results = sjSDM_cv(
+  Y = as.matrix(otu.data),
+  env = linear(as.matrix(scale.env1)), 
+  spatial = linear(XY, ~0 + UTM_E:UTM_N),
+  biotic = bioticStruct(on_diag = FALSE, inverse = FALSE), # inverse=TRUE is 'better' but much slower
+  tune = "random", # random steps in tune-parameter space
+  CV = nrow(as.matrix(otu.data)), # 5L for 5-fold cross validation, nrow(Y) for LOOCV
+  tune_steps = 60L, # 20L is default
+  alpha_cov = seq(0, 1, 0.1),
+  alpha_coef = seq(0, 1, 0.1),
+  lambda_cov = seq(0, 0.1, 0.001), 
+  lambda_coef = seq(0, 0.1, 0.001),
+  n_cores = 2L, # NULL, # or 10L for small models, run this many sjsdm models at once (1 per CPU core). 10L is too much for large models because the 10 CPUs try to run on only the 2 GPUs available on ada: 5/GPU
+  n_gpu = 2L,# spread over this many GPU cards
+  iter = 150L, # 2L
+  sampling = 5000L # default is 5000L
+)
 # https://rscs.uea.ac.uk/ada/using-ada/jobs/gpu
 # each gpu node has 2 NVIDIA Quadro P5000 cards, each with 2560 GPU cores
 # link = "probit", # not used in sjSDM_cv
