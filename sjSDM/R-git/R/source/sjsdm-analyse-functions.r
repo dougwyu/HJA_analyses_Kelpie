@@ -1,5 +1,53 @@
 # functions to make code of sjsdm graphs shorter
 # Yuanheng Li, May 22, 2020
+# last modified: Jul 16, 2020
+
+# variation partition plot with diff colors
+vp.plot <- function(data, ind, textM, textL) {
+col <- brewer.pal(length(unique(data[,ind])), 'Paired')
+  mycolor<-col
+  data[,ind]=as.factor(data[,ind])
+  group<-data[, ind]
+  color = mycolor[as.numeric(group)] 
+  ternaryplot(data[, 2:4], 
+              pch = 20, 
+              col = color,
+              main = textM, 
+              labels = "outside", 
+              grid = "dashed", 
+              cex = 0.5, 
+              prop_size = 1, 
+              dimnames_position = "corner" # edge
+              ) 
+  grid_legend("topright", 
+              pch=20, 
+              col=mycolor, 
+              labels=levels(group), 
+              title = textL
+              ) 
+	
+}
+
+# list relation of spp & their envir factors
+bar.coef = function(effect_ind, t_turn) {
+t= -(abs(effect_ind$beta[which.max(abs(effect_ind$beta))]))*t_turn
+#figure
+ggplot(effect_ind, aes(x = name, y = beta, fill=max_effects)) +
+    geom_bar(stat="identity", width = 0.5)+
+#    position = position_dodge(0.4), 
+    scale_fill_manual(values=col) +
+    guides(fill = guide_legend(reverse=F)) +
+    coord_flip(expand=F)  + 
+    geom_hline(aes(yintercept = 0),linetype="dashed",size=1) +
+    theme_classic()+ facet_wrap(~factors, ncol = 5) +
+    xlab("otu") +
+    ylab("beta") + 
+    geom_text(aes(y= t, label = max),  size = 2, fontface = "bold")
+#    labs(fill="Species Index") 
+#    +geom_errorbar(aes(ymax = Estimate + Std.Err, ymin = Estimate - Std.Err), width = 0.3)
+    #geom_errorbar(aes(ymax = Estimate + Std.Err, ymin = Estimate - Std.Err), width = 0.3)
+}
+
 
 # extract min & max spp pairs of correlation
 extract.minmax.cor = function (otu, sigma) {
@@ -27,7 +75,7 @@ extract.minmax.cor = function (otu, sigma) {
 	
 
 # species covariance circular plot with min&max pairs of covariance
-cov.circle = function (version.text, otu.text, sigma, otu.tbl) {
+cov.circle = function (version.text, otu.text, sigma, otu.tbl, result) {
 	sigmas = sigma[base::upper.tri(sigma)]
 	upper = order(sigmas, decreasing = TRUE)[1:number]
 	lower = order(sigmas, decreasing = FALSE)[1:number]
@@ -93,7 +141,7 @@ cov.circle = function (version.text, otu.text, sigma, otu.tbl) {
 	add_legend(viridis::viridis(11), angles = c(140,110),radius = 5.4)
 	text(cos(deg2rad(123))*(lineSeq+1), sin(deg2rad(123))*(lineSeq+1.2), labels = "covariance", pos = 2, xpd = NA)
 		
-	add_legend(cols = cols, range = c(2, 850), angles = c(70,40),radius = 5.4)
+	add_legend(cols = cols, range = c(2, ncol(result$sigma)), angles = c(70,40),radius = 5.4)
 	text(cos(deg2rad(53))*(lineSeq+1), sin(deg2rad(55))*(lineSeq+1.1), labels = "low to high", pos = 4, xpd = NA) 
 	text(cos(deg2rad(64))*(lineSeq+1.3), sin(deg2rad(62))*(lineSeq+1.1), labels = paste(otu.text), pos = 4, xpd = NA) 
 		
@@ -124,7 +172,32 @@ cov.circle = function (version.text, otu.text, sigma, otu.tbl) {
 	
 
 # species covariance circle with max environmental variable
-cov.circle.env = function (sigma, version.text, evnames, otu.text) {
+cov.circle.env = function (version.text, evnames, otu.text, result, effect_comb, otu.tbl) {
+	OTU_log = log(sort(apply(otu.tbl, 2, sum))+.001)
+	range(OTU_log)
+	OTU_log[1]=0 
+	cuts = cut(OTU_log, breaks = 10)
+	cols = viridis::magma(10) 
+	
+	levels(cuts) = cols
+	sppnames2=paste("spp",1:20,sep = "")
+	abun=as.character(cuts)
+	sppsort=1:20
+	
+	OTU_sort_abun <- data.frame(sppsort=rep(sppsort, len=ncol(otu.tbl)), sum = apply(otu.tbl, 2, sum))
+	OTU_sort_abun = OTU_sort_abun[order(OTU_sort_abun$sum), ]
+	OTU_sort_abun$abun<-abun
+	OTU_sort_abun = OTU_sort_abun[order(OTU_sort_abun$sppsort), ]
+	
+	sppname3=seq(1:20); sppname3=as.character(sppname3)
+	effect_comb$name <- rep(sppname3, len=nrow(effect_comb))
+	effect_comb$abun <- OTU_sort_abun$abun
+	effect_comb$abun<-as.character(effect_comb$abun)
+	effect_comb_ind = order(effect_comb[,1], effect_comb[,2])
+	effect_comb = effect_comb[effect_comb_ind,]
+	
+	sigma = re_scale(result$sigma)[effect_comb_ind, effect_comb_ind]
+	
 	sigmas = sigma[upper.tri(sigma)]
 	number=10
 	upper = order(sigmas, decreasing = TRUE)[1:number]
@@ -136,7 +209,7 @@ cov.circle.env = function (sigma, version.text, evnames, otu.text) {
 	n = ncol(sigma)
 	lineSeq = 3.5
 	nseg = 100
-		
+	
 	
 	#Drawing figure parameter
 	par( mar = c(1,2,2.1,2)+0.1)
@@ -175,9 +248,8 @@ cov.circle.env = function (sigma, version.text, evnames, otu.text) {
 	#formula = ~mean.NDVI.scale+mean.EVI.scale+ mean.green.scale + mean.bright.scale + mean.wet.scale
 	
 	colourCount = length(unique(evnames))
-	getPalette = colorRampPalette(RColorBrewer::brewer.pal(length(evnames), "Paired"))
-	cols=getPalette(colourCount)
-		
+	cols = sample(rainbow(colourCount))
+	
 	coords = data.frame(cbind(xx, yy, angles))
 	effect_comb=effect_comb[,-c(3,4)]
 	effect_comb2 = effect_comb
@@ -186,8 +258,8 @@ cov.circle.env = function (sigma, version.text, evnames, otu.text) {
 	effect_comb2 = data.frame(effect_comb2)
 			
 	for(i in sort(unique(max_effects))) {
-	  sub<- coords %>% filter(effect_comb2$max_effects==i)
-	  sub_eff <- effect_comb2 %>% filter(max_effects==i)
+	  sub = coords %>% filter(effect_comb2$max_effects==i)
+	  sub_eff = effect_comb2 %>% filter(max_effects==i)
 	  from <- sub[1,3]
 	  to <- sub[nrow(sub),3]
 
@@ -237,7 +309,7 @@ cov.circle.env = function (sigma, version.text, evnames, otu.text) {
 	for(i in 1:unique(length(abun))){
 	  rect(xleft = x[i], xright = x[i+1], ybottom = -5, ytop = -5+diff(x)[1], col = abun1[i], xpd = NA, border = NA)
 	  text(x= x[1]-0.2, y=-5.2, labels = "2", pos = 4, xpd = NA)
-	  text(x= x[10]-0.2, y=-5.2, labels = '850', pos = 4, xpd = NA)
+	  text(x= x[10]-0.2, y=-5.2, labels = ncol(result$sigma), pos = 4, xpd = NA)
 	}
 	text(x=-5.3, y=-5.3, labels = paste(otu.text), pos = 4, xpd = NA)
 	
