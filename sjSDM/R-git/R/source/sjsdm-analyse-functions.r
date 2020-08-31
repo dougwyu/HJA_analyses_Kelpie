@@ -138,10 +138,10 @@ cov.circle = function (version.text, otu.text, sigma, otu.tbl, result) {
 	  segments(x0 = x1[1], x1 = x1[2], y0 = y1[1], y1 = y1[2], col = as.character(cuts[i]), lend = 1)
 	}
 		
-	add_legend(viridis::viridis(11), angles = c(140,110),radius = 5.4)
+	sjSDM::add_legend(viridis::viridis(11), angles = c(140,110),radius = 5.4)
 	text(cos(deg2rad(123))*(lineSeq+1), sin(deg2rad(123))*(lineSeq+1.2), labels = "covariance", pos = 2, xpd = NA)
 		
-	add_legend(cols = cols, range = c(2, ncol(result$sigma)), angles = c(70,40),radius = 5.4)
+	sjSDM::add_legend(cols = cols, range = c(2, ncol(result$sigma)), angles = c(70,40),radius = 5.4)
 	text(cos(deg2rad(53))*(lineSeq+1), sin(deg2rad(55))*(lineSeq+1.1), labels = "low to high", pos = 4, xpd = NA) 
 	text(cos(deg2rad(64))*(lineSeq+1.3), sin(deg2rad(62))*(lineSeq+1.1), labels = paste(otu.text), pos = 4, xpd = NA) 
 		
