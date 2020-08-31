@@ -1,10 +1,12 @@
 # Yuanheng
-# create: Jul 23, 2020
+# create: Jul 23, 2020 2020
+# last modified: Aug 31,
 # 1. change how to use spike-in
 # 2. add lysis buffer info
+# 3. subsets & 3 parts data for adagpu
 
 ```{r setup}
-#setwd("/media/yuanheng/SD-64g2/files/Projects/Oregon/R-git")
+#setwd('/media/yuanheng/SD-64g2/Downloads/backup2/HJA_analyses_Kelpie/sjSDM/R-git')
 	
 lapply(c("ggplot2", "gridExtra",'vegan', 'labdsv', 'tidyverse', 'scatterplot3d', 'gridBase','conflicted', 'grid', 'ggcorrplot','here'), library, character.only=T)
 	
@@ -19,7 +21,7 @@ dr_here()
 
 ```{r load files}
 # formatted data
-otu.env1.present = read.csv(here('kelpie','formatted_data','present2_lidar_mulspec_sample_by_species_corr_table_F2308_minimap2_20200221_kelpie20200214.csv'), header=T, sep=',', stringsAsFactors = F, na.strings='NA')
+otu.env1.present = read.csv(here('data','kelpie_data','formatted_data','present2_lidar_mulspec_sample_by_species_corr_table_F2308_minimap2_20200221_kelpie20200214.csv'), header=T, sep=',', stringsAsFactors = F, na.strings='NA')
 dim(otu.env1.present)
 	
 # ('HJA_analyses_Kelpie/Kelpie_maps' folder) 
@@ -34,7 +36,7 @@ str(a1)
 spike_input = c('COI_SPIKE_Coleoptera_Mordellidae_0.4'=1, 'COI_SPIKE_Coleoptera_Elateridae_0.8'=9)
 	
 # lysis buffer info
-lysis = read.csv(here('kelpie', 'lysis_buffer_volume_20200724.csv'), header=T, sep=',', stringsAsFactors = F, na.strings='NA')
+lysis = read.csv(here('data','kelpie_data','lysis_buffer_volume_20200724.csv'), header=T, sep=',', stringsAsFactors = F, na.strings='NA')
 # 'lysis_buffer_volume_20200715.csv' has error
 str(lysis)
 	
@@ -43,7 +45,7 @@ str(lysis)
 
 ```{r formate-HMSC-course}
 # load fsl
-otu.env1.fsl = read.csv(here('kelpie','formatted_data','FSL2_lidar_mulspec_sample_by_species_corr_table_F2308_minimap2_20200221_kelpie20200723.csv'), header=T, sep=',', stringsAsFactors = F, na.strings='NA')
+otu.env1.fsl = read.csv(here('data','kelpie_data','formatted_data','FSL2_lidar_mulspec_sample_by_species_corr_table_F2308_minimap2_20200221_kelpie20200723.csv'), header=T, sep=',', stringsAsFactors = F, na.strings='NA')
 dim(otu.env1.fsl)
 	
 # explore
@@ -186,10 +188,10 @@ for (i in 1:length(otu.env1$site_trap_period)) {
 	}
 }
 	
-[1] "HOBO-063_M1_S2"
-[1] "SM-06_M1_S1"
-[1] NA
-[1] NA
+#[1] "HOBO-063_M1_S2"
+#[1] "SM-06_M1_S1"
+#[1] NA
+#[1] NA
 	
 otu.env1 = subset(otu.env1, site_trap_period!='NA')
 otu.env1 = subset(otu.env1, site_trap_period!="HOBO-063_M1_S2" & site_trap_period!="SM-06_M1_S1")
@@ -265,15 +267,15 @@ fsl.env1 = cbind(fsl.env1, fsl.env[,34:1180])
 	
 str(fsl.env1[,1:53])
 	
-#write.table(fsl.env1, here('kelpie','formatted_data','FSL2_lidar_mulspec_sample_by_species_corr_table_F2308_minimap2_20200221_kelpie20200723.csv'), row.names=F, sep=',')
+#write.table(fsl.env1, here('data','kelpie_data','formatted_data','FSL2_lidar_mulspec_sample_by_species_corr_table_F2308_minimap2_20200221_kelpie20200723.csv'), row.names=F, sep=',')
 	
-fsl.env1 = read.table(here('kelpie','formatted_data','FSL2_lidar_mulspec_sample_by_species_corr_table_F2308_minimap2_20200221_kelpie20200723.csv'), header=T, sep=',')
+fsl.env1 = read.table(here('data','kelpie_data','formatted_data','FSL2_lidar_mulspec_sample_by_species_corr_table_F2308_minimap2_20200221_kelpie20200723.csv'), header=T, sep=',')
 names(fsl.env1)[1:55]
 	
 ```
 
 ```{r further format}
-fsl.env1 = read.table(here('kelpie','formatted_data','fsl_hmsc_sample_by_species_corr_table_F2308_minimap2_20200221_kelpie20200723.csv'), sep = ",", header=T)
+fsl.env1 = read.table(here('data','kelpie_data','formatted_data','data_used_during_format','fsl_hmsc_sample_by_species_corr_table_F2308_minimap2_20200221_kelpie20200723.csv'), sep = ",", header=T)
 str(fsl.env1[,1:55])
 	
 # calculate quasi-probability
@@ -282,29 +284,6 @@ dim(fsl.env11)
 names(fsl.env1)[1:58]
 	
 fsl.env12 = cbind(fsl.env1[,1:57],fsl.env11)
-	
-# present dataset
-otu.env.present2 = read.table(here('kelpie','formatted_data','present_hmsc_sample_by_species_corr_table_F2308_minimap2_20200221_kelpie20200214.csv'), sep = ",", header=T)
-	
-dim(otu.env.present2)
-dim(fsl.env12)
-	
-# minimum occurrence >= 5
-# present
-data = otu.env.present2
-dim(as.data.frame(select(data, -contains('__'))))
-	
-dimotu=56
-	
-a = data.frame(index=dimotu:dim(data)[2], sel=specnumber(as.data.frame(select(data, contains('__'))), MARGIN=2) >4)
-str(a)
-table(a$sel)
-	
-otu.env.present3 = select(data, 1:(dimotu-1), a$index[a$sel==T])
-dim(otu.env.present3)
-names(otu.env.present3)[1:56]
-	
-rm(data,a,dimotu)
 	
 
 # quasi-prob
@@ -323,22 +302,33 @@ names(fsl.env13)[1:58]
 	
 rm(data,a,dimotu)
 	
+# present dataset
+#otu.env.present2 = read.table(here('data','kelpie_data','formatted_data', 'data_used_during_format', 'present_hmsc_sample_by_species_corr_table_F2308_minimap2_20200221_kelpie20200214.csv'), sep = ",", header=T)
+	
+a = as.data.frame(ifelse(select(fsl.env13, contains('__'))>0, 1, 0))
+otu.env.present3 = cbind(select(fsl.env13, -contains('__')), a)
+dim(otu.env.present3)
+names(otu.env.present3)[1:58]
+	
+rm(a)
+	
+
 # remove 'l_Cover_4m_16m_all.scale' (there's 3 NAs)
 dim(fsl.env13)
 dim(otu.env.present3)
 	
 fsl.env13 = select(fsl.env13, -'l_Cover_4m_16m_all.scale',-"l_Cover_4m_16m_all")
-otu.env.present3 = select(otu.env.present3, -'l_Cover_4m_16m_all.scale',-"l_Cover_4m_16m_all")
+otu.env.present3 = select(otu.env.present3, -'l_Cover_4m_16m_all.scale', -"l_Cover_4m_16m_all")
 	
-#write.table(fsl.env13, here('kelpie','formatted_data','quasiP_lidar_mulspec_5_sample_by_species_corr_table_F2308_minimap2_20200221_kelpie20200723.csv'), row.names=F, sep=',')
-#write.table(otu.env.present3, here('kelpie','formatted_data','incidence_lidar_mulspec_5_sample_by_species_corr_table_F2308_minimap2_20200221_kelpie20200214.csv'), row.names=F, sep=',')
+#write.table(fsl.env13, here('data','kelpie_data','formatted_data','quasiP_lidar_mulspec_5_sample_by_species_corr_table_F2308_minimap2_20200221_kelpie20200723.csv'), row.names=F, sep=',')
+#write.table(otu.env.present3, here('data','kelpie_data','formatted_data','incidence_lidar_mulspec_5_sample_by_species_corr_table_F2308_minimap2_20200221_kelpie20200723.csv'), row.names=F, sep=',')
 	
 ```
 
 ```{r subsets}
 # load data 
-quasiP.env1 = read.table(here('kelpie','formatted_data','quasiP_lidar_mulspec_5_sample_by_species_corr_table_F2308_minimap2_20200221_kelpie20200723.csv'), header=T, sep=',')
-otu.env1.present = read.table(here('kelpie','formatted_data','incidence_lidar_mulspec_5_sample_by_species_corr_table_F2308_minimap2_20200221_kelpie20200214.csv'), header=T, sep=',')
+quasiP.env1 = read.table(here('data','kelpie_data','formatted_data','quasiP_lidar_mulspec_5_sample_by_species_corr_table_F2308_minimap2_20200221_kelpie20200723.csv'), header=T, sep=',')
+otu.env1.present = read.table(here('data','kelpie_data','formatted_data','incidence_lidar_mulspec_5_sample_by_species_corr_table_F2308_minimap2_20200221_kelpie20200723.csv'), header=T, sep=',')
 	
 str(quasiP.env1[,1:44])
 dim(otu.env1.present)
@@ -348,26 +338,17 @@ dim(quasiP.env1)
 # ......................... subsets of data ..................................
 dataI.1.present = subset(otu.env1.present, session == 'S1' & trap == 'M1' )
 dim(dataI.1.present)
-#names(dataI.1.present)[33:56]
 	
-#a = data.frame(select(dataI.1.present, contains('__')))
-#b = data.frame(name = names(a), sel=colSums(a)>0)
-#table(b$sel)
-	
-#dataI.1.present.5 = cbind(dataI.1.present[,1:53], data.frame(dplyr::select(dataI.1.present, b$name[b$sel==T])))
-#dim(dataI.1.present.5)
-#rm(a,b,dataI.1.present)
-	
-dataII.1.present = subset(otu.env1.present, session == 'S2' & trap == 'M1' )
+#dataII.1.present = subset(otu.env1.present, session == 'S2' & trap == 'M1' )
 	
 dataI.1.quasiP = subset(quasiP.env1, session == 'S1' & trap == 'M1' )
 dim(dataI.1.quasiP )
 	
-dataII.1.fsl = subset(fsl.env1, session == 'S2' & trap == 'M1' )
+#dataII.1.quasiP = subset(quasiP.env1, session == 'S2' & trap == 'M1' )
 	
-print(c(dim(dataI.1.fsl), dim(dataI.1.present)))
+print(c(dim(dataI.1.quasiP), dim(dataI.1.present)))
 	
-print(c(dim(dataII.1.fsl), dim(dataII.1.present)))
+#print(c(dim(dataII.1.quasiP), dim(dataII.1.present)))
 	
 # .... if there's all zero OTUs ....
 # .... S1
@@ -402,9 +383,9 @@ dim(quasiP_s1m1_Y5)
 quasiP_s1m1_X5 = select(dataI.1.quasiP.5, ends_with('.scale'))#"site_trap_period",
 names(quasiP_s1m1_X5)
 	
-#write.table(quasiP_s1m1_X5, here('kelpie','for_adagpu','quasiP_s1m1_env_5_sample_by_species_corr_table_F2308_minimap2_20200221_kelpie20200723.csv'), row.names=F, sep=',')
-#write.table(quasiP_s1m1_Y5, here('kelpie','for_adagpu','quasiP_s1m1_otu_5_sample_by_species_corr_table_F2308_minimap2_20200221_kelpie20200723.csv'), row.names=F, sep=',')
-#write.table(quasiP_s1m1_S5, here('kelpie','for_adagpu','quasiP_s1m1_spatial_5_sample_by_species_corr_table_F2308_minimap2_20200221_kelpie20200723.csv'), row.names=F, sep=',')
+#write.table(quasiP_s1m1_X5, here('data','kelpie_data','for_adagpu','quasiP_s1m1_env_5_sample_by_species_corr_table_F2308_minimap2_20200221_kelpie20200723.csv'), row.names=F, sep=',')
+#write.table(quasiP_s1m1_Y5, here('data','kelpie_data','for_adagpu','quasiP_s1m1_otu_5_sample_by_species_corr_table_F2308_minimap2_20200221_kelpie20200723.csv'), row.names=F, sep=',')
+#write.table(quasiP_s1m1_S5, here('data','kelpie_data','for_adagpu','quasiP_s1m1_spatial_5_sample_by_species_corr_table_F2308_minimap2_20200221_kelpie20200723.csv'), row.names=F, sep=',')
 	
 #0/1
 #dataI.1.present.5
@@ -418,36 +399,33 @@ dim(present_s1m1_Y5)
 present_s1m1_X5 = select(dataI.1.present.5, ends_with('.scale'))#"site_trap_period",
 names(present_s1m1_X5)
 	
-write.table(present_s1m1_X5, here('kelpie','for_adagpu','incidence_s1m1_env_5_sample_by_species_corr_table_F2308_minimap2_20200221_kelpie20200214.csv'), row.names=F, sep=',')
-write.table(present_s1m1_Y5, here('kelpie','for_adagpu','incidence_s1m1_otu_5_sample_by_species_corr_table_F2308_minimap2_20200221_kelpie20200214.csv'), row.names=F, sep=',')
-write.table(present_s1m1_S5, here('kelpie','for_adagpu','incidence_s1m1_spatial_5_sample_by_species_corr_table_F2308_minimap2_20200221_kelpie20200214.csv'), row.names=F, sep=',')
-	
-dataI.1.fsl2$site_trap_period[41:42]
-dataI.1.present2$site_trap_period[41:43] 
-dataI.1.present2$site_trap_period[43:88] == dataI.1.fsl2$site_trap_period[42:87]
-# "SM-06_M1_S1" (42) -> no info for lysis!
-#
-# ... session II
-b = data.frame(otu=colnames(select(dataII.1.present,contains('__'))), zero=apply(select(dataII.1.present,contains('__')),2,sum)==0)
-b$otu=as.character(b$otu)
-table(b$zero)
-	
-dataII.1.present2 = dplyr::select(dataII.1.present, -contains('__'),b$otu[b$zero==F])
-dim(dataII.1.present2)
-dataII.1.present2[1:5,34:40]
+#write.table(present_s1m1_X5, here('data','kelpie_data','for_adagpu','incidence_s1m1_env_5_sample_by_species_corr_table_F2308_minimap2_20200221_kelpie20200214.csv'), row.names=F, sep=',')
+#write.table(present_s1m1_Y5, here('data','kelpie_data','for_adagpu','incidence_s1m1_otu_5_sample_by_species_corr_table_F2308_minimap2_20200221_kelpie20200214.csv'), row.names=F, sep=',')
+#write.table(present_s1m1_S5, here('data','kelpie_data','for_adagpu','incidence_s1m1_spatial_5_sample_by_species_corr_table_F2308_minimap2_20200221_kelpie20200214.csv'), row.names=F, sep=',')
 	
 
-b = data.frame(otu=colnames(select(dataII.1.fsl,contains('__'))), zero=apply(select(dataII.1.fsl,contains('__')),2,sum)==0)
-b$otu=as.character(b$otu)
-table(b$zero)
+#
+# ... session II
+#b = data.frame(otu=colnames(select(dataII.1.present,contains('__'))), zero=apply(select(dataII.1.present,contains('__')),2,sum)==0)
+#b$otu=as.character(b$otu)
+#table(b$zero)
 	
-dataII.1.fsl2 = dplyr::select(dataII.1.fsl, -contains('__'),b$otu[b$zero==F])
-dim(dataII.1.fsl2)
-dataII.1.fsl2[1:5,34:40]
+#dataII.1.present2 = dplyr::select(dataII.1.present, -contains('__'),b$otu[b$zero==F])
+#dim(dataII.1.present2)
+#dataII.1.present2[1:5,34:40]
 	
-print(c(dim(dataII.1.fsl2), dim(dataII.1.present2)))
+
+#b = data.frame(otu=colnames(select(dataII.1.fsl,contains('__'))), zero=apply(select(dataII.1.fsl,contains('__')),2,sum)==0)
+#b$otu=as.character(b$otu)
+#table(b$zero)
+	
+#dataII.1.fsl2 = dplyr::select(dataII.1.fsl, -contains('__'),b$otu[b$zero==F])
+#dim(dataII.1.fsl2)
+#dataII.1.fsl2[1:5,34:40]
+	
+#print(c(dim(dataII.1.fsl2), dim(dataII.1.present2)))
 	
 # . write table
-#write.table(dataI.1.fsl2, here('kelpie','formatted_data', 'session_trap', 's1m1_relAbun2_lidar_mulspec_sample_by_species_corr_table_F2308_minimap2_20200221_kelpie20200214.csv'))
+
 	
 ```
