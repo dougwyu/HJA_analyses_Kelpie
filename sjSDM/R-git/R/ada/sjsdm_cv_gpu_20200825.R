@@ -22,7 +22,7 @@ library(glue)
 rundate <- 20200830 # run date
 minocc <- 5 # minimum occupancy (incidence) per OTU
 
-abund <- "pa" # "qp" # pa is 0/1 data, qp is quasiprob data
+abund <- "qp" # "qp" # pa is 0/1 data, qp is quasiprob data
 resultsfolder <- glue("results_{rundate}_{minocc}minocc_{abund}_loocv")
 dir_create(resultsfolder) # create results/ directory, but only if the results/ directory does not already exist
 
@@ -74,15 +74,17 @@ dev.off()
 
 
 ####
-# now run with qp data
-abund <- "qp" # "qp" # pa is 0/1 data, qp is quasiprob data
+# now run with pa data
+abund <- "pa" # "qp" # pa is 0/1 data, qp is quasiprob data
 resultsfolder <- glue("results_{rundate}_{minocc}minocc_{abund}_loocv")
 dir_create(resultsfolder) # create results/ directory, but only if the results/ directory does not already exist
 
 # species data:  otu.data
-# comment in the dataset that i want to use. qp == quasiprob, pa == 0/1
-# otu.data.pa.csv, otu.data.qp.csv
 otu.data <- read_csv(here("data", glue("otu.data.{abund}.csv")))
+# or if i don't have a pa dataset,  i convert qp to 0/1 data
+  # otu.data.pa.csv <- otu.data.qp.csv
+  # otu.data.pa.csv[otu.data.pa.csv > 0] <- 1
+  # otu.data <- otu.data.pa.csv
 
 # sjSDM_cv
 tune_results = sjSDM_cv(
