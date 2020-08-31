@@ -12,7 +12,7 @@
 #SBATCH --mail-user=dougwyu@mac.com #sends email to me
 #SBATCH --mail-type=ALL           #Mail events (NONE, BEGIN, END, FAIL, ALL)
 
-# ran on 20200824 on ada gpu, 27 hrs to complete with 275 spp, 88 sites, loocv
+# ran on 20200830 on ada gpu, 17.5 hrs to complete with 274 spp, 87 sites, loocv (pa data only)
 # sbatch sjsdm_gpu_20200825.sub # to submit the job
 
 module purge
