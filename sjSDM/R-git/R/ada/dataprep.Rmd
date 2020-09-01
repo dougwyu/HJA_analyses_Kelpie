@@ -61,7 +61,7 @@ options(scipen = 999)
 
 
 ```{r working directory}
-here() # "/Users/Negorashi2011/Dropbox/Working_docs/Luo_Mingjie_Oregon/HJA_analyses_Kelpie/sjSDM/R-git"
+here() # should be: "/Users/Negorashi2011/Dropbox/Working_docs/Luo_Mingjie_Oregon/HJA_analyses_Kelpie/sjSDM/R-git"
 ```
 
 
@@ -72,7 +72,10 @@ XY.csv <- read_csv(here("data", "kelpie_data", "for_adagpu", "quasiP_s1m1_spatia
   select(UTM_E, UTM_N)
 
 otu.data.qp.csv <- read_csv(here("data", "kelpie_data", "for_adagpu", "quasiP_s1m1_otu_5_sample_by_species_corr_table_F2308_minimap2_20200221_kelpie20200723.csv"))
+```
 
+```{r edit otu.data}
+# otu.data
 # keep OTUs with >=5 incidences
 minocc <- 5 # set to high number (e.g. 20) for testing
 otu.data.qp.csv <- otu.data.qp.csv[ , specnumber(otu.data.qp.csv, MARGIN = 2) >= minocc]
@@ -82,10 +85,28 @@ otu.data.pa.csv <- otu.data.qp.csv
 otu.data.pa.csv[otu.data.pa.csv > 0] <- 1
 ```
 
+```{r edit scale.env1.csv}
+# default is all environmental covariates: GIS + MS + Lidar
+
+# GIS variables
+scale.env1.csv <- scale.env1.csv %>% 
+  select(elevation.scale, canopy.ht.scale, min.T.scale, max.T.scale, precipitation.scale, metre.road.scale, metre.stream.scale, yrs.disturb.min.scale)
+
+# # or
+# # MS (multispectral) variables + elevation.scale
+# scale.env1.csv <- scale.env1.csv %>% 
+#   select(elevation.scale, mean.NDVI.scale, mean.EVI.scale, mean.green.scale, mean.bright.scale, mean.wet.scale)
+
+# # or
+# # LiDAR variables + elevation.scale
+# scale.env1.csv <- scale.env1.csv %>% 
+#   select(elevation.scale, l_Cover_2m_max.scale, l_Cover_2m_4m.scale, l_Cover_4m_16m.scale, l_p25.scale, l_p95.scale, l_rumple.scale)
+```
+
 
 These files are used as input to the sjsdm_cv() and sjsdm() code
 ```{r save data files}
-prepdate <- 20200830
+prepdate <- "20200831_5minocc_gis"
 datafolder <- glue("data_{prepdate}")
 dir_create(here("data", "kelpie_data", "for_adagpu", datafolder))
 
