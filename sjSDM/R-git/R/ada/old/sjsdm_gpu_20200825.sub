@@ -2,8 +2,8 @@
 #SBATCH -p gpu # -p for 'partition name'
      # gpu 24 hrs default, 7 d max, 2 GPUs max, 192GB per GPU
 #SBATCH --qos=gpu # QOS to be allowed to use GPU servers
+#SBATCH --gres=gpu:2 # Number of GPUs (per node)  # gpu:1 is the default.
 #SBATCH --mem 96G #
-# #SBATCH --gres=gpu:1 # Number of GPUs (per node)  # gpu:1 is the default.
 #SBATCH --ntasks=2 # number of slots == number of cores
 #SBATCH -t 36:00:00 # 36 hours # time (DD-HH:MM:00)
 #SBATCH --job-name=sjsdm # job name

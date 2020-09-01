@@ -19,9 +19,9 @@ library(fs)
 library(glue)
 
 # set variables
-rundate <- 20200831 # run date
+rundate <- 20200902 # run date
 minocc <- 5 # minimum occupancy (incidence) per OTU
-envvar <- "gis" # gis, ms, lidar, gismslidar
+envvar <- "ms" # gis, ms, lidar, gismslidar
 
 abund <- "qp" # "qp" # pa is 0/1 data, qp is quasiprob data
 
@@ -75,12 +75,14 @@ plot(tune_results, perf = "logLik")
 dev.off()
 # green points in the best plot are (close to) the best lambda and alpha values
 
-
+# copy datafolder into results folder
+dir_copy(datafolder, resultsfolder)
 
 ####
 # now run with pa data
 abund <- "pa" # "qp" # pa is 0/1 data, qp is quasiprob data
-resultsfolder <- glue("results_{rundate}_{minocc}minocc_{abund}_loocv")
+
+resultsfolder <- glue("results_{rundate}_{minocc}minocc_{envvar}_{abund}_loocv")
 dir_create(resultsfolder) # create results/ directory, but only if the results/ directory does not already exist
 
 # species data:  otu.data
@@ -123,6 +125,8 @@ plot(tune_results, perf = "logLik")
 dev.off()
 # green points in the best plot are (close to) the best lambda and alpha values
 
+# copy datafolder into results folder
+dir_copy(datafolder, resultsfolder)
 
 # # sjSDM test code
 # community <- simulate_SDM(sites = 100, species = 10, env = 5)
