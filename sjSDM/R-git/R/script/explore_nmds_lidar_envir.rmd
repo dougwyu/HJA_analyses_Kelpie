@@ -1,30 +1,33 @@
 # Yuanheng
 # create: May 25, 2020
+# last modified: Aug 31, 2020
 # apply NMDS for different sessions & mark them on geographic map
 
 # apply NMDS on lidar_data ('10_eo_data')
 
 ```{r set-up}
+#setwd('/media/yuanheng/SD-64g2/Downloads/backup2/HJA_analyses_Kelpie/sjSDM/R-git')
+	
 lapply(c("ggplot2", "gridExtra",'vegan', 'labdsv','tidyverse','scatterplot3d', 'gridBase','grid', 'here'),library,character.only=T)
-  
-here::here()
-# .../R-git !!!
-getwd()
+	
+dr_here()
+packageVersion('vegan')
+#[1] ‘2.5.6’ metaMDS
 	
 ```
 
 ```{r read-in data}
-otu.env1.spike.present2 = read.table(here('kelpie','formatted_data','present_lidar_mulspec_sample_by_species_corr_table_F2308_minimap2_20200221_kelpie20200214.csv'), sep=',', header=T, na.strings='NA')
+otu.env1.spike.present2 = read.table(here('data','kelpie_data','formatted_data','old','present_lidar_mulspec_sample_by_species_corr_table_F2308_minimap2_20200221_kelpie20200214.csv'), sep=',', header=T, na.strings='NA')
 	
-otu.env1.spike.relAbun2 = read.table(here('kelpie','formatted_data','relAbun_lidar_mulspec_sample_by_species_corr_table_F2308_minimap2_20200221_kelpie20200214.csv'), sep=',', header=T, na.strings='NA')
+otu.env1.spike.relAbun2 = read.table(here('data','kelpie_data','formatted_data','old','relAbun_lidar_mulspec_sample_by_species_corr_table_F2308_minimap2_20200221_kelpie20200214.csv'), sep=',', header=T, na.strings='NA')
 	
 # can skip if directly goes to 'subsets of data'
 # 0/1 OTU
-otu.env1.spike.present = read.csv(here('kelpie','formatted_data','present2_mulspec_sample_by_species_corr_table_F2308_minimap2_20200221_kelpie20200214.csv'), header=T, sep=',', stringsAsFactors = F, na.strings='NA')
+otu.env1.spike.present = read.csv(here('data','kelpie_data','formatted_data','old','present2_mulspec_sample_by_species_corr_table_F2308_minimap2_20200221_kelpie20200214.csv'), header=T, sep=',', stringsAsFactors = F, na.strings='NA')
 str(otu.env1.spike.present[,1:26])
 	
 # relAbun OTU
-otu.env1.spike.relAbun = read.csv(here('kelpie','formatted_data','relAbun2_mulspec_sample_by_species_corr_table_F2308_minimap2_20200221_kelpie20200214.csv'), header=T, sep=',', stringsAsFactors = F, na.strings='NA')
+otu.env1.spike.relAbun = read.csv(here('data','kelpie_data','formatted_data','old','relAbun2_mulspec_sample_by_species_corr_table_F2308_minimap2_20200221_kelpie20200214.csv'), header=T, sep=',', stringsAsFactors = F, na.strings='NA')
 str(otu.env1.spike.relAbun[,1:26])
 	
 # lidar data
@@ -34,7 +37,7 @@ str(lidar.env)
 ```
 
 ```{r visualize lidar indices}
-# pdf(here('R','graph','describe_lidar_indices.pdf'), height=4, width=9)
+# pdf(here('results','descriptive-graph','describe_lidar_indices.pdf'), height=4, width=9)
 par(mfrow=c(1,2))
 	
 plot(x = 1:dim(lidar.env)[1], y = lidar.env$l_p95, type='l', ylim=c(0, max(lidar.env[,c(4:8,10:14)])), main='black: p95, red: p25, blue: rumple')
@@ -109,9 +112,9 @@ otu2 = otu2[ , c(1:39, 1187:1197, 40:1186)]
 names(otu2[,20:51])
 names(otu2[,1190:1197])
 	
-# write.table(otu2, file=here('kelpie','formatted_data','present_lidar_mulspec_sample_by_species_corr_table_F2308_minimap2_20200221_kelpie20200214.csv'), sep=',',row.names=F)
+# write.table(otu2, file=here('data','kelpie_data','formatted_data','old', 'present_lidar_mulspec_sample_by_species_corr_table_F2308_minimap2_20200221_kelpie20200214.csv'), sep=',',row.names=F)
 	
-# write.table(otu2, file=here('kelpie','formatted_data','relAbun_lidar_mulspec_sample_by_species_corr_table_F2308_minimap2_20200221_kelpie20200214.csv'), sep=',',row.names=F)
+# write.table(otu2, file=here('data','kelpie_data','formatted_data','old', 'relAbun_lidar_mulspec_sample_by_species_corr_table_F2308_minimap2_20200221_kelpie20200214.csv'), sep=',',row.names=F)
 	
 otu.env1.spike.relAbun2 = otu2
 	
@@ -143,17 +146,17 @@ print(c(dim(dataI.1.spike.relAbun),dim(dataI.2.spike.relAbun), dim(dataII.1.spik
 	
 
 # .... if there's all zero OTUs ....
-dd = dataI.1.spike.present		# S1, M1, 0/1
-#dd = dataI.2.spike.present		# S1, M2, 0/1
+ dd = dataI.1.spike.present		# S1, M1, 0/1
+# dd = dataI.2.spike.present		# S1, M2, 0/1
 	
 # dd = dataII.1.spike.present			# S2, M1, 0/1
-#dd = dataII.2.spike.present		# S2, M2, 0/1
+# dd = dataII.2.spike.present		# S2, M2, 0/1
 	
 # dd = dataI.1.spike.relAbun		# S1, M1, abun
 #dd = dataI.2.spike.relAbun		# S1, M2, abun
 	
 # dd = dataII.1.spike.relAbun		# S2, M1, abun
-#dd = dataII.2.spike.relAbun		# S2, M2, abun
+# dd = dataII.2.spike.relAbun		# S2, M2, abun
 	
 b = data.frame(otu=colnames(select(dd,contains('__'))), zero=apply(select(dd,contains('__')),2,sum)==0)
 b$otu=as.character(b$otu)
@@ -164,11 +167,11 @@ dd2[1:5,34:45]
 	
 print(c(dim(dd), dim(dd2)))
 	
-dataI.1.spike.present2 = dd2
-#dataI.2.spike.present2 = dd2
+ dataI.1.spike.present2 = dd2
+# dataI.2.spike.present2 = dd2
 	
 # dataII.1.spike.present2 = dd2
-#dataII.2.spike.present2 = dd2
+# dataII.2.spike.present2 = dd2
 	
 # dataI.1.spike.relAbun2 = dd2
 #dataI.2.spike.relAbun2 = dd2
@@ -282,7 +285,7 @@ str(nmds.geo.table)
 c(range(nmds.geo.table$nmds1), range(nmds.geo.table$nmds2))
 	
 # . NMDS  .
-#pdf(here('R','graph',paste(pdf.name)), width=15, height=15)
+#pdf(here('results','descriptive-graph','nmds_graph',paste(pdf.name)), width=15, height=15)
 	
 par(mfrow=c(2,2))
 	
@@ -400,7 +403,7 @@ fit.nmds = fitII1_3.spike.relAbun
 pdf.text = 'nmds_lidar_s2m1_spike_relAbun.pdf'
 plot.text = paste("kelpi 20200214, 3 mds, relAbun, session 2 (M1), stress ",round(nmds$stress,4), sep='')
 	
-#pdf(here('R','graph',paste(pdf.text)), width=11, height=11)
+#pdf(here('results','descriptive-graph','nmds_graph',paste(pdf.text)), width=11, height=11)
 	
 par(mfrow=c(2,2))
 	
@@ -466,7 +469,7 @@ g.4 = ggplot(nmds.geo.table, aes(UTM_E, UTM_N, size=p95, colour=nmds1)) + geom_p
 	  
 g.5 = ggplot(nmds.geo.table, aes(UTM_E, UTM_N, size=rumple, colour=nmds1)) + geom_point() + scale_colour_gradient(low='purple', high='orange') + ggtitle('l_rumple') + theme(plot.title= element_text(hjust=.5), text=element_text(family = "sans"), legend.position='bottom', legend.title=element_text(size=9)) 
 	
-#pdf(here('R','graph',paste(pdf.text)), width=18, height=12)
+#pdf(here('results','descriptive-graph','nmds_graph',paste(pdf.text)), width=18, height=12)
 par(mfrow=c(2,3))
   
 # geo plots
@@ -507,18 +510,18 @@ str(distI1.spike.present)
 # 2D NMDS
 set.seed(87516)
 nmds2d = metaMDS(distI1.spike.present, distance='bray', try=30, trymax=2000, k=2, trace=T,plot=T, binary=F)
-#... Procrustes: rmse 0.0004416068  max resid 0.003395293 (87516)
+#... Procrustes: rmse 0.0006187125  max resid 0.005188922
 	  
 nmds2d
-# Stress:     0.2247201 
+# Stress:     0.2256677
 	  
 # 3D NMDS
 set.seed(18756)  # set the seed so that the result can be repeated
 nmds3d = metaMDS(distI1.spike.present, distance='bray', try=30, trymax=2000, k=3, trace=T,plot=T)
-#  ... Procrustes: rmse 0.0009067094  max resid 0.003763488
+#  ... Procrustes: rmse 0.001204459  max resid 0.005170151 
 	
 nmds3d
-# Stress:     0.1751298
+# Stress:     0.1753449
 	  
 count.nmdsI1.spike.present = nmds2d
 count.nmdsI1_3.spike.present = nmds3d
@@ -587,7 +590,7 @@ c(range(nmds.geo.table$nmds1), range(nmds.geo.table$nmds2))
 # . NMDS  .
 plot.text = '0/1, session 1, trap 1, 88 sites, 850 otu'
 	
-#pdf(here('R','graph','nmds_geo_lidar_s1m1_present.pdf'), width=15, height=15)
+#pdf(here('results','descriptive-graph','nmds_graph','nmds_geo_lidar_s1m1_present.pdf'), width=15, height=15)
 	
 par(mfrow=c(2,2))
 	
@@ -649,19 +652,19 @@ str(distII1.spike.present)
 # 2D NMDS
 set.seed(87156)
 nmds2d = metaMDS(distII1.spike.present, distance='bray', try=30, trymax=6000, k=2, trace=T,plot=T)
-#  Procrustes: rmse 0.0002273249  max resid 0.001038094 
+#  Procrustes: rmse 0.001390123  max resid 0.009601155
 	
 nmds2d
-# Stress:     0.276602
+# Stress:     0.2818141
 	
 
 # 3D NMDS
 set.seed(18756)
 nmds3d = metaMDS(distII1.spike.present, distance='bray', try=30, trymax=6000, k=3, trace=T,plot=T) # , previous.best=cmdscale(distI2.noS
-#   Procrustes: rmse 0.00119641  max resid 0.006656238
+#   Procrustes: rmse 0.002128049  max resid 0.01249923
 	
 nmds3d
-# Stress:     0.2059325
+# Stress:     0.2104043
 	
 stressplot(nmds3d)
   
@@ -703,7 +706,7 @@ gof = goodness(nmds)
 pdf.text = 'nmds_lidar_s2m1_present.pdf'
 plot.text = paste("kelpi 20200214, 3 mds, 0/1, session 2 (M1), stress ",round(nmds$stress,4), sep='')
 	
-#pdf(here('R','graph', paste(pdf.text)), width=11, height=11)
+#pdf(here('results','descriptive-graph','nmds_graph', paste(pdf.text)), width=11, height=11)
 	
 par(mfrow=c(2,2))
 	
@@ -764,7 +767,7 @@ g.4 = ggplot(nmds.geo.table, aes(UTM_E, UTM_N, size=p95, colour=nmds1)) + geom_p
   	
 g.5 = ggplot(nmds.geo.table, aes(UTM_E, UTM_N, size=rumple, colour=nmds1)) + geom_point() + scale_colour_gradient(low='purple', high='orange') + ggtitle('l_rumple') + theme(plot.title= element_text(hjust=.5), text=element_text(family = "sans"), legend.position='bottom', legend.title=element_text(size=9)) 
 	
-#pdf(here('R','graph', paste(pdf.text)), width=18, height=12)
+#pdf(here('results','descriptive-graph','nmds_graph', paste(pdf.text)), width=18, height=12)
 par(mfrow=c(2,3))
 	
 # . I. nmds with env.variables, plot 1:3
