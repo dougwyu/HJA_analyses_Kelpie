@@ -278,6 +278,29 @@ names(fsl.env1)[1:55]
 fsl.env1 = read.table(here('data','kelpie_data','formatted_data','data_used_during_format','fsl_hmsc_sample_by_species_corr_table_F2308_minimap2_20200221_kelpie20200723.csv'), sep = ",", header=T)
 str(fsl.env1[,1:55])
 	
+# make a dataset with FSL >=5
+data = fsl.env1
+dim(as.data.frame(select(data, -contains('__'))))
+	
+dimotu=58
+	
+a = data.frame(index=dimotu:dim(data)[2], sel=specnumber(as.data.frame(select(data, contains('__'))), MARGIN=2) >4)
+str(a)
+table(a$sel)
+	
+fsl.env11 = select(data, 1:(dimotu-1), a$index[a$sel==T])
+dim(fsl.env11)
+names(fsl.env11)[1:58]
+	
+rm(data,a,dimotu)
+	
+dim(fsl.env11)
+	
+fsl.env11 = select(fsl.env11, -'l_Cover_4m_16m_all.scale',-"l_Cover_4m_16m_all")
+	
+#write.table(fsl.env11, here('xxx','abundance_fsl_lidar_mulspec_5_sample_by_species_corr_table_F2308_minimap2_20200221_kelpie20200723.csv'), row.names=F, sep=',')
+	
+
 # calculate quasi-probability
 fsl.env11 = data.frame(sapply(select(fsl.env1, contains('__')), function(x) scales::rescale(log(x+0.001))))
 dim(fsl.env11)
