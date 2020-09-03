@@ -76,8 +76,7 @@ otu.data.qp.csv <- read_csv(here("data", "kelpie_data", "for_adagpu", "quasiP_s1
 
 ```{r edit XY.csv}
 # scale XY data
-XY.csv <- scale(XY.csv) %>% 
-  tbl_df()
+XY.csv <- scale(XY.csv) %>% tbl_df()
 ```
 
 
