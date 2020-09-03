@@ -74,6 +74,13 @@ XY.csv <- read_csv(here("data", "kelpie_data", "for_adagpu", "quasiP_s1m1_spatia
 otu.data.qp.csv <- read_csv(here("data", "kelpie_data", "for_adagpu", "quasiP_s1m1_otu_5_sample_by_species_corr_table_F2308_minimap2_20200221_kelpie20200723.csv"))
 ```
 
+```{r edit XY.csv}
+# scale XY data
+XY.csv <- scale(XY.csv) %>% 
+  tbl_df()
+```
+
+
 ```{r edit otu.data}
 # otu.data
 # keep OTUs with >=5 incidences
