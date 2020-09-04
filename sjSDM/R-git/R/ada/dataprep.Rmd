@@ -79,7 +79,6 @@ otu.data.qp.csv <- read_csv(here("data", "kelpie_data", "for_adagpu", "quasiP_s1
 XY.csv <- scale(XY.csv) %>% tbl_df()
 ```
 
-
 ```{r edit otu.data}
 # otu.data
 # keep OTUs with >=5 incidences
@@ -113,7 +112,7 @@ scale.env1.csv <- scale.env1.csv %>%
 These files are used as input to the sjsdm_cv() and sjsdm() code
 ```{r save data files}
 # set variables
-prepdate <- 20200904 # run date
+prepdate <- 20200906 # run date
 minocc <- 5 # minimum occupancy (incidence) per OTU
 envvar <- "lidar" # gis, ms, lidar, gismslidar
 (datafolder <- glue("data_{prepdate}_{minocc}minocc_{envvar}"))
