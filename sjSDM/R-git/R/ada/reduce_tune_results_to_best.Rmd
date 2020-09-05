@@ -1,0 +1,38 @@
+---
+title: "reduce_tune_results_to_best"
+author: "Douglas Yu"
+date: "05/09/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+# packages
+library(sjSDM)
+library(here)
+library(tidyverse)
+library(fs)
+library(glue)
+
+# set variables
+rundate <- 20200904 # run date
+minocc <- 5 # minimum occupancy (incidence) per OTU
+envvar <- "lidar" # gis, ms, lidar, gismslidar
+
+abund <- "qp" # "qp" # pa is 0/1 data, qp is quasiprob data
+```
+
+```{r get best results}
+(resultsfolder <- glue("results_{rundate}_{minocc}minocc_{envvar}_{abund}_loocv"))
+
+tune_results <- readRDS(here("results", "crossvalidation", resultsfolder, glue("sjsdm_tune_results_HJA_{rundate}.RDS")))
+```
+
+```{r save best results}
+best <- plot(tune_results, perf = "logLik")
+
+# save best results only from tune_results, because the tune_results file is ~620MB
+saveRDS(best, here("results", "crossvalidation", resultsfolder, glue("sjsdm_tune_results_HJA_bestonly_{rundate}.RDS")))
+```
+

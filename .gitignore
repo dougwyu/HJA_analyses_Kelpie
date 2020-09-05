@@ -22,3 +22,4 @@ HJA_scripts/08_reference_sequences_datasets/~$biodiversity_site_info_vars_descri
 sjSDM/R-git/adagpu/results_20200823_cv5/sjsdm.err
 sjSDM/R-git/adagpu/results_20200823_cv5/sjsdm.out
 sjSDM/R-git/adagpu/results_20200823_44OTU_loocv/sjsdm_tune_results_HJA_20200823.RDS
+sjSDM/R-git/results/crossvalidation/results_20200904_5minocc_lidar_qp_loocv/sjsdm_tune_results_HJA_20200904.RDS
