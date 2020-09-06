@@ -19,9 +19,9 @@ library(fs)
 library(glue)
 
 # set variables
-rundate <- 20200906 # run date
+rundate <- 20200907 # run date
 minocc <- 5 # minimum occupancy (incidence) per OTU
-envvar <- "lidar" # gismslidar, gis, ms, lidar
+envvar <- "gismslidar" # gismslidar, gis, ms, lidar
 
 abund <- "qp" # "qp" # pa is 0/1 data, qp is quasiprob data
 
@@ -83,7 +83,7 @@ saveRDS(best, here(resultsfolder, glue("sjsdm_tune_results_HJA_{rundate}_bestonl
 # copy datafolder into results folder
 dir_copy(datafolder, resultsfolder)
 
-# code to run loocv on pa data commented out
+# loocv with pa data commented out.  will be running either only qp or only pa data, which is set above in the abund variable
 # ####
 # # now run with pa data
 # abund <- "pa" # "qp" # pa is 0/1 data, qp is quasiprob data
@@ -139,7 +139,7 @@ dir_copy(datafolder, resultsfolder)
 # 
 # # copy datafolder into results folder
 # dir_copy(datafolder, resultsfolder)
-
+# 
 
 
 
