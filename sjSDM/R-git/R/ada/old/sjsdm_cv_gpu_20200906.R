@@ -75,10 +75,6 @@ plot(tune_results, perf = "logLik")
 dev.off()
 # green points in the best plot are (close to) the best lambda and alpha values
 
-# save best lambdas and alphas
-best <- plot(tune_results, perf = "logLik")
-saveRDS(best, here(resultsfolder, glue("sjsdm_tune_results_HJA_{rundate}_bestonly.RDS")))
-
 # copy datafolder into results folder
 dir_copy(datafolder, resultsfolder)
 
@@ -130,15 +126,8 @@ plot(tune_results, perf = "logLik")
 dev.off()
 # green points in the best plot are (close to) the best lambda and alpha values
 
-# save best lambdas and alphas
-best <- plot(tune_results, perf = "logLik")
-saveRDS(best, here(resultsfolder, glue("sjsdm_tune_results_HJA_{rundate}_bestonly.RDS")))
-
 # copy datafolder into results folder
 dir_copy(datafolder, resultsfolder)
-
-
-
 
 # # sjSDM test code
 # community <- simulate_SDM(sites = 100, species = 10, env = 5)

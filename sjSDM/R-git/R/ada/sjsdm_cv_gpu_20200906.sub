@@ -3,12 +3,12 @@
      # gpu 24 hrs default, 7 d max, 2 GPUs max, 192GB per GPU
 #SBATCH --qos=gpu # QOS to be allowed to use GPU servers
 #SBATCH --gres=gpu:2 # Number of GPUs (per node)  # gpu:1 is the default. if I set gpu:1, but i use n_gpu=2 in sjsdm_cv() code, sjsdm_cv() will grab 2 gpus, including from jobs by other users
-#SBATCH --mem 96G #
+#SBATCH --mem 128G #
 #SBATCH --ntasks=2 # number of slots == number of CPU cores (match n_cpu)
 #SBATCH -t 48:00:00 # 48 hrs # time (DD-HH:MM)
-#SBATCH --job-name=sjsdmcvl2 # job name
-#SBATCH -o sjsdmcvl2.out
-#SBATCH -e sjsdmcvl2.err
+#SBATCH --job-name=sjsdmcva # job name
+#SBATCH -o sjsdmcva.out
+#SBATCH -e sjsdmcva.err
 #SBATCH --mail-user=dougwyu@mac.com #sends email to me
 #SBATCH --mail-type=ALL           #Mail events (NONE, BEGIN, END, FAIL, ALL)
 
@@ -21,4 +21,3 @@ module add R
 
 # upload sjsdm_gpu_20200906.sub and sjsdm_gpu_20200906.R into working folder (~/sjSDM)
 Rscript --vanilla sjsdm_cv_gpu_20200906.R
-# this script reruns the lidar cross validation but this time with the XY.csv dataset NOT scaled and centered. testing to see if the crossvalidation results are the same as with the scaled XY.csv data. if they are not the same, then i need to rerun loocv for everything. 

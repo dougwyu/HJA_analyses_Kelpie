@@ -5,6 +5,8 @@ date: "05/09/2020"
 output: html_document
 ---
 
+This shouldn't be needed most of the time.
+
 ```{bash}
 ssh ada
 interactive
@@ -30,7 +32,7 @@ rundate <- 20200904 # run date
 minocc <- 5 # minimum occupancy (incidence) per OTU
 envvar <- "lidar" # gis, ms, lidar, gismslidar
 
-abund <- "qp" # "qp" # pa is 0/1 data, qp is quasiprob data
+abund <- "pa" # "qp" # pa is 0/1 data, qp is quasiprob data
 ```
 
 ```{r get best results}

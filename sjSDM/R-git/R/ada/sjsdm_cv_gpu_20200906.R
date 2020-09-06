@@ -21,7 +21,7 @@ library(glue)
 # set variables
 rundate <- 20200906 # run date
 minocc <- 5 # minimum occupancy (incidence) per OTU
-envvar <- "lidar" # gis, ms, lidar, gismslidar
+envvar <- "lidar" # gismslidar, gis, ms, lidar
 
 abund <- "qp" # "qp" # pa is 0/1 data, qp is quasiprob data
 
@@ -50,6 +50,8 @@ tune_results = sjSDM_cv(
   spatial = linear(XY, ~0 + UTM_E:UTM_N),
   biotic = bioticStruct(on_diag = FALSE, inverse = FALSE), # inverse=TRUE is 'better' but much slower
   tune = "random", # random steps in tune-parameter space
+  learning_rate = 0.003, # 0.01 default, 0.003 recommended for high species number
+  family = stats::binomial("probit"), # for both p/a and quasiprob data, default
   CV = nrow(as.matrix(otu.data)), # 5L for 5-fold cross validation, nrow(Y) for LOOCV
   tune_steps = 60L, # 20L is default
   alpha_cov = seq(0, 1, 0.1),
@@ -74,6 +76,10 @@ pdf(file = here(resultsfolder, glue("best_{rundate}.pdf")))
 plot(tune_results, perf = "logLik")
 dev.off()
 # green points in the best plot are (close to) the best lambda and alpha values
+
+# save best lambdas and alphas
+best <- plot(tune_results, perf = "logLik")
+saveRDS(best, here(resultsfolder, glue("sjsdm_tune_results_HJA_{rundate}_bestonly.RDS")))
 
 # copy datafolder into results folder
 dir_copy(datafolder, resultsfolder)
@@ -126,8 +132,15 @@ plot(tune_results, perf = "logLik")
 dev.off()
 # green points in the best plot are (close to) the best lambda and alpha values
 
+# save best lambdas and alphas
+best <- plot(tune_results, perf = "logLik")
+saveRDS(best, here(resultsfolder, glue("sjsdm_tune_results_HJA_{rundate}_bestonly.RDS")))
+
 # copy datafolder into results folder
 dir_copy(datafolder, resultsfolder)
+
+
+
 
 # # sjSDM test code
 # community <- simulate_SDM(sites = 100, species = 10, env = 5)
