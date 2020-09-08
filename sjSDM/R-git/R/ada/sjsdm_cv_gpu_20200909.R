@@ -21,9 +21,9 @@ library(glue)
 # set variables
 rundate <- 20200909 # run date
 minocc <- 5 # minimum occupancy (incidence) per OTU
-envvar <- "ms" # gismslidar, gis, ms, lidar
+envvar <- "gis" # gismslidar, gis, ms, lidar
 
-abund <- "qp" # "qp" # pa is 0/1 data, qp is quasiprob data
+abund <- "pa" # pa is 0/1 data, qp is quasiprob data
 
 resultsfolder <- glue("results_{rundate}_{minocc}minocc_{envvar}_{abund}_loocv")
 dir_create(resultsfolder) # create results/ directory, but only if the results/ directory does not already exist

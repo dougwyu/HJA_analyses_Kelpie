@@ -6,9 +6,9 @@
 #SBATCH --mem 128G #
 #SBATCH --ntasks=2 # number of slots == number of CPU cores (match n_cpu)
 #SBATCH -t 48:00:00 # 48 hrs # time (DD-HH:MM)
-#SBATCH --job-name=sjsdmcvm # job name
-#SBATCH -o sjsdmcvm.out
-#SBATCH -e sjsdmcvm.err
+#SBATCH --job-name=sjsdmcvg # job name
+#SBATCH -o sjsdmcvg.out
+#SBATCH -e sjsdmcvg.err
 #SBATCH --mail-user=dougwyu@mac.com #sends email to me
 #SBATCH --mail-type=ALL           #Mail events (NONE, BEGIN, END, FAIL, ALL)
 
