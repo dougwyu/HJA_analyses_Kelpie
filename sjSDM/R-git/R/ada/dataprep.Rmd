@@ -90,8 +90,8 @@ otu.data.pa.csv[otu.data.pa.csv > 0] <- 1
 # default is all environmental covariates: GIS + MS + Lidar
 
 # GIS variables
-scale.env1.csv <- scale.env1.csv %>%
-  select(elevation.scale, canopy.ht.scale, min.T.scale, max.T.scale, precipitation.scale, metre.road.scale, metre.stream.scale, yrs.disturb.min.scale)
+# scale.env1.csv <- scale.env1.csv %>%
+#   select(elevation.scale, canopy.ht.scale, min.T.scale, max.T.scale, precipitation.scale, metre.road.scale, metre.stream.scale, yrs.disturb.min.scale)
 
 # # or
 # # MS (multispectral) variables + elevation.scale
@@ -105,17 +105,17 @@ scale.env1.csv <- scale.env1.csv %>%
 
 # # or
 # # MS + LiDAR + elevation.scale
-# scale.env1.csv <- scale.env1.csv %>%
-#   select(elevation.scale, mean.NDVI.scale, mean.EVI.scale, mean.green.scale, mean.bright.scale, mean.wet.scale, l_Cover_2m_max.scale, l_Cover_2m_4m.scale, l_Cover_4m_16m.scale, l_p25.scale, l_p95.scale, l_rumple.scale)
+scale.env1.csv <- scale.env1.csv %>%
+  select(elevation.scale, mean.NDVI.scale, mean.EVI.scale, mean.green.scale, mean.bright.scale, mean.wet.scale, l_Cover_2m_max.scale, l_Cover_2m_4m.scale, l_Cover_4m_16m.scale, l_p25.scale, l_p95.scale, l_rumple.scale)
 ```
 
 
 These files are used as input to the sjsdm_cv() and sjsdm() code
 ```{r save data files}
 # set variables
-prepdate <- 20200909 # run date
+prepdate <- 20200911 # run date
 minocc <- 5 # minimum occupancy (incidence) per OTU
-envvar <- "gis" # gismslidar, gis, ms, lidar, mslidar
+envvar <- "mslidar" # gismslidar, gis, ms, lidar, mslidar
 (datafolder <- glue("data_{prepdate}_{minocc}minocc_{envvar}"))
 
 dir_create(here("data", "kelpie_data", "for_adagpu", datafolder))
