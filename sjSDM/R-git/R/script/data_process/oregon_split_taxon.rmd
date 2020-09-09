@@ -1,0 +1,62 @@
+# Yuanheng
+# create: Sep 09, 2020 
+# last modified:   31, 2020
+# make a taxonomic table for HMSC (TP.csv)
+# your taxa as rows; the order, family, genus and species name in the columns
+
+```{r setup}
+#setwd('/media/yuanheng/SD-64g2/Downloads/backup2/HJA_analyses_Kelpie/sjSDM/R-git')
+	
+lapply(c("ggplot2", "gridExtra",'vegan', 'labdsv', 'tidyverse', 'scatterplot3d', 'gridBase','conflicted', 'grid', 'ggcorrplot','here'), library, character.only=T)
+	
+conflict_prefer("filter", "dplyr")
+conflict_prefer("select", "dplyr")
+	
+dr_here()
+	
+```
+
+```{r load files}
+otu.present = read.table(here('data','kelpie_data','formatted_data','incidence_lidar_mulspec_5_sample_by_species_corr_table_F2308_minimap2_20200221_kelpie20200723.csv'), header=T, sep=',', stringsAsFactors = F, na.strings='NA')
+otu.quasiP = read.table(here('data','kelpie_data','formatted_data','quasiP_lidar_mulspec_5_sample_by_species_corr_table_F2308_minimap2_20200221_kelpie20200723.csv'), header=T, sep=',', stringsAsFactors = F, na.strings='NA')
+	
+print(c(dim(otu.present), dim(otu.quasiP)))
+	
+names(otu.present)[33:65]
+	
+```
+
+```{r extract-taxon}
+# check if otu orders are same for two datasets
+otu.pa = as.data.frame(select(otu.present, contains('__')))
+names(otu.pa)[1:5]
+dim(otu.pa)
+	
+otu.qp = as.data.frame(select(otu.quasiP, contains('__')))
+names(otu.qp)[1:5]
+dim(otu.qp)
+	
+table(names(otu.qp) == names(otu.pa))
+	
+TP = data.frame(otu=names(otu.qp), order=rep('aaa', length.out=dim(otu.qp)[2]), family= rep('aaa', length.out=dim(otu.qp)[2]),genus= rep('aaa', length.out=dim(otu.qp)[2]), species=rep('aaa', length.out=dim(otu.qp)[2]), stringsAsFactors = F)
+str(TP)
+	
+TP$order = sapply(strsplit(sapply(str_split(TP$otu, '__'), function(a) a[2]), '_'), function(a) a[2])
+TP$family = sapply(strsplit(sapply(str_split(TP$otu, '__'), function(a) a[2]), '_'), function(a) a[3])
+TP$genus = sapply(strsplit(sapply(str_split(TP$otu, '__'), function(a) a[2]), '_'), function(a) a[4])
+TP$species = sapply(strsplit(sapply(str_split(TP$otu, '__'), function(a) a[2]), '_'), function(a) a[6])
+	
+unique(TP$order)
+	
+unique(TP$family)
+TP$family[TP$family=='BOLD'] = 'NA'
+	
+TP$genus[TP$family=='NA'] = 'NA'
+unique(TP$genus)
+	
+TP$species[TP$genus=='NA' | TP$species=='BOLD' ] = 'NA'
+unique(TP$species)
+	
+write.table(TP, here('data', 'kelpie_data', 'formatted_data', 'data_used_during_format','TP_lidar_mulspec_5_sample_by_species_corr_table_F2308_minimap2_20200221_kelpie20200723.csv'), row.names=F, sep=',')
+	
+```
