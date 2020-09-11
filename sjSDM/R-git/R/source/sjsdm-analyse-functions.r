@@ -3,13 +3,13 @@
 # last modified: Jul 16, 2020
 
 # variation partition plot with diff colors
-vp.plot <- function(data, ind, textM, textL) {
+vp.plot <- function(data, x1, x2, ind, textM, textL) {
 col <- brewer.pal(length(unique(data[,ind])), 'Paired')
   mycolor<-col
   data[,ind]=as.factor(data[,ind])
   group<-data[, ind]
   color = mycolor[as.numeric(group)] 
-  ternaryplot(data[, 2:4], 
+  ternaryplot(data[, x1:x2], 
               pch = 20, 
               col = color,
               main = textM, 
