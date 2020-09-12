@@ -11,6 +11,8 @@ Sys.setenv(RETICULATE_PYTHON="/gpfs/scratch/b042/sjSDM_env/bin/python")
 # }
 # 
 
+# rm(list=ls())
+
 # packages
 library(sjSDM)
 library(here)
@@ -18,40 +20,46 @@ library(tidyverse)
 library(fs)
 library(glue)
 
-abund <- "pa" # "qp" # pa is 0/1 data, qp is quasiprob data
-rundate <- 20200830 # sjsdm_cv run date
+rundate <- 20200907 # sjsdm_cv run date
+envvar <- "gismslidar" # gismslidar, mslidar, gis, ms, lidar
+abund <- "qp" # "qp" # pa is 0/1 data, qp is quasiprob data
+
 minocc <- 5 # minimum occupancy (incidence) per OTU, value from dataprep.Rmd
-resultsfolder <- glue("results_{rundate}_{minocc}minocc_{abund}_loocv")
+
+resultsfolder <- glue("results_{rundate}_{minocc}minocc_{envvar}_{abund}_loocv")
+resultsfolder
+datafolder <- glue("data_{rundate}_{minocc}minocc_{envvar}")
+datafolder
 
 # read in data
 # env data:  scale.env1
-scale.env1 <- read_csv(here("data", "scale.env1.csv"))
+scale.env1 <- read_csv(here(resultsfolder, datafolder, "scale.env1.csv"))
 
 # species data:  otu.data
 # comment in the dataset that i want to use. qp == quasiprob, pa == 0/1
-otu.data <- read_csv(here("data", "otu.data.pa.csv"))
-# otu.data <- read_csv(here("data", "otu.data.qp.csv"))
+otu.data <- read_csv(here(resultsfolder, datafolder, glue("otu.data.{abund}.csv")))
 
 # XY data: XY
-XY <- read_csv(here("data", "XY.csv"))
+XY <- read_csv(here(resultsfolder, datafolder, "XY.csv"))
 
 
 # read in cross-validation output from resultsfolder
-tune_results <- readRDS(here(resultsfolder, 
-                             glue("sjsdm_tune_results_HJA_{rundate}.RDS")))
-best = plot(tune_results, perf = "logLik")
-
-# # run sjSDM model
+best <- readRDS(here(resultsfolder, 
+                             glue("sjsdm_tune_results_HJA_{rundate}_bestonly.RDS")))
+best
 # # lambda is the regularization strength
 # # sjSDM supports l1 (lasso) and l2 (ridge) regularization:
-  # # alpha weights the lasso or ridge penalty:
-  # # - alpha = 0 --> pure lasso
-  # # - alpha = 1.0 --> pure ridge
+# # alpha weights the lasso or ridge penalty:
+# # - alpha = 0 --> pure lasso
+# # - alpha = 1.0 --> pure ridge
 # green points in the best plot are (close to) the best lambda and alpha values
+
+
+# # run sjSDM model
 model <-  sjSDM(
   Y = as.matrix(otu.data),
   iter = 150L,
-  learning_rate = 0.003, # 0.01 default, 0.003 recommended for high species number
+  learning_rate = 0.002, # 0.01 default, 0l002 or 0.003 recommended for high species number, try a few values and choose the one with the smoothest model history
   family = stats::binomial("probit"), # for both p/a and quasiprob data, default
   env = linear(data = as.matrix(scale.env1),
                formula = ~.,
@@ -82,7 +90,8 @@ model <-  sjSDM(
 # calculate post-hoc p-values:
 p <- getSe(model)
 summary.p <- summary(p)
-pdf(file = here(resultsfolder, "model_history.pdf"))
+
+pdf(file = here(resultsfolder, glue("model_history_{rundate}.pdf")))
 plot(model$history) # check iter
 dev.off()
 
@@ -90,7 +99,7 @@ dev.off()
 result = list(beta = coef(model),
               sigma = getCov(model),
               history = model$history,
-              p = p,
+              # p = p,
               logLik=logLik(model)
               )
 
@@ -99,25 +108,22 @@ saveRDS(result, here(resultsfolder, glue("sjsdm_result_HJA_{rundate}.RDS")))
 # model <- readRDS(here(resultsfolder, glue("sjsdm_model_HJA_{rundate}.RDS")))
 # result <- readRDS(here(resultsfolder, glue("sjsdm_result_HJA_{rundate}.RDS")))
 
-# #VP for test
+# VP for test
 imp <- importance(model)
-pdf(file = here(resultsfolder, "importance.pdf"))
+pdf(file = here(resultsfolder, glue("importance_{rundate}.pdf")))
 plot(imp)
 dev.off()
 
 # Rsquared2(model, individual = FALSE)
 # Rsquared2(model)
 
+# does eight runs, each ~22 secs
 an <- anova(model, cv = FALSE)
-# # print(an)
-pdf(file = here(resultsfolder, "anova.pdf"))
+pdf(file = here(resultsfolder, glue("anova_{rundate}.pdf")))
 plot(an, percent = FALSE)
 dev.off()
 
-# an_cv <- anova(model, cv = 5L)
-# # print(an)
-# plot(an_cv)
-# plot(an_cv, percent = FALSE)
+# END
 
 
 
