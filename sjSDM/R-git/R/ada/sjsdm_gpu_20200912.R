@@ -19,9 +19,11 @@ library(here)
 library(tidyverse)
 library(fs)
 library(glue)
+library(RColorBrewer)
 
-rundate <- 20200911 # sjsdm_cv run date
-envvar <- "mslidar" # gismslidar, mslidar, gis, ms, lidar
+
+rundate <- 20200907 # sjsdm_cv run date
+envvar <- "gismslidar" # gismslidar, mslidar, gis, ms, lidar
 abund <- "qp" # "qp" # pa is 0/1 data, qp is quasiprob data
 
 minocc <- 5 # minimum occupancy (incidence) per OTU, value from dataprep.Rmd
@@ -45,7 +47,7 @@ XY <- read_csv(here(resultsfolder, datafolder, "XY.csv"))
 
 # read in cross-validation output from resultsfolder
 best <- readRDS(here(resultsfolder, 
-                             glue("sjsdm_tune_results_HJA_{rundate}_bestonly.RDS")))
+                     glue("sjsdm_tune_results_HJA_{rundate}_bestonly.RDS")))
 best
 # # lambda is the regularization strength
 # # sjSDM supports l1 (lasso) and l2 (ridge) regularization:
@@ -89,7 +91,9 @@ model <-  sjSDM(
 # summary(model)
 # calculate post-hoc p-values:
 p <- getSe(model)
-# summary.p <- summary(p)
+summary.p <- summary(p)
+# str(summary.p)
+
 
 pdf(file = here(resultsfolder, glue("model_history_{rundate}.pdf")))
 plot(model$history) # check iter
@@ -105,8 +109,10 @@ result = list(beta = coef(model),
 
 saveRDS(model, here(resultsfolder, glue("sjsdm_model_HJA_{rundate}.RDS")))
 saveRDS(result, here(resultsfolder, glue("sjsdm_result_HJA_{rundate}.RDS")))
+saveRDS(summary.p, here(resultsfolder, glue("sjsdm_summary.p_HJA_{rundate}.RDS")))
 # model <- readRDS(here(resultsfolder, glue("sjsdm_model_HJA_{rundate}.RDS")))
 # result <- readRDS(here(resultsfolder, glue("sjsdm_result_HJA_{rundate}.RDS")))
+
 
 # VP for test
 imp <- importance(model)
@@ -122,6 +128,9 @@ an <- anova(model, cv = FALSE)
 pdf(file = here(resultsfolder, glue("anova_{rundate}.pdf")))
 plot(an, percent = FALSE)
 dev.off()
+
+
+
 
 # END
 
