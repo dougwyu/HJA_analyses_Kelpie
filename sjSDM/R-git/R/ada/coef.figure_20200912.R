@@ -1,6 +1,6 @@
-# code from Cai Wang
+# code from Cai Wang, edited by Doug
 
-coef.figure <- function(summary.p, result, minsize, maxsize=200000) {
+coef.figure <- function(summary.p, result, minsize, maxsize=200000, taxon="all") {
   effect <- data.frame(summary.p$coefmat)
   effect$rownames=rownames(effect)
   # effect <- rownames_to_column(effect, var = "rownames")
@@ -9,6 +9,12 @@ coef.figure <- function(summary.p, result, minsize, maxsize=200000) {
                    into = c("species", "coef"), 
                    sep = " "
                    )
+  
+  ifelse(taxon != "all",
+     effect <- filter(effect, grepl(taxon, species)),
+     effect <- effect
+     )
+  
   effect<-effect %>% filter(coef != "(Intercept)")
   effect<-effect %>% dplyr::select(-c(Z.value,Pr...z..))
   effect$coef<-as.factor(effect$coef)
@@ -51,12 +57,13 @@ coef.figure <- function(summary.p, result, minsize, maxsize=200000) {
     ) %>% 
     tidyr::separate(taxon, into = c("class", "order", "family", "genus", "genus2", "species", "BOLD", "BOLDID")) %>% 
     unite(OTU, c("OTU", "class", "order", "family"), sep = "_", ) %>% 
-    select(-genus, -genus2, -species, -BOLD, -BOLDID) %>% 
+    select(-genus, -genus2, -species, -BOLD, -BOLDID) %>%
     mutate(
       size = as.numeric(size)
     ) %>% 
     rename(species = OTU) %>% 
     filter(size>minsize & size < maxsize)
+
   
   effect$species=as.factor(effect$species)
   effect$species=factor(effect$species, levels=rev(levels(effect$species)))
@@ -85,8 +92,8 @@ coef.figure <- function(summary.p, result, minsize, maxsize=200000) {
     labs(fill="Species Index") + 
     coord_flip(expand=F) + 
     geom_hline(aes(yintercept = 0), 
-               linetype="dashed", 
-               size=1) +
+               linetype="dotted", 
+               size=0.5) +
     theme_classic()+ 
     facet_wrap(~coef, ncol = 5) +
     geom_text(aes(y = t, label = max), 
@@ -97,3 +104,7 @@ coef.figure <- function(summary.p, result, minsize, maxsize=200000) {
     theme(axis.text.x = element_text(size = 1))
   return(p1)
 }
+
+
+# effecthist <- effect %>% distinct(species, .keep_all = TRUE) 
+# hist(effecthist$size, breaks = 5000, xlim = c(0, 3000))
