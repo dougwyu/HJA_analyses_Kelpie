@@ -68,6 +68,7 @@ XY.csv <- read_csv(here("data", "kelpie_data", "for_adagpu", "quasiP_s1m1_spatia
   select(UTM_E, UTM_N)
 
 otu.data.qp.csv <- read_csv(here("data", "kelpie_data", "for_adagpu", "quasiP_s1m1_otu_5_sample_by_species_corr_table_F2308_minimap2_20200221_kelpie20200723.csv"))
+# mapped reads -> FSL correction -> log(Y+0.001) -> scales::rescale()
 ```
 
 ```{r edit XY.csv}
@@ -119,9 +120,9 @@ scale.env1.csv <- scale.env1.csv %>%
 These files are used as input to the sjsdm_cv() and sjsdm() code
 ```{r save data files}
 # set variables
-prepdate <- 20200911 # run date
+prepdate <- 20200915 # run date
 minocc <- 5 # minimum occupancy (incidence) per OTU
-envvar <- "mslidar" # gismslidar, gis, ms, lidar, mslidar
+envvar <- "gismslidar" # gismslidar, gis, ms, lidar, mslidar
 (datafolder <- glue("data_{prepdate}_{minocc}minocc_{envvar}"))
 
 dir_create(here("data", "kelpie_data", "for_adagpu", datafolder))
