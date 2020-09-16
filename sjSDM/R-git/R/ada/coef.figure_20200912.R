@@ -98,10 +98,11 @@ coef.figure <- function(summary.p, result, minsize, maxsize=200000, taxon="all")
     facet_wrap(~coef, ncol = 5) +
     geom_text(aes(y = t, label = max), 
               position = position_dodge(0.6),
-              size = 2, fontface = "bold") + 
+              size = 1, fontface = "bold") + 
     # geom_errorbar(aes(ymax = Estimate + Std.Err, ymin = Estimate - Std.Err), width = 0.3) +
     scale_y_continuous(limits = c(-1.1,1)) +
-    theme(axis.text.x = element_text(size = 1))
+    theme(axis.text.x = element_text(size = 3)) +
+    theme(axis.text.y = element_text(size = 3))
   return(p1)
 }
 

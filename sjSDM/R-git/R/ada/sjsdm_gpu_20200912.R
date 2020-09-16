@@ -22,7 +22,7 @@ library(glue)
 library(RColorBrewer)
 
 
-rundate <- 20200907 # sjsdm_cv run date
+rundate <- 20200915 # sjsdm_cv run date
 envvar <- "gismslidar" # gismslidar, mslidar, gis, ms, lidar
 abund <- "qp" # "qp" # pa is 0/1 data, qp is quasiprob data
 
@@ -94,7 +94,7 @@ p <- getSe(model)
 summary.p <- summary(p)
 # str(summary.p)
 
-
+# model history
 pdf(file = here(resultsfolder, glue("model_history_{rundate}.pdf")))
 plot(model$history) # check iter
 dev.off()
@@ -112,7 +112,7 @@ saveRDS(result, here(resultsfolder, glue("sjsdm_result_HJA_{rundate}.RDS")))
 saveRDS(summary.p, here(resultsfolder, glue("sjsdm_summary.p_HJA_{rundate}.RDS")))
 # model <- readRDS(here(resultsfolder, glue("sjsdm_model_HJA_{rundate}.RDS")))
 # result <- readRDS(here(resultsfolder, glue("sjsdm_result_HJA_{rundate}.RDS")))
-
+# summary.p <- readRDS(here(resultsfolder, glue("sjsdm_summary.p_HJA_{rundate}.RDS")))
 
 # VP for test
 imp <- importance(model)

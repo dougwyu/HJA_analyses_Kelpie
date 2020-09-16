@@ -1,12 +1,12 @@
 # packages
-library(sjSDM)
-library(here)
+# library(sjSDM)
 library(tidyverse)
 library(fs)
 library(glue)
 library(RColorBrewer)
+library(here)
 
-rundate <- 20200907 # sjsdm_cv run date
+rundate <- 20200915 # sjsdm_cv run date
 envvar <- "gismslidar" # gismslidar, mslidar, gis, ms, lidar
 abund <- "qp" # "qp" # pa is 0/1 data, qp is quasiprob data
 
@@ -27,7 +27,7 @@ source(here("R", "ada", "coef.figure_20200912.R"))
 # set variables
 minsize <- 1
 maxsize <- 200000L # default 200000 to include all large OTUs
-taxon <- "Coleoptera"
+taxon <- "Dolichovespula"
 
 # function(summary.p, result, minsize, maxsize=200000, taxon="all")
 p1 <- coef.figure(summary.p, result, minsize, maxsize, taxon)
@@ -42,28 +42,3 @@ pdf(file = here("results", "crossvalidation", resultsfolder,
 print(p1)
 dev.off()
 
-
-
-
-# read in data
-# env data:  scale.env1
-scale.env1 <- read_csv(here(resultsfolder, datafolder, "scale.env1.csv"))
-
-# species data:  otu.data
-# comment in the dataset that i want to use. qp == quasiprob, pa == 0/1
-otu.data <- read_csv(here(resultsfolder, datafolder, glue("otu.data.{abund}.csv")))
-
-# XY data: XY
-XY <- read_csv(here(resultsfolder, datafolder, "XY.csv"))
-
-
-# read in cross-validation output from resultsfolder
-best <- readRDS(here(resultsfolder, 
-                             glue("sjsdm_tune_results_HJA_{rundate}_bestonly.RDS")))
-best
-# # lambda is the regularization strength
-# # sjSDM supports l1 (lasso) and l2 (ridge) regularization:
-# # alpha weights the lasso or ridge penalty:
-# # - alpha = 0 --> pure lasso
-# # - alpha = 1.0 --> pure ridge
-# green points in the best plot are (close to) the best lambda and alpha values

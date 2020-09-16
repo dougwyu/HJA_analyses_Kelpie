@@ -116,6 +116,13 @@ scale.env1.csv <- scale.env1.csv %>%
   select(elevation.scale, canopy.ht.scale, min.T.scale, max.T.scale, precipitation.scale, metre.road.scale, metre.stream.scale, yrs.disturb.min.scale, mean.NDVI.scale, mean.EVI.scale, mean.green.scale, mean.bright.scale, mean.wet.scale, l_Cover_2m_max.scale, l_Cover_2m_4m.scale, l_Cover_4m_16m.scale, l_p25.scale, l_p95.scale, l_rumple.scale)
 ```
 
+If i want to remove correlated predictors
+```{r, eval=FALSE}
+scale.env1.csv <- scale.env1.csv %>%
+  select(elevation.scale, canopy.ht.scale, min.T.scale, metre.road.scale, metre.stream.scale, yrs.disturb.min.scale, mean.NDVI.scale, mean.green.scale, l_Cover_2m_max.scale, l_Cover_2m_4m.scale, l_Cover_4m_16m.scale, l_p25.scale, l_rumple.scale)
+corrplot::corrplot(cor(scale.env1.csv), method = "ellipse", type = "lower")
+```
+
 
 These files are used as input to the sjsdm_cv() and sjsdm() code
 ```{r save data files}

@@ -17,6 +17,18 @@ set -o pipefail
 # read in folder list and make a bash array
 find ./ -maxdepth 1 -mindepth 1 -type d -exec basename {} \; | sort > folderlist.txt
 sed -i '/minimap2_outputs/d' ./folderlist.txt # remove minimap2 folder from folderlist.txt
+
+# https://unix.stackexchange.com/questions/15308/how-to-use-find-command-to-search-for-multiple-extensions
+# https://unix.stackexchange.com/questions/273207/list-all-the-files-in-ending-with-several-file-extensions
+# find ./ -maxdepth 4 -mindepth 1 -type f -iname "SM-04*.fq.gz" \
+#      -o -iname "HOBO-315*.fq.gz" \
+#      -o -iname "HOBO-308*.fq.gz" \
+#      -o -iname "248762*.fq.gz" \
+#      -o -iname "SM-02*.fq.gz" \
+#      -o -iname "HOBO-310*.fq.gz" | wc -l
+# http://www.compciv.org/topics/bash/loops/
+# https://codefather.tech/blog/bash-loop-through-lines-file/
+
 # find ${HOMEFOLDER}/${TARGETFOLDER}/ -maxdepth 1 -mindepth 1 -type d -exec basename {} \; | sort > folderlist.txt # find all folders 1 levels down only, and then execute basename to remove folder pathnames
 # using -mindepth 1 prevents parent folders from being included in output
      # wc -l folderlist.txt

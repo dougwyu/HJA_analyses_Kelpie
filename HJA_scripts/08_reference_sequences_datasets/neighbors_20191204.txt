@@ -1,4 +1,4 @@
-"SiteName","NeighborName","Distance"
+"index","SiteName","NeighborName","Distance"
 "97","SM-04","HOBO-315",449.751042244484
 "193","SM-04","HOBO-308",642.12537716555
 "3937","SM-04","248762",801.064292051518
