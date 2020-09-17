@@ -20,15 +20,15 @@ library(tidyverse)
 library(fs)
 library(glue)
 library(RColorBrewer)
+dir_ls()
 
-
-rundate <- 20200915 # sjsdm_cv run date
+rundate <- 20200916 # sjsdm_cv run date
 envvar <- "gismslidar" # gismslidar, mslidar, gis, ms, lidar
 abund <- "qp" # "qp" # pa is 0/1 data, qp is quasiprob data
 
 minocc <- 5 # minimum occupancy (incidence) per OTU, value from dataprep.Rmd
 
-resultsfolder <- glue("results_{rundate}_{minocc}minocc_{envvar}_{abund}_loocv")
+resultsfolder <- glue("results_{rundate}_{minocc}minocc_{envvar}_{abund}_loocv_DNN")
 resultsfolder
 datafolder <- glue("data_{rundate}_{minocc}minocc_{envvar}")
 datafolder

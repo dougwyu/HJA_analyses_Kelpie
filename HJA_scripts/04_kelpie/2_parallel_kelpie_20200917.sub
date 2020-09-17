@@ -18,4 +18,4 @@ PATH=$PATH:~/scripts/parallel-20170722/bin/ # GNU Parallel
 PATH=$PATH:~/scripts/FilterReads/ubuntu-16.04/
 
 # upload _parallel_kelpie_YYYYMMDD.sub and _parallel_kelpie_YYYYMMDD.sh *into* ~/_Oregon/2019Sep_shotgun/2.trimmeddata/
-bash _parallel_kelpie_20200917.sh # this runs Kelpie
+bash 1_parallel_kelpie_20200917.sh # this runs Kelpie

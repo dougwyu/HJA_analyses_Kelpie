@@ -9,7 +9,7 @@ set -o pipefail
 #######################################################################################
 #######################################################################################
 
-ssh hpc
+ssh ada
 interactive
 # to use parallel without a pathname in bsub scripts
 PATH=$PATH:~/scripts/parallel-20170722/bin/
@@ -20,7 +20,7 @@ OUTPUTFOLDER="minimap2_outputs"
 cd ~/_Oregon/2019Sep_shotgun/2.trimmeddata/; ls # 2.trimmeddata, testkelpie
 if [ ! -d ${OUTPUTFOLDER} ] # if directory minimap2_outputs_all does not exist.
 then
-	mkdir ${OUTPUTFOLDER}
+     mkdir ${OUTPUTFOLDER}
 fi
 ls
 "ls" -l BWA*/s*${PLATE}*.out # check if all BWA folders have a current smtl*.out file, showing that samtools ran correctly.  Check the sizes of the samtools.out file.  they should all be about the same.
@@ -62,15 +62,15 @@ parallel cp BWA*/${OUTPUTFOLDER}/*_{1}_q{2}_sorted_genomecov_d.txt.gz ${OUTPUTFO
 parallel ls ${OUTPUTFOLDER}/*_{1}_q{2}_sorted_genomecov_d.txt.gz ::: ${FILTER1} ${FILTER2} ::: ${QUAL1} ${QUAL2} | wc -l # 484
 
 # rename, tar, and gzip for download
-MAPDATE="20200221"
-TARGET="kelpie_20200214_BF3BR2_derep_filtered_geneious_vsearch97_min2_spikes" #
+MAPDATE="20200917"
+TARGET="kelpie_20200916_BF3BR2_derep_filter3_vsearch97_rmdup_spikes" #
 du -sh ${OUTPUTFOLDER}/ # 485M
 # set filename to something that i can understand after download
 mv ${OUTPUTFOLDER} outputs_${FILTER1}_q${QUAL2}_${OUTPUTFOLDER}_${MAPDATE}_${TARGET}
-ls # outputs_F2308_f0x2_q48_minimap2_outputs_20191219_kelpie2091217_vsearch97_filtered_geneious_filtered/
+ls # outputs_F2308_f0x2_q48_minimap2_outputs_20191219_kelpie_20200916_BF3BR2_derep_filter3_vsearch97_rmdup_spikes
 # tar gzip for download
 tar -czvf outputs_${FILTER1}_q${QUAL2}_${OUTPUTFOLDER}_${MAPDATE}_${TARGET}.tar.gz outputs_${FILTER1}_q${QUAL2}_${OUTPUTFOLDER}_${MAPDATE}_${TARGET}/
-# filename format:  outputs_F2308_f0x2_q48_minimap2_outputs_20191219_kelpie2091217_vsearch97_filtered_geneious_filtered.tar.gz
+# filename format:  outputs_F2308_f0x2_q48_minimap2_outputs_20191219_kelpie_20200916_BF3BR2_derep_filter3_vsearch97_rmdup_spikes.tar.gz
 ls
 rm -rf outputs_${FILTER1}_q${QUAL2}_${OUTPUTFOLDER}_${MAPDATE}_${TARGET}/
 ls

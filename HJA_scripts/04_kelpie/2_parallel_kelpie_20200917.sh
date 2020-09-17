@@ -8,11 +8,12 @@ set -o pipefail
 ##################################################################################################
 ##################################################################################################
 
-# Usage: bash _parallel_kelpie_YYYYMMDD.sh
-# but i run this interactively because it is fast
-	PATH=$PATH:~/scripts/vsearch-2.15.0-linux-x86_64/bin/ # downloaded 12 Jul 2020 from github
-	PATH=$PATH:~/scripts/Kelpie_v2.0.8/ubuntu-16.04/
-	PATH=$PATH:~/scripts/parallel-20170722/bin/ # GNU Parallel
+# I run this in an interactive session because it is fast, but it could probably be run 
+# as a batch job without needing editing, using
+# sbatch
+PATH=$PATH:~/scripts/vsearch-2.15.0-linux-x86_64/bin/ # downloaded 12 Jul 2020 from github
+PATH=$PATH:~/scripts/Kelpie_v2.0.8/ubuntu-16.04/
+PATH=$PATH:~/scripts/parallel-20170722/bin/ # GNU Parallel
 
 # to run on testkelpie, upload into ~/_Oregon/2019Sep_shotgun/testkelpie/BWA01
 # cd ~/_Oregon/2019Sep_shotgun/testkelpie/
@@ -41,7 +42,7 @@ if [ ! -d kelpieoutputindiv ] # if directory kelpieoutputindiv does not exist.
 then
      mkdir kelpieoutputindiv
 fi
-
+ls
 # assumption: all FilterReads outputs will be in one folder filterreadsoutput, one up from the BWA folders
 find ./allfilterreadsoutput -type f -iname "*_COI.fa" -exec basename {} \; > fastalist.txt
 	# remove _{1,2}_val_{1,2}_COI.fa from filenames 076361-M1-S1_BDSW190602952-1a_1_val_1_COI.fa
@@ -62,8 +63,7 @@ echo "There are" ${#sample_names[@]} "files that will be processed." # 242, echo
 parallel -k -j 1 "Kelpie_v2 -f CCHGAYATRGCHTTYCCHCG -r TCDGGRTGNCCRAARAAYCA -filtered -min 400 -max 500 allfilterreadsoutput/{1}_?_val_?_COI.fa kelpieoutputindiv/{1}_BF3BR2.fas" ::: "${sample_names[@]}"
 
 # Leray Fol-degen-rev, -f GGWACWGGWTGAACWGTWTAYCCYCC -r TANACYTCNGGRTGNCCRAARAAYCA, -min 300 -max 400
-# parallel -k -j 3 "Kelpie_v2 -f GGWACWGGWTGAACWGTWTAYCCYCC -r TANACYTCNGGRTGNCCRAARAAYCA -filtered -min 300 -max 400 allfilterreadsoutput/{1}_?_val_?_COI.fa kelpieoutputindiv/{1}_LERAY.fas" ::: "${sample_names[@]}"
-
+nohup parallel -k -j 3 "Kelpie_v2 -f GGWACWGGWTGAACWGTWTAYCCYCC -r TANACYTCNGGRTGNCCRAARAAYCA -filtered -min 300 -max 400 allfilterreadsoutput/{1}_?_val_?_COI.fa kelpieoutputindiv/{1}_LERAY.fas" ::: "${sample_names[@]}" &
 
 
 #### run kelpie on nearest-neighbor sets of files (each sample + five nearest neighbors)
@@ -89,8 +89,12 @@ i=0 # set index to 0
 while IFS=, read -r f1 f2 f3 f4 f5 f6
   do
       ((i=i+1)) # increment i by 1
+      echo "starting i should be 1: $i"
       # find any files with these sitenames and concatenate into a single fasta file
-      echo "creating kelpieinput_${i}.fa"
+      echo "creating kelpieinput_${i}.fa from these files:"
+      find ./allfilterreadsoutput -type f -iname "$f1*" -o -iname "$f2*" -o -iname "$f3*" -o -iname "$f4*" -o -iname "$f5*" -o -iname "$f6*"
+      echo "$f1, $f2, $f3, $f4, $f5, $f6"
+
       find ./allfilterreadsoutput -type f -iname "$f1*" -o -iname "$f2*" -o -iname "$f3*" -o -iname "$f4*" -o -iname "$f5*" -o -iname "$f6*" -exec cat {} + > kelpieinput_${i}.fa
 
       if [ ! -s kelpieinput_${i}.fa ]
