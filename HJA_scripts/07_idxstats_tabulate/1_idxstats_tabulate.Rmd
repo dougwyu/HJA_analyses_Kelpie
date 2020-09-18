@@ -29,6 +29,7 @@ library(arsenal) # for summary(comparedf())
 library(sjmisc) # for rotate_df()
 library(pivottabler)
 library(vegan)
+library(fs)
     
 # Provide real numbers, not scientific notation.
 options(scipen = 999)
@@ -63,8 +64,9 @@ samtoolsqual <- "q48"
 (idxstatsgenomecovfolder <- paste0("outputs_F2308_f0x2_", samtoolsqual, "_minimap2_outputs_20200917_kelpie_20200916_BF3BR2_derep_filter3_vsearch97_rmdup_spikes"))
 
 # this is where i store the outputs of this script
-# mkdir outputs_minimap2_20200221_F2308_f0x2_q48_kelpie20200214_vsearch97
-(outputidxstatstabulatefolder <- "outputs_minimap2_20200917_F2308_f0x2_q48_kelpie20200916_vsearch97")
+(outputidxstatstabulatefolder <- "outputs_minimap2_20200917_F2308_q48_kelpie20200916_vsearch97")
+# dir_create(file.path("..", "..", "Kelpie_maps", outputidxstatstabulatefolder))
+
 
 idxstatsfile <- paste0("*", samtoolsfilter, "_", samtoolsqual, "_sorted\\.bam_idxstats\\.txt")  
     # e.g. "*F2308_f0x2_q1_sorted.bam_idxstats.txt"
@@ -158,7 +160,7 @@ idx %>% distinct(trap) %>% count()  # 2
 idx %>% distinct(trap)  # M1, M2
 idx %>% distinct(pathname) %>% count()  # number of distinct values of filenames:  242  
 idx %>% distinct(samtools_filter) %>% count() # number of distinct values of samtools_filter: should be 1
-idx %>% distinct(samtools_filter) # should look something like:  F2308_f0x2 or F2308, depending on samtoolsfilter
+idx %>% distinct(samtools_filter) # should look something like:  F2308 or F2308_f0x2, depending on samtoolsfilter
 
 # sanity check:  all count values should be 1213 (1211 + 2 spikes), except HOBO-357-M1-S2, which equals 2*1213 since there are two samples named HOBO-357, since one of them is Hobo-351_M1_S2, but we don't know which one, The period (S2) and trap (M1) are known, however. So we leave HOBO-357-M1-S2 untouched, and have set UTM_E, UTM_N, and Correct_Site as NA
 species_list <- idx %>% 
@@ -338,8 +340,8 @@ idx_meta %>% distinct(trap) # number of distinct values of trap:  should be 2
 idx_meta %>% distinct(period) %>% count()  # number of distinct values of period:  should be 2
 idx_meta %>% distinct(period)  # number of distinct values of period:  should be 2 (S1, S2) 
 idx_meta %>% distinct(mitogenome) %>% count()  # number of distinct values of mitogenome: 1213 (1211 OTUs + 2 spike-ins)
-idx_meta %>% distinct(mt_length)  # number of distinct values of mt_length: 897 and 894 are the two spike-ins:  full barcode plus some flanking sequence from the plasmids
-idx_meta %>% distinct(samtools_filter) # %>% count()  # 1, either F2308_f0x2 or F2308
+idx_meta %>% distinct(mt_length)  # number of distinct values of mt_length: 894 and 897 are the two spike-ins:  full barcode plus some flanking sequence from the plasmids
+idx_meta %>% distinct(samtools_filter) # %>% count()  # 1, either F2308 or F2308_f0x2
 idx_meta %>% distinct(mapqual_filter) # %>% count()  # 1, q48 
 
 idx_summ <- idx_meta %>% 
@@ -462,16 +464,16 @@ species_list <- genomecoverages_summ %>%
 
 
 ```{r save genomecoverage data files, include = FALSE, eval = FALSE}
-# TIME SAVING STEP  After running once for mitogenomes and for barcodes, i save the file to avoid having to rerun the map() step
+# TIME SAVING STEP  After running once, i save the file to avoid having to rerun the map() step
 
 # F2308 samtools filter
-  # saveRDS(genomecoverages_summ, file.path("..", "..", "Kelpie_maps", outputidxstatstabulatefolder, "genomecoverages_summ_F2308_minimap2_20200221_kelpie20200214.RDS"), compress = TRUE)
+  # saveRDS(genomecoverages_summ, file.path("..", "..", "Kelpie_maps", outputidxstatstabulatefolder, "genomecoverages_summ_F2308_minimap2_20200917_kelpie20200916.RDS"), compress = TRUE)
   # to read in genomecov files
-  # genomecoverages_summ <- readRDS(file.path("..", "..", "Kelpie_maps", outputidxstatstabulatefolder, "genomecoverages_summ_F2308_minimap2_20200221_kelpie20200214.RDS"))
+  # genomecoverages_summ <- readRDS(file.path("..", "..", "Kelpie_maps", outputidxstatstabulatefolder, "genomecoverages_summ_F2308_minimap2_20200917_kelpie20200916.RDS"))
 
 # F2308_f0x2 samtools filter
-  # saveRDS(genomecoverages_summ, file.path("..", "..", "Kelpie_maps", outputidxstatstabulatefolder, "genomecoverages_summ_F2308_f0x2_minimap2_20200221_kelpie20200214.RDS"), compress = TRUE)
-# genomecoverages_summ <- readRDS(file.path("..", "..", "Kelpie_maps", outputidxstatstabulatefolder, "genomecoverages_summ_F2308_f0x2_minimap2_20200221_kelpie20200214.RDS"))
+  # saveRDS(genomecoverages_summ, file.path("..", "..", "Kelpie_maps", outputidxstatstabulatefolder, "genomecoverages_summ_F2308_f0x2_minimap2_20200917_kelpie20200916.RDS"), compress = TRUE)
+# genomecoverages_summ <- readRDS(file.path("..", "..", "Kelpie_maps", outputidxstatstabulatefolder, "genomecoverages_summ_F2308_f0x2_minimap2_20200917_kelpie20200916.RDS"))
 ```
 
 
@@ -495,7 +497,7 @@ idx_meta_genomecov <- idx_meta_genomecov %>%
 # use grepl() to find mitogenome names that are COI spike names
 # this regex works for both the mitogenome and barcode datasets
 # my goodness, this is base R!
-idx_meta_genomecov$COI_Species <- if_else(grepl("COI_SPIKE", idx_meta_genomecov$mitogenome), "COI_Spike", "Oregon_Species") 
+idx_meta_genomecov$COI_Species <- if_else(grepl("COI-SPIKE", idx_meta_genomecov$mitogenome), "COI_Spike", "Oregon_Species") 
 
 # names(idx_meta_genomecov)
 # reorder the columns for convenience
@@ -525,7 +527,7 @@ HOBO-036_M1_S2 should set period to NA (could be either S1 or S2)
 HOBO-357_M1_S2 should set site to HOBO-357-351 and set UTM_E & UTM_N to NA (could be either HOBO-357 or HOBO-351)
 
 What this means for HOBO-036_M1_S1/2 is that we can use the composition information from these two samples for site, but we don't know which period each sample is.
-What this means for HOBO-351/7_M1_S2 is that we can use the composition information from these two samples for period, but we don't know where these samples come from (other than from either HOBO-357 or HOBO-351). One possibility is that we will add environmental covariates that are coarse enough that they cover both sites (they are ~650 m apart). 
+What this means for HOBO-357-351_M1_S2 is that we can use the composition information from these two samples for period, but we don't know where these samples come from (other than from either HOBO-357 or HOBO-351). One possibility is that we will add environmental covariates that are coarse enough that they cover both sites (they are ~650 m apart). 
 ```{r set metadata to NA for HOBO-357_M1_S2 and HOBO-036_M1_S2}
 idx_meta_genomecov <- idx_meta_genomecov %>% 
   mutate(
@@ -554,26 +556,47 @@ idx_meta_genomecov <- idx_meta_genomecov %>%
   ) 
 ```
 
-Extract taxonomy information from mitogenome column. Previously, i joined a table of taxonomy information and matched by OTU name (occurrenceID, which took the form R100_1;size=100), but in the taxonomy section of this pipeline, i now include the taxonomy in the otu name to make it easier to see what gets mapped. Here i separate mitogenome into separate columns for OTU name and consensusClassification.
+Extract taxonomy information from mitogenome column. Previously, i joined a table of taxonomy information and matched by OTU name (occurrenceID, which took the form R100_1;size=100), but in the taxonomy chapter of this pipeline, i now include the taxonomy in the otu name to make it easier to see what gets mapped. Here i separate mitogenome into separate columns for OTU name and consensusClassification.
+
+R1-124_Insecta_Lepidoptera_Ypsolophidae_Ypsolopha_canariella_BOLD_AAC0507_BLAST-EXACT-MATCH;size=29
+R1063_28__Insecta_Diptera_Rhagionidae_Symphoromyia_sp_BOLD_AAP6399_size=99
+R1002-21__Insecta_Psocodea_Psocidae_Loensia_NA_BOLD_ACC5693_size=385
+
+
 ```{r}
 idx_meta_genomecov <- idx_meta_genomecov %>% 
+  rename(mitogenome_orig = mitogenome) %>% 
+  separate(mitogenome_orig, c("OTUname_consensusClassification", "OTUsize"), sep = ";", remove = FALSE) %>% 
+  separate(OTUname_consensusClassification, c("OTUname", "class", "order", "family", "genus", "species_epithet", "BOLD", "BOLDID", "blastmatch"), sep = "_", remove = TRUE) %>% 
+  unite(col = "consensusClassification", class, order, family, genus, species_epithet, BOLD, BOLDID, remove = FALSE, sep = "_") %>% 
   mutate(
-    mitogenome = str_replace(mitogenome, "(^R[0-9, _]+)", "\\1;")
-    ) %>% 
-  separate(mitogenome, c("OTUname", "consensusClassification", "OTUsize"), sep = ";", remove = FALSE) %>% 
-  unite(col = "mitogenome2", OTUname, OTUsize, sep = "", remove = TRUE)
-# warning message is that the COI_Spike OTUs don't match the regex and are thus ignored
+    OTUname = str_c(OTUname, "_")
+  ) %>% 
+  unite(col = "mitogenome", OTUname, class, order, family, genus, species_epithet, BOLD, BOLDID, OTUsize, remove = TRUE)
 
-# sanity check:  all count values should be 1, except for HOBO-357-351_M1_S2 (previously HOBO-357_M1_S2) and HOBO-036_M1_NA (prev HOBO-036_M1_S2), which have counts of 2 
+# deprecate, because this was based on the old OTU name syntax
+# idx_meta_genomecov <- idx_meta_genomecov %>% 
+#   mutate(
+#     mitogenome = str_replace(mitogenome, "(^R[0-9, _]+)", "\\1;")
+#     ) %>% 
+#   separate(mitogenome, c("OTUname", "consensusClassification", "OTUsize"), sep = ";", remove = FALSE) %>% 
+#   unite(col = "mitogenome2", OTUname, OTUsize, sep = "", remove = TRUE)
+# # warning message is that the COI_Spike OTUs don't match the regex and are thus ignored
+
+# sanity check:  all count values should be 1, except for HOBO-036_M1_NA (prev HOBO-036_M1_S2) and HOBO-357-351_M1_S2 (previously HOBO-357_M1_S2), which have counts of 2
 species_list <- idx_meta_genomecov %>% 
   filter(COI_Species != "COI_Spike") %>% 
   count(site, trap, period, mitogenome) %>% 
   arrange(desc(n))
 
-# similar sanity check but using taxonomy only. Here, we see that GBIF_BOLD assigned the same taxonomy to multiple OTUs (e.g. Insecta_Coleoptera_Cleridae_Enoclerus_sp_BOLD_ACI7539), but by visual inspection, these are all ones where there was a BLAST_CLOSE_MATCH, not an exact match, which is why I use "sp" in the species field. Recall that these are 97% vsearch OTUs, so they are different at the barcode level. Also, they receive mappings, which means that minimap2 sees the sequences as sufficiently different to map reads to them with mapqual >= 48.
+# similar sanity check but using consensusClassification only.  Count values should all be 1, except for HOBO-357-351_M1_S2 and HOBO-036_M1_NA because these two sites are listed twice in the dataset. 
+# I also found one error, a species represented by two OTUs in 'kelpie_20200916_BF3BR2_derep_filter3_vsearch97_rmdup_spikes.fas', because i failed to remove the small OTU in the taxonomy stage:
+# R2125-7__Insecta_Diptera_Asilidae_NA_NA_BOLD_ABW2452_size=3745
+# R2332-6__Insecta_Diptera_Asilidae_NA_NA_BOLD_ABW2452_size=1
+# R2125-7 does get mapped to, but i wonder if this OTU would have attracted more reads without the small OTU. I need to experiment. Recall that these are 97% vsearch OTUs, so they are different at the barcode level. Also, they receive mappings, which means that minimap2 sees the sequences as sufficiently different to map reads to them with mapqual >= 48.
 species_list <- idx_meta_genomecov %>% 
   filter(COI_Species != "COI_Spike") %>% 
-  count(site, trap, period, consensusClassification) %>% 
+  count(site, trap, period, consensusClassification, blastmatch) %>% 
   arrange(desc(n))
 ```
 
@@ -629,7 +652,7 @@ coispike <- idx_meta_genomecov %>%
   filter(COI_Species == "COI_Spike") %>% 
   select(mitogenome, site_trap_period, site, trap, period, mapped_reads, pct_coverage) %>% 
   group_by(site_trap_period) %>% 
-  summarise(mapped_reads = sum(mapped_reads))
+  summarise(mapped_reads = sum(mapped_reads)) 
 
 # changed code to keep the 2 spike-ins in the dataset, so that they can be used downstream. idx_meta_genomecov_corr still corrects the OTUs by the sum of the spike-ins per sample, but if we want, we retain option to do a different correction. 
 idx_meta_genomecov_sp <- idx_meta_genomecov 
@@ -666,14 +689,14 @@ idxstats_by_mitogenome <- idx_meta_genomecov_corr %>%
     dplyr::arrange(desc(n)); View(idxstats_by_mitogenome)
 
 # F2308 samtools filter
-# write_tsv(idx_meta_genomecov_corr, gzfile(file.path("..", "..", "Kelpie_maps", outputidxstatstabulatefolder, "idx_meta_genomecov_corr_F2308_minimap_20200221_kelpie20200723.txt.gz"))) # output file
-# F2308 f0x2 samtools filter
-# write_tsv(idx_meta_genomecov_corr, gzfile(file.path("..", "..", "Kelpie_maps", outputidxstatstabulatefolder, "idx_meta_genomecov_corr_F2308_f0x2_minimap_20200221_kelpie20200214.txt.gz"))) # output file
+# write_tsv(idx_meta_genomecov_corr, gzfile(file.path("..", "..", "Kelpie_maps", outputidxstatstabulatefolder, "idx_meta_genomecov_corr_F2308_minimap_20200916_kelpie20200917.txt.gz"))) # output file
+# F2308_f0x2 samtools filter
+# write_tsv(idx_meta_genomecov_corr, gzfile(file.path("..", "..", "Kelpie_maps", outputidxstatstabulatefolder, "idx_meta_genomecov_corr_F2308_f0x2_minimap_20200916_kelpie20200917.txt.gz"))) # output file
 
 
 # to import the output datafile
 # F2308 samtools filter
-# idx_meta_genomecov_corr <- read_delim(file.path("..", "..", "Kelpie_maps", outputidxstatstabulatefolder, "idx_meta_genomecov_corr_F2308_minimap_20200221_kelpie20200214.txt.gz"), "\t", escape_double = FALSE,
+# idx_meta_genomecov_corr <- read_delim(file.path("..", "..", "Kelpie_maps", outputidxstatstabulatefolder, "idx_meta_genomecov_corr_F2308_minimap_20200916_kelpie20200917.txt.gz"), "\t", escape_double = FALSE,
 #    col_types = cols(
 #      Correct_Period = col_character(),
 #      Correct_Site = col_character(),
@@ -681,7 +704,7 @@ idxstats_by_mitogenome <- idx_meta_genomecov_corr %>%
 #    trim_ws = TRUE)
 
 # F2308 f0x2 samtools filter
-# idx_meta_genomecov_corr <- read_delim(file.path("..", "..", "Kelpie_maps", outputidxstatstabulatefolder, "idx_meta_genomecov_corr_F2308_f0x2_minimap_20200221_kelpie20200214.txt.gz"), "\t", escape_double = FALSE,
+# idx_meta_genomecov_corr <- read_delim(file.path("..", "..", "Kelpie_maps", outputidxstatstabulatefolder, "idx_meta_genomecov_corr_F2308_f0x2_minimap_20200916_kelpie20200917.txt.gz"), "\t", escape_double = FALSE,
 #    col_types = cols(
 #      Correct_Period = col_character(),
 #      Correct_Site = col_character(),
@@ -762,9 +785,9 @@ envdataTosa <- envdataTosa %>%
       SiteName == "76361" ~ "076361",
       TRUE ~ as.character(SiteName)
     )
-  )
-
-# SiteName 290415 was a place where the malaise trap was stolen twice, and SiteName Hobo-040 was attacked by bears in both sessions, so these rows do not have a match with idx_meta_genomecov species data
+  ) %>% 
+  filter(SiteName != "290415" & SiteName != "HOBO-040") 
+# SiteName 290415 was a place where the malaise trap was stolen twice, and SiteName Hobo-040 was attacked by bears in both sessions, so these rows do not have a match with idx_meta_genomecov species data (i.e. there were no samples to sequence)
 
 # mapped_reads_corr only
 # join idx_meta_genomecov_corr_filtered_wide and envdataTosa
@@ -779,14 +802,14 @@ idx_meta_genomecov_corr_filtered_wide <- envdataTosa %>%
 
 # write output
 # F2308 samtools filter
-# write_csv(idx_meta_genomecov_corr_filtered_wide, file.path("..", "..", "Kelpie_maps", outputidxstatstabulatefolder, "sample_by_species_corr_table_F2308_minimap2_20200221_kelpie20200723.csv"))
-# F2308 f0x2 samtools filter
-# write_csv(idx_meta_genomecov_corr_filtered_wide, file.path("..", "..", "Kelpie_maps", outputidxstatstabulatefolder, "sample_by_species_corr_table_F2308_f0x2_minimap2_20200221_kelpie20200214.csv"))
+# write_csv(idx_meta_genomecov_corr_filtered_wide, file.path("..", "..", "Kelpie_maps", outputidxstatstabulatefolder, "sample_by_species_corr_table_F2308_minimap2_20200916_kelpie20200917.csv"))
+# F2308_f0x2 samtools filter
+# write_csv(idx_meta_genomecov_corr_filtered_wide, file.path("..", "..", "Kelpie_maps", outputidxstatstabulatefolder, "sample_by_species_corr_table_F2308_f0x2_minimap2_20200916_kelpie20200917.csv"))
 
 # read_csv() commands 
   # mapped_reads_corr
     # F2308 samtools filter
-    # idx_meta_genomecov_corr_filtered_wide <- read_csv(file.path("..", "..", "Kelpie_maps", outputidxstatstabulatefolder, "sample_by_species_corr_table_F2308_minimap2_20200221_kelpie20200723.csv"))
+    # idx_meta_genomecov_corr_filtered_wide <- read_csv(file.path("..", "..", "Kelpie_maps", outputidxstatstabulatefolder, "sample_by_species_corr_table_F2308_minimap2_20200916_kelpie20200917.csv"))
     # F2308 f0x2 samtools filter
     # not yet created
 
@@ -804,20 +827,20 @@ idx_meta_genomecov_filtered_wide <- envdataTosa %>%
   select(-rownumber, -UTM_E.y, -UTM_N.y)
 
 # to see number of reads per sample for a given species
-species <- select(idx_meta_genomecov_filtered_wide, starts_with(c("R1343_86", "R904_134", "R2320_84", "R2352_82")))
+species <- select(idx_meta_genomecov_filtered_wide, starts_with(c("R96__", "R1829-2")))
 
 # write output
 # F2308 samtools filter
-# write_csv(idx_meta_genomecov_filtered_wide, file.path("..", "..", "Kelpie_maps", outputidxstatstabulatefolder, "sample_by_species_table_F2308_minimap2_20200221_kelpie20200723.csv"))
-# F2308 f0x2 samtools filter
-  # write_csv(idx_meta_genomecov_filtered_wide, file.path("..", "..", "Kelpie_maps", outputidxstatstabulatefolder, "sample_by_species_table_F2308_minimap2_20200221_kelpie20200214.csv"))
+# write_csv(idx_meta_genomecov_filtered_wide, file.path("..", "..", "Kelpie_maps", outputidxstatstabulatefolder, "sample_by_species_table_F2308_minimap2_20200916_kelpie20200917.csv"))
+# F2308_f0x2 samtools filter
+  # write_csv(idx_meta_genomecov_filtered_wide, file.path("..", "..", "Kelpie_maps", outputidxstatstabulatefolder, "sample_by_species_table_F2308_f0x2_minimap2_20200916_kelpie20200917.csv"))
 
   # read_csv() commands
       # mapped_reads
       # F2308 samtools filter
-      # idx_meta_genomecov_filtered_wide <- read_csv(file.path("..", "..", "Kelpie_maps", outputidxstatstabulatefolder, "sample_by_species_table_F2308_minimap2_20200221_kelpie20200723.csv"))
+      # idx_meta_genomecov_filtered_wide <- read_csv(file.path("..", "..", "Kelpie_maps", outputidxstatstabulatefolder, "sample_by_species_table_F2308_minimap2_20200916_kelpie20200917.csv"))
     
-      # F2308 f0x2 samtools filter
+      # F2308_f0x2 samtools filter
       # not yet created
 ```
 
@@ -838,7 +861,7 @@ pt$evaluatePivot()
 sampletable_pt <- pt$asDataFrame(separator="_")
 names(sampletable_pt)
 sampletable_pt <- sampletable_pt %>% 
-  rownames_to_column(var = "site") %>% 
+  # rownames_to_column(var = "site") %>% 
   # filter(site !="Total") %>% 
   arrange(desc(S1_Total))
 
@@ -873,14 +896,14 @@ idx_meta_genomecov_filtered_wide_lulu <- idx_meta_genomecov_filtered_wide %>%
 
 
 ```{bash vsearch for matchlist}
-cd ~/Dropbox/Working_docs/Luo_Mingjie_Oregon/HJA_scripts/5_taxonomy/
+cd ~/Dropbox/Working_docs/Luo_Mingjie_Oregon/HJA_analyses_Kelpie/HJA_scripts/05_taxonomy/kelpie_20200916_BF3BR2/
 
-vsearch --usearch_global kelpie_20200214_BF3BR2_derep_filtered_geneious_vsearch97_min2.fas --db kelpie_20200214_BF3BR2_derep_filtered_geneious_vsearch97_min2.fas --self --id .84 --iddef 1 --userout match_list.tsv -userfields query+target+id --maxaccepts 0 --query_cov .9 --maxhits 10
+vsearch --usearch_global kelpie_20200916_BF3BR2_derep_filter3_vsearch97_rmdup_spikes.fas --db kelpie_20200916_BF3BR2_derep_filter3_vsearch97_rmdup_spikes.fas --self --id .84 --iddef 1 --userout match_list.tsv -userfields query+target+id --maxaccepts 0 --query_cov .9 --maxhits 10
 ```
 
 
 ```{r}
-match_list <- read_delim(file.path("..", "5_taxonomy", "match_list.tsv"), "\t", escape_double = FALSE, col_names = FALSE, trim_ws = TRUE)
+match_list <- read_delim(file.path("..", "05_taxonomy", "kelpie_20200916_BF3BR2", "match_list.tsv"), "\t", escape_double = FALSE, col_names = FALSE, trim_ws = TRUE)
 
 curated_result <- lulu::lulu(idx_meta_genomecov_filtered_wide_lulu, match_list)
 curated_table <- rownames_to_column(curated_result$curated_table, var = "OTU")
@@ -903,7 +926,11 @@ species <- as.data.frame(specnumber(species_idx_meta_genomecov, MARGIN = 2)) %>%
   arrange(desc(occurrences))
 View(species)
 
+otuhist <- hist(species$occurrences, breaks = 200)
+text(otuhist$mids, otuhist$counts, cex = 0.5, 
+     otuhist$counts, adj = c(.5, -.5), col = "blue3")
 ```
+
 
 
 makeblastdb does not work because info lines are too long
