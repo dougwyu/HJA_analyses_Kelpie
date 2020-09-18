@@ -204,6 +204,8 @@ kelpie_otus2df <- kelpie_otus2df %>%
 
 write_csv(kelpie_otus2df, here("kelpie_20200916_BF3BR2", "kelpie_otus2df.csv"))
 
+
+
 # open kelpie_otus2df.csv and manually filter OTUs so that only the largest one matching to a BOLDID is retained (more details above)
 
 kelpie_otus3df <- read_csv(here("kelpie_20200916_BF3BR2",
@@ -229,11 +231,12 @@ mv kelpie_20200916_BF3BR2_derep_filter3_vsearch97_rmdup_spikes_format.fas kelpie
 
 seqkit stats kelpie_20200916_BF3BR2_derep_filter3_vsearch97_rmdup_spikes.fas
 # format  type  num_seqs  sum_len  min_len  avg_len  max_len
-# FASTA   DNA      1,122  468,522      276    417.6      897
+# FASTA   DNA      1,121  468,105      276    417.6      897
 ```
 
 NEXT STEP
 Use kelpie_20200916_BF3BR2_derep_filter3_vsearch97_rmdup_spikes.fas as the mapping target to generate the OTU table
+# this version no longer has the extra OTU: R2332-6__Insecta_Diptera_Asilidae_NA_NA_BOLD_ABW2452_size=1
 
 # END
 
