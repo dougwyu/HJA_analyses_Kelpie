@@ -17,8 +17,9 @@ PATH=$PATH:~/scripts/parallel-20170722/bin/
 
 ####### set up output folder to hold everything before running
 OUTPUTFOLDER="minimap2_outputs"
-cd ~/_Oregon/2019Sep_shotgun/2.trimmeddata/; ls # 2.trimmeddata, testkelpie
-if [ ! -d ${OUTPUTFOLDER} ] # if directory minimap2_outputs_all does not exist.
+# cd ~/_Oregon/2019Sep_shotgun/testkelpie/; ls # test data
+cd ~/_Oregon/2019Sep_shotgun/2.trimmeddata/; ls # production
+if [ ! -d ${OUTPUTFOLDER} ] # if directory minimap2_outputs does not exist.
 then
      mkdir ${OUTPUTFOLDER}
 fi
@@ -57,14 +58,14 @@ ls ${OUTPUTFOLDER}/*_sorted.bam.flagstat.txt | wc -l # half the idxstats values
 parallel ls -l BWA*/${OUTPUTFOLDER}/*_{1}_q{2}_sorted_genomecov_d.txt.gz ::: ${FILTER1} ${FILTER2} ::: ${QUAL1} ${QUAL2}
 parallel ls -l BWA*/${OUTPUTFOLDER}/*_{1}_q{2}_sorted_genomecov_d.txt.gz ::: ${FILTER1} ${FILTER2} ::: ${QUAL1} ${QUAL2} | wc -l # 484
 # copy
-parallel cp BWA*/${OUTPUTFOLDER}/*_{1}_q{2}_sorted_genomecov_d.txt.gz ${OUTPUTFOLDER}/ ::: ${FILTER1} ${FILTER2} ::: ${QUAL1} ${QUAL2}  # takes considerably longer than above
+parallel cp BWA*/${OUTPUTFOLDER}/*_{1}_q{2}_sorted_genomecov_d.txt.gz ${OUTPUTFOLDER}/ ::: ${FILTER1} ${FILTER2} ::: ${QUAL1} ${QUAL2}  # takes longer than above
 # check again
 parallel ls ${OUTPUTFOLDER}/*_{1}_q{2}_sorted_genomecov_d.txt.gz ::: ${FILTER1} ${FILTER2} ::: ${QUAL1} ${QUAL2} | wc -l # 484
 
 # rename, tar, and gzip for download
 MAPDATE="20200917"
 TARGET="kelpie_20200916_BF3BR2_derep_filter3_vsearch97_rmdup_spikes" #
-du -sh ${OUTPUTFOLDER}/ # 485M
+du -sh ${OUTPUTFOLDER}/ # 727M
 # set filename to something that i can understand after download
 mv ${OUTPUTFOLDER} outputs_${FILTER1}_q${QUAL2}_${OUTPUTFOLDER}_${MAPDATE}_${TARGET}
 ls # outputs_F2308_f0x2_q48_minimap2_outputs_20191219_kelpie_20200916_BF3BR2_derep_filter3_vsearch97_rmdup_spikes
@@ -75,16 +76,18 @@ ls
 rm -rf outputs_${FILTER1}_q${QUAL2}_${OUTPUTFOLDER}_${MAPDATE}_${TARGET}/
 ls
 
-# use Transmit to download *.gz file to Luo_Mingjie_Oregon/Kelpie_maps/
+# use Transmit to download *.gz file to Luo_Mingjie_Oregon/HJA_analyses_Kelpie/Kelpie_maps/
 
 ######## remove the minimap2_output/ folders after i've finished the mapping jobs. these are the bam, bam.bai, idxstats, flagstats, and genomecov files left behind in the BWA folders
 PATH=$PATH:~/scripts/parallel-20170722/bin/
 # FILTER="F2308"
 OUTPUTFOLDER="minimap2_outputs"
 
-cd ~/_Oregon/2019Sep_shotgun/2.trimmeddata/; ls # 2.trimmeddata, testkelpie
+# cd ~/_Oregon/2019Sep_shotgun/testkelpie/; ls # test
+cd ~/_Oregon/2019Sep_shotgun/2.trimmeddata/; ls # production
 ls
 parallel "ls BWA{}/minimap2_outputs/" ::: 01 02 03 04 05 06 07 08 09 10
 # parallel "rm -rf BWA{}/minimap2_outputs/" ::: 01 02 03 04 05 06 07 08 09 10
 parallel "ls BWA{}/minimap2_outputs/" ::: 01 02 03 04 05 06 07 08 09 10
 # ls: should say:  cannot access BWA*/minimap2_outputs/: No such file or directory
+du -sh ~/_Oregon # 1.5 T

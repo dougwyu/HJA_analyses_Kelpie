@@ -9,7 +9,7 @@ This file takes the idxstats.txt outputs of samtools and bedtools (idxstats, gen
 
 This code has only been checked on macOS.
 
-```{r load packages}
+```{r setup}
 # rm(list=ls())
 library(tidyverse)
 library(conflicted)
@@ -58,13 +58,13 @@ samtoolsfilter <- "F2308" # F2308 filter only
 samtoolsqual <- "q48"
 
 # this is the enclosing folder around the idxstats and genomecov files for a given set of mappings
-# outputs_F2308_f0x2_q48_minimap2_outputs_20200221_kelpie_20200214_BF3BR2_derep_filtered_geneious_vsearch97_min2_spikes
-# the samtoolsfilter value does not change in the folder name, always "F2308_f0x2"
-idxstatsgenomecovfolder <- paste0("outputs_F2308_f0x2_", samtoolsqual, "_minimap2_outputs_20200221_kelpie_20200214_BF3BR2_derep_filtered_geneious_vsearch97_min2_spikes")
+# outputs_F2308_f0x2_q48_minimap2_outputs_20200917_kelpie_20200916_BF3BR2_derep_filter3_vsearch97_rmdup_spikes
+# the samtoolsfilter value does not change in the folder name; it is always "F2308_f0x2"
+(idxstatsgenomecovfolder <- paste0("outputs_F2308_f0x2_", samtoolsqual, "_minimap2_outputs_20200917_kelpie_20200916_BF3BR2_derep_filter3_vsearch97_rmdup_spikes"))
 
 # this is where i store the outputs of this script
 # mkdir outputs_minimap2_20200221_F2308_f0x2_q48_kelpie20200214_vsearch97
-outputidxstatstabulatefolder <- "outputs_minimap2_20200221_F2308_f0x2_q48_kelpie20200214_vsearch97"
+(outputidxstatstabulatefolder <- "outputs_minimap2_20200917_F2308_f0x2_q48_kelpie20200916_vsearch97")
 
 idxstatsfile <- paste0("*", samtoolsfilter, "_", samtoolsqual, "_sorted\\.bam_idxstats\\.txt")  
     # e.g. "*F2308_f0x2_q1_sorted.bam_idxstats.txt"
@@ -83,7 +83,7 @@ samplemetadatafilename <- "shotgun_samples_HJAndrews_Malaisetraps_20200108.xlsx"
 
 Read in all idx_stats files, add metadata to columns, and merge into one big table in long format (vertically by time)
 ```{r 1. read and tabulate idx files}
-# make sure to unzip the output folder:  outputs_F2308_f0x2_q48_minimap2_outputs_20200221_kelpie_20200214_BF3BR2_derep_filtered_geneious_vsearch97_min2_spikes.tar.gz
+# make sure to unzip the output folder:  outputs_F2308_f0x2_q48_minimap2_outputs_20200917_kelpie_20200916_BF3BR2_derep_filter3_vsearch97_rmdup_spikes.tar.gz
 
 cat("idxstatsgenomecoverfolder is: ", idxstatsgenomecovfolder)
 cat("idxstatsfile search pattern is: ", idxstatsfile)

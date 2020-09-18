@@ -8,7 +8,7 @@ set -o pipefail
 #######################################################################################
 #######################################################################################
 
-# Usage: bash _loop_minimap2_only_20200219.sh
+# Usage: bash _loop_minimap2_only_20200917.sh
 
 # SCRIPT OUTLINE:
      # make list of folders
@@ -21,7 +21,7 @@ set -o pipefail
 
 PIPESTART=$(date)
 
-# upload bash _loop_minimap2_only_20200219.sh *into* folder that contains the sample folders that i want to map
+# upload bash _loop_minimap2_only_20200917.sh *into* folder that contains the sample folders that i want to map
 # when i have lots of sample files, i break it up by putting the sample files into BWA**/ folders and running these scripts inside each one
 HOMEFOLDER=$(pwd) # this sets working directory to that folder
 echo "Home folder is ${HOMEFOLDER}"
@@ -37,6 +37,7 @@ fi
 # run inside each BWA folder
 find ./ -maxdepth 1 -mindepth 1 -type d -exec basename {} \; | sort > folderlist.txt
 sed -i '/minimap2_outputs/d' ./folderlist.txt # GNU sed only
+sed -i '/filterreadsoutput/d' ./folderlist.txt # GNU sed only
      # grep "minimap2_outputs" folderlist.txt # should return nothing because it has been deleted
      # wc -l folderlist.txt # 20
      # cat folderlist.txt

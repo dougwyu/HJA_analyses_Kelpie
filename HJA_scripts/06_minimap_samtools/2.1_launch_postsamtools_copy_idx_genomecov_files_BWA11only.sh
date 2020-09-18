@@ -9,7 +9,10 @@ set -o pipefail
 #######################################################################################
 #######################################################################################
 
-ssh hpc
+
+                ####  BWA11 only ####
+
+ssh ada
 interactive
 # to use parallel without a pathname in bsub scripts
 PATH=$PATH:~/scripts/parallel-20170722/bin/

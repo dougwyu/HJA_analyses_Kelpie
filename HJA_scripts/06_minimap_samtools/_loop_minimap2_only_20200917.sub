@@ -21,4 +21,4 @@ PATH=$PATH:/gpfs/home/b042/scripts/bedtools2/ # downloaded 17 Sep 2020 from gith
 PATH=$PATH:~/scripts/vsearch-2.15.0-linux-x86_64/bin/ # downloaded 12 Jul 2020 from github
 PATH=$PATH:~/scripts/parallel-20170722/bin/ # GNU Parallel
 
-bash _loop_minimap2_only_20200219.sh
+bash _loop_minimap2_only_20200917.sh

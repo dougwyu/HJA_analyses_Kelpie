@@ -117,8 +117,8 @@ ls ~/_Oregon/2019Sep_shotgun/2.trimmeddata/BWA01/ # check if there is a working 
 
 
 ######  WAIT FOR THE MINIMAP2 JOBS TO FINISH BEFORE LAUNCHING THE SAMTOOLS SCRIPTS
-# ssh hpc
-# interactive
+ssh ada
+interactive
 
 ####### launch samtools scripts #######
 cd ~/_Oregon/2019Sep_shotgun/2.trimmeddata/BWA01; ls # 2.trimmeddata
@@ -168,3 +168,4 @@ squeue -u b042
 # squeue -u b042
 
 ls minimap2_outputs/ # should show new bam files
+squeue -u b042
