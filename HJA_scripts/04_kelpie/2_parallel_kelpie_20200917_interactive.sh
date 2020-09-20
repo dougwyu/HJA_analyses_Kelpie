@@ -8,9 +8,8 @@ set -o pipefail
 ##################################################################################################
 ##################################################################################################
 
-# I run this in an interactive session because it is fast, but it could probably be run 
-# as a batch job without needing editing, using
-# sbatch
+# I run this in an interactive session because it is fast, but it could probably be run
+# as a batch job without needing editing, using sbatch
 PATH=$PATH:~/scripts/vsearch-2.15.0-linux-x86_64/bin/ # downloaded 12 Jul 2020 from github
 PATH=$PATH:~/scripts/Kelpie_v2.0.8/ubuntu-16.04/
 PATH=$PATH:~/scripts/parallel-20170722/bin/ # GNU Parallel
