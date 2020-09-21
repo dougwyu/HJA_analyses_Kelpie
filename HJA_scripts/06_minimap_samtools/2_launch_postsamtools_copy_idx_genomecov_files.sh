@@ -24,7 +24,7 @@ then
      mkdir ${OUTPUTFOLDER}
 fi
 ls
-"ls" -l BWA*/s*${PLATE}*.out # check if all BWA folders have a current smtl*.out file, showing that samtools ran correctly.  Check the sizes of the samtools.out file.  they should all be about the same.
+"ls" -l BWA*/samtl*${PLATE}*.out # check if all BWA folders have a current samtl*.out file, showing that samtools ran correctly.  Check the sizes of the samtools.out file.  they should all be about the same.
 
 ####### code to copy samtools output files to: outputs_${FILTER1}_q${QUAL2}_${OUTPUTFOLDER}_${MAPDATE}_${TARGET}.tar.gz #######
 ####### This folder is then downloaded to my laptop to process with R:  idxstats_tabulate_macOS_Plates*.Rmd
@@ -73,7 +73,8 @@ ls # outputs_F2308_f0x2_q48_minimap2_outputs_20191219_kelpie_20200916_BF3BR2_der
 tar -czvf outputs_${FILTER1}_q${QUAL2}_${OUTPUTFOLDER}_${MAPDATE}_${TARGET}.tar.gz outputs_${FILTER1}_q${QUAL2}_${OUTPUTFOLDER}_${MAPDATE}_${TARGET}/
 # filename format:  outputs_F2308_f0x2_q48_minimap2_outputs_20191219_kelpie_20200916_BF3BR2_derep_filter3_vsearch97_rmdup_spikes.tar.gz
 ls
-rm -rf outputs_${FILTER1}_q${QUAL2}_${OUTPUTFOLDER}_${MAPDATE}_${TARGET}/
+# uncomment and run when ready
+# rm -rf outputs_${FILTER1}_q${QUAL2}_${OUTPUTFOLDER}_${MAPDATE}_${TARGET}/
 ls
 
 # use Transmit to download *.gz file to Luo_Mingjie_Oregon/HJA_analyses_Kelpie/Kelpie_maps/

@@ -37,14 +37,16 @@ cd ${HOMEFOLDER}${TARGETFOLDER} # || exit
 # concatenate the fasta files into a single large fasta file
 timestamp="20200916_BF3BR2" # e.g. 20200715_LERAYFOL, 20200717_BF3BR2
 echo $timestamp
-cd BF3BR2_kelpie_output/
-cat kelpieoutput*/*BF3BR2.fas > kelpie_${timestamp}.fas
+cd kelpie_output_BF3BR2/
+# cat kelpieoutputneighbors/BF3BR2*.fas > kelpie_${timestamp}.fas
+# cat kelpieoutputindiv/*BF3BR2.fas >> kelpie_${timestamp}.fas
+
 ls
 
-seqkit stats kelpie_${timestamp}.fas # 607,248 BF3BR2 seqs 2.0.8
+seqkit stats kelpie_${timestamp}.fas # 1,244,402 BF3BR2 seqs 2.0.8
 
 seqkit seq -m 400 kelpie_${timestamp}.fas -o kelpie_${timestamp}_min400.fas
-seqkit stats kelpie_${timestamp}_min400.fas kelpie_${timestamp}.fas # 607,177 BF3BR2 seqs 2.0.8
+seqkit stats kelpie_${timestamp}_min400.fas kelpie_${timestamp}.fas # 1,239,163 BF3BR2 seqs 2.0.8
 mv kelpie_${timestamp}_min400.fas kelpie_${timestamp}.fas
 seqkit stats kelpie_${timestamp}.fas
 
@@ -57,7 +59,7 @@ grep "R1$" kelpie_${timestamp}.fas | wc -l # should equal to number of samples
 seqkit rename kelpie_${timestamp}.fas > kelpie_${timestamp}_rename.fas # renames duplicate headers
 mv kelpie_${timestamp}_rename.fas kelpie_${timestamp}.fas # replace old with new, deduplicated version
 grep "R1$" kelpie_${timestamp}.fas # duplicates have new names, plus the original name info
-seqkit stats kelpie_${timestamp}.fas # 607,177 seqs
+seqkit stats kelpie_${timestamp}.fas # 1,239,163 seqs
 
 # dereplicate the fasta file
     # orig command
@@ -70,7 +72,7 @@ seqkit stats kelpie_${timestamp}.fas # 607,177 seqs
 vsearch --derep_fulllength kelpie_${timestamp}.fas --sizeout --fasta_width 0 --threads 0 --output kelpie_${timestamp}_derep.fas # --relabel_sha1
 head kelpie_${timestamp}_derep.fas
 tail kelpie_${timestamp}_derep.fas
-seqkit stats kelpie_${timestamp}_derep.fas # 4,081 uniq BF3BR2 seqs 2.0.8
+seqkit stats kelpie_${timestamp}_derep.fas # 5,351 uniq BF3BR2 seqs 2.0.8
 
 # uncomment when ready to run
 # rm -f kelpie_${timestamp}.fas
@@ -82,12 +84,17 @@ ls
 # concatenate the discard fasta files into a single large fasta file
 timestamp="20200916_BF3BR2" # e.g. 20200715_LERAYFOL, 20200717_BF3BR2
 echo $timestamp
-cd ~/_Oregon/2019Sep_shotgun/2.trimmeddata/BF3BR2_kelpie_output/
-cat kelpieoutput*/*BF3BR2_discards.fas > kelpie_${timestamp}_discards.fas
+cd ~/_Oregon/2019Sep_shotgun/2.trimmeddata/kelpie_output_BF3BR2/
+cat kelpieoutputindiv/*BF3BR2_discards.fas > kelpie_${timestamp}_discards.fas
+seqkit stats kelpie_${timestamp}_discards.fas
+cat kelpieoutputneighbors/*_discards.fas >> kelpie_${timestamp}_discards.fas
+seqkit stats kelpie_${timestamp}_discards.fas # 12,883 seqs
 ls
 head kelpie_${timestamp}_discards.fas
 grep "D1" kelpie_${timestamp}_discards.fas # duplicates have new names, plus the original name info
-seqkit stats kelpie_${timestamp}_discards.fas # 7,792 seqs kelpie 2.0.8
+seqkit rename kelpie_${timestamp}_discards.fas > kelpie_${timestamp}_discards_rename.fas # renames duplicate headers
+grep "D1" kelpie_${timestamp}_discards.fas # duplicates have new names, plus the original name info
+seqkit stats kelpie_${timestamp}_discards.fas # 12,883 seqs kelpie 2.0.8
 
 # END
 
