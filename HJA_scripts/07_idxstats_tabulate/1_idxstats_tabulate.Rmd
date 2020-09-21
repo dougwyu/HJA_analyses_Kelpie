@@ -162,7 +162,9 @@ idx %>% distinct(pathname) %>% count()  # number of distinct values of filenames
 idx %>% distinct(samtools_filter) %>% count() # number of distinct values of samtools_filter: should be 1
 idx %>% distinct(samtools_filter) # should look something like:  F2308 or F2308_f0x2, depending on samtoolsfilter
 
-# sanity check:  all count values should be 1213 (1211 + 2 spikes), except HOBO-357-M1-S2, which equals 2*1213 since there are two samples named HOBO-357, since one of them is Hobo-351_M1_S2, but we don't know which one, The period (S2) and trap (M1) are known, however. So we leave HOBO-357-M1-S2 untouched, and have set UTM_E, UTM_N, and Correct_Site as NA
+# sanity check:  all count values should be 1285 (1283 + 2 spikes), except HOBO-357-M1-S2, which equals 2*1285 since there are two samples named HOBO-357, since one of them is Hobo-351_M1_S2, but we don't know which one, The period (S2) and trap (M1) are known, however. So we leave HOBO-357-M1-S2 untouched, and have set UTM_E, UTM_N, and Correct_Site as NA
+# orig species count was 1211 when kelpie was run on only the individual samples, whereas this run includes kelpie output from nearest-neighbor groupings (each site plus its 5 nearest neighbour sites pooled into a single fastq file)
+# 1283-1211 = 72 additional species
 species_list <- idx %>% 
   count(site, trap, period) %>% 
   arrange(desc(n))
@@ -223,7 +225,7 @@ idx <- fixidxgenomecov(idx)
 
 idx %>% distinct(site) %>% count()  # there should be 94 idx site names, same as the 94 correct site names in the metadata Excel file
 
-# sanity check:  all count values should be 900, except for HOBO-357 and HOBO-036, which have ambiguous metadata
+# sanity check:  all count values should be 1285, except for HOBO-357 and HOBO-036, which have ambiguous metadata
 species_list <- idx %>% 
   count(site, trap, period) %>% 
   arrange(desc(n))
@@ -323,8 +325,7 @@ names(idx_meta)
 
 
 ```{r sanity checks}
-# sanity check:  all count values should be 1213, except for HOBO-357-M1-S2 because there were two samples with this name
-# HOBO-036 should also have 1800 because we can't differentiate the periods
+# sanity check:  all count values should be 1285, except for HOBO-357-M1-S2 because there were two samples with this name, and for HOBO-036 because we can't differentiate the periods
 species_list <- idx_meta %>% 
   count(site, period, trap) %>% 
   arrange(desc(n))
@@ -456,7 +457,7 @@ genomecoverages_summ <- fixidxgenomecov(genomecoverages_summ)
 
 genomecoverages_summ %>% distinct(site) %>% count()  # there should be 94 idx site names, same as the 94 correct site names in the metadata Excel file
 
-# sanity check:  all count values should be 1213, except for HOBO-357_M1_S2 and HOBO-036_M1_S2, which have two copies each (the two S2s should be S1 and S2, but we don't know which one), and thus counts of 2426
+# sanity check:  all count values should be 1285, except for HOBO-357_M1_S2 and HOBO-036_M1_S2, which have two copies each (the two S2s should be S1 and S2, but we don't know which one), and thus counts of 2570
 species_list <- genomecoverages_summ %>% 
   count(site, trap, period) %>% 
   arrange(desc(n))
@@ -504,7 +505,7 @@ idx_meta_genomecov$COI_Species <- if_else(grepl("COI-SPIKE", idx_meta_genomecov$
 idx_meta_genomecov <- idx_meta_genomecov %>% 
   select(COI_Species, mitogenome:mapped_reads, pct_coverage, site:mapqual_filter, everything()) 
 
-# sanity check:  all count values should be 1211 OTUs (1213 - the 2 spikes), except for HOBO-357_M1_S2 and HOBO-036_M1_S2, which have 2422 OTUs (because two samples have been pooled in each site)
+# sanity check:  all count values should be 1283 OTUs (1285 - the 2 spikes), except for HOBO-357_M1_S2 and HOBO-036_M1_S2, which have 2566 OTUs (because two samples have been pooled in each site)
 species_list <- idx_meta_genomecov %>% 
   filter(COI_Species != "COI_Spike") %>% 
   count(site, trap, period) %>% 
@@ -680,8 +681,8 @@ idxstats_by_site_trap_period <- idx_meta_genomecov_corr %>%
     dplyr::count() %>% 
     dplyr::arrange(desc(n)); View(idxstats_by_site_trap_period)
 
-# ideally, there should be 1213 in all rows of column "n" 
-# 1213 == 1211 species + 2 spike-in species
+# ideally, there should be 1285 in all rows of column "n" 
+# 1285 == 1283 species + 2 spike-in species
 idxstats_by_mitogenome <- idx_meta_genomecov_corr %>% 
     dplyr::group_by(site_trap_period) %>% 
     dplyr::distinct(mitogenome) %>% 
@@ -827,7 +828,7 @@ idx_meta_genomecov_filtered_wide <- envdataTosa %>%
   select(-rownumber, -UTM_E.y, -UTM_N.y)
 
 # to see number of reads per sample for a given species
-species <- select(idx_meta_genomecov_filtered_wide, starts_with(c("R96__", "R1829-2")))
+(species <- select(idx_meta_genomecov_filtered_wide, starts_with(c("R343-70__", "R6801-4"))))
 
 # write output
 # F2308 samtools filter
@@ -882,7 +883,7 @@ sampletable_pt <- sampletable_pt %>%
 ### lulu.  
 I ran lulu on the kelpie_20200214_BF3BR2_derep_filtered_geneious_vsearch97_min2.fas OTUs, and lulu removed no OTUs.  So it looks like Kelpie + vsearch97 produces separate OTUs, and lulu does not help.
 
-prepare dataframe for lulu:  sjmisc::rotate_df
+prepare dataframe for lulu: uses sjmisc::rotate_df
 ```{r}
 names(idx_meta_genomecov_filtered_wide)
 idx_meta_genomecov_filtered_wide_lulu <- idx_meta_genomecov_filtered_wide %>% 
