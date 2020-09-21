@@ -65,7 +65,7 @@ parallel ls ${OUTPUTFOLDER}/*_{1}_q{2}_sorted_genomecov_d.txt.gz ::: ${FILTER1} 
 # rename, tar, and gzip for download
 MAPDATE="20200917"
 TARGET="kelpie_20200916_BF3BR2_derep_filter3_vsearch97_rmdup_spikes" #
-du -sh ${OUTPUTFOLDER}/ # 727M
+du -sh ${OUTPUTFOLDER}/ # 800M
 # set filename to something that i can understand after download
 mv ${OUTPUTFOLDER} outputs_${FILTER1}_q${QUAL2}_${OUTPUTFOLDER}_${MAPDATE}_${TARGET}
 ls # outputs_F2308_f0x2_q48_minimap2_outputs_20191219_kelpie_20200916_BF3BR2_derep_filter3_vsearch97_rmdup_spikes
@@ -73,6 +73,7 @@ ls # outputs_F2308_f0x2_q48_minimap2_outputs_20191219_kelpie_20200916_BF3BR2_der
 tar -czvf outputs_${FILTER1}_q${QUAL2}_${OUTPUTFOLDER}_${MAPDATE}_${TARGET}.tar.gz outputs_${FILTER1}_q${QUAL2}_${OUTPUTFOLDER}_${MAPDATE}_${TARGET}/
 # filename format:  outputs_F2308_f0x2_q48_minimap2_outputs_20191219_kelpie_20200916_BF3BR2_derep_filter3_vsearch97_rmdup_spikes.tar.gz
 ls
+
 # uncomment and run when ready
 # rm -rf outputs_${FILTER1}_q${QUAL2}_${OUTPUTFOLDER}_${MAPDATE}_${TARGET}/
 ls
