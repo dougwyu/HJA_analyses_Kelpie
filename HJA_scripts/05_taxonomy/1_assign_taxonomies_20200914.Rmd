@@ -217,6 +217,15 @@ write_csv(kelpie_otus2df, here("kelpie_20200916_BF3BR2", "kelpie_otus2df.csv"))
 
 
 # open kelpie_otus2df.csv in Excel and manually filter OTUs so that only the largest one matching to a BOLDID is retained (more details above). Save as kelpie_otus2df_rmdup.csv
+# on 20 Sep 2020, i learned about dplyr::slice_max(), which lets one do this more or less automatically, but it is not incorporated into this pipeline
+  # ID    <- c(1,1,1,2,2,2,2,3,3)
+  # Value <- c(2,3,5,2,5,8,17,3,5)
+  # Event <- c(1,1,2,1,2,1,2,2,2)
+  # (group <- data.frame(Subject=ID, pt=Value, Event=Event))
+  # 
+  # group %>% 
+  #   dplyr::group_by(Subject) %>% 
+  #   dplyr::slice_max(pt)
 
 kelpie_otus3df <- read_csv(here("kelpie_20200916_BF3BR2",
                                 "kelpie_otus2df_rmdup.csv")) %>% 
