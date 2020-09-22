@@ -30,24 +30,26 @@ echo "Home folder is ${HOMEFOLDER}${TARGETFOLDER}" # ~/_Oregon/2019Sep_shotgun/2
 cd ${HOMEFOLDER}${TARGETFOLDER} # || exit
 
 #### After running 2_parallel_kelpie_20200917.sh, there will be fasta files in an output folder
-# BF3BR2_kelpie_output/
-# LERAY_kelpie_output/
+# kelpie_output_BF3BR2/
+# kelpie_output_LERAY/
 # Now, i need to concatenate, deduplicate names, and clean up
 
 # concatenate the fasta files into a single large fasta file
-timestamp="20200916_BF3BR2" # e.g. 20200715_LERAYFOL, 20200717_BF3BR2
+primer="LERAY" # BF3BR2
+minlen=300 # 400 for BF3BR2, 300 for LERAY
+timestamp="20200916_${primer}" # e.g. 20200715_LERAYFOL, 20200916_BF3BR2
 echo $timestamp
-cd kelpie_output_BF3BR2/
-# cat kelpieoutputneighbors/BF3BR2*.fas > kelpie_${timestamp}.fas
-# cat kelpieoutputindiv/*BF3BR2.fas >> kelpie_${timestamp}.fas
 
+cd kelpie_output_${primer}/
+cat kelpieoutputneighbors/${primer}*.fas > kelpie_${timestamp}.fas
+ls
+cat kelpieoutputindiv/*${primer}.fas >> kelpie_${timestamp}.fas
 ls
 
-seqkit stats kelpie_${timestamp}.fas # 1,244,402 BF3BR2 seqs 2.0.8
-
-seqkit seq -m 400 kelpie_${timestamp}.fas -o kelpie_${timestamp}_min400.fas
-seqkit stats kelpie_${timestamp}_min400.fas kelpie_${timestamp}.fas # 1,239,163 BF3BR2 seqs 2.0.8
-mv kelpie_${timestamp}_min400.fas kelpie_${timestamp}.fas
+seqkit stats kelpie_${timestamp}.fas # 1,244,402 BF3BR2 seqs 2.0.8, 714,508 LERAY seqs 2.0.8
+seqkit seq -m "${minlen}" kelpie_${timestamp}.fas -o kelpie_${timestamp}_min${minlen}.fas
+seqkit stats kelpie_${timestamp}_min${minlen}.fas kelpie_${timestamp}.fas # 1,239,163 BF3BR2 seqs 2.0.8, 710,474 LERAY
+mv kelpie_${timestamp}_min${minlen}.fas kelpie_${timestamp}.fas
 seqkit stats kelpie_${timestamp}.fas
 
 # a problem is that the amplicon names are reused across multiple samples (e.g. >R1 is used in each sample fasta)
@@ -55,11 +57,11 @@ seqkit stats kelpie_${timestamp}.fas
 # so i use seqkit rename to rename duplicated names
 # deduplicate header names
 grep "R1$" kelpie_${timestamp}.fas # there are duplicate headers, because i concatenated multiple fasta files
-grep "R1$" kelpie_${timestamp}.fas | wc -l # should equal to number of samples
+grep "R1$" kelpie_${timestamp}.fas | wc -l # should equal to number of samples + number of nearest neighbor groups: 335
 seqkit rename kelpie_${timestamp}.fas > kelpie_${timestamp}_rename.fas # renames duplicate headers
 mv kelpie_${timestamp}_rename.fas kelpie_${timestamp}.fas # replace old with new, deduplicated version
 grep "R1$" kelpie_${timestamp}.fas # duplicates have new names, plus the original name info
-seqkit stats kelpie_${timestamp}.fas # 1,239,163 seqs
+seqkit stats kelpie_${timestamp}.fas # 1,239,163 seqs, 993,692 seqs
 
 # dereplicate the fasta file
     # orig command
@@ -72,20 +74,19 @@ seqkit stats kelpie_${timestamp}.fas # 1,239,163 seqs
 vsearch --derep_fulllength kelpie_${timestamp}.fas --sizeout --fasta_width 0 --threads 0 --output kelpie_${timestamp}_derep.fas # --relabel_sha1
 head kelpie_${timestamp}_derep.fas
 tail kelpie_${timestamp}_derep.fas
-seqkit stats kelpie_${timestamp}_derep.fas # 5,351 uniq BF3BR2 seqs 2.0.8
+seqkit stats kelpie_${timestamp}_derep.fas # 5,351 uniq BF3BR2 seqs 2.0.8; 4,227 uniq Leray seqs 2.0.8
 
 # uncomment when ready to run
 # rm -f kelpie_${timestamp}.fas
 ls
 
-# this is what i use as input to GBIF, after which i do a translation align to remove indels, and then cluster into 97% OTUs
+# kelpie_${timestamp}_derep.fas is what i use as input to GBIF, after which i do a translation align to remove indels, and then cluster into 97% OTUs
 
 
 # concatenate the discard fasta files into a single large fasta file
-timestamp="20200916_BF3BR2" # e.g. 20200715_LERAYFOL, 20200717_BF3BR2
-echo $timestamp
-cd ~/_Oregon/2019Sep_shotgun/2.trimmeddata/kelpie_output_BF3BR2/
-cat kelpieoutputindiv/*BF3BR2_discards.fas > kelpie_${timestamp}_discards.fas
+echo $timestamp # e.g. 20200715_LERAYFOL, 20200916_BF3BR2, 20200916_LERAY
+cd ~/_Oregon/2019Sep_shotgun/2.trimmeddata/kelpie_output_${primer}/
+cat kelpieoutputindiv/*${primer}_discards.fas > kelpie_${timestamp}_discards.fas
 seqkit stats kelpie_${timestamp}_discards.fas
 cat kelpieoutputneighbors/*_discards.fas >> kelpie_${timestamp}_discards.fas
 seqkit stats kelpie_${timestamp}_discards.fas # 12,883 seqs
@@ -94,7 +95,7 @@ head kelpie_${timestamp}_discards.fas
 grep "D1" kelpie_${timestamp}_discards.fas # duplicates have new names, plus the original name info
 seqkit rename kelpie_${timestamp}_discards.fas > kelpie_${timestamp}_discards_rename.fas # renames duplicate headers
 grep "D1" kelpie_${timestamp}_discards.fas # duplicates have new names, plus the original name info
-seqkit stats kelpie_${timestamp}_discards.fas # 12,883 seqs kelpie 2.0.8
+seqkit stats kelpie_${timestamp}_discards.fas # 12,883 BF3BR2 seqs kelpie 2.0.8; 10,962 LERAY seqs 2.0.8
 
 # END
 

@@ -57,12 +57,15 @@ echo "${sample_names[@]}" # echo all array elements
 echo "There are" ${#sample_names[@]} "files that will be processed." # 242, echo number of elements in the array
 
 # run kelpie on each individual COI.fa file
-# BF3BR2, -f CCHGAYATRGCHTTYCCHCG -r TCDGGRTGNCCRAARAAYCA, -max 500
 # run Kelpie in parallel. -j n means n samples at a time, -k keep same order as in array, --dryrun see the generated commands
-parallel -k -j 1 "Kelpie_v2 -f CCHGAYATRGCHTTYCCHCG -r TCDGGRTGNCCRAARAAYCA -filtered -min 400 -max 500 allfilterreadsoutput/{1}_?_val_?_COI.fa kelpieoutputindiv/{1}_BF3BR2.fas" ::: "${sample_names[@]}"
+# BF3BR2, -f CCHGAYATRGCHTTYCCHCG -r TCDGGRTGNCCRAARAAYCA, -max 500
+	nohup parallel -k -j 1 "Kelpie_v2 -f CCHGAYATRGCHTTYCCHCG -r TCDGGRTGNCCRAARAAYCA -filtered -min 400 -max 500 allfilterreadsoutput/{1}_?_val_?_COI.fa kelpieoutputindiv/{1}_BF3BR2.fas" ::: "${sample_names[@]}" &
+ls kelpieoutputindiv/*BF3BR2.fas | wc -l # 242
 
 # Leray Fol-degen-rev, -f GGWACWGGWTGAACWGTWTAYCCYCC -r TANACYTCNGGRTGNCCRAARAAYCA, -min 300 -max 400
-nohup parallel -k -j 3 "Kelpie_v2 -f GGWACWGGWTGAACWGTWTAYCCYCC -r TANACYTCNGGRTGNCCRAARAAYCA -filtered -min 300 -max 400 allfilterreadsoutput/{1}_?_val_?_COI.fa kelpieoutputindiv/{1}_LERAY.fas" ::: "${sample_names[@]}" &
+	nohup parallel -k -j 3 "Kelpie_v2 -f GGWACWGGWTGAACWGTWTAYCCYCC -r TANACYTCNGGRTGNCCRAARAAYCA -filtered -min 300 -max 400 allfilterreadsoutput/{1}_?_val_?_COI.fa kelpieoutputindiv/{1}_LERAY.fas" ::: "${sample_names[@]}" &
+ls kelpieoutputindiv/*LERAY.fas | wc -l # 242
+
 
 
 #### run kelpie on nearest-neighbor sets of files (each sample + five nearest neighbors)
@@ -96,7 +99,7 @@ while IFS=, read -r f1 f2 f3 f4 f5 f6
 
       find ./allfilterreadsoutput -type f -iname "$f1*" -o -iname "$f2*" -o -iname "$f3*" -o -iname "$f4*" -o -iname "$f5*" -o -iname "$f6*" -exec cat {} + > kelpieinput_${i}.fa
 
-      if [ ! -s kelpieinput_${i}.fa ]
+      if [ ! -s kelpieinput_${i}.fa ] # if kelpieinput_${i}.fa has filesize==0, then delete it and exit loop
       then
            echo "deleting kelpieinput_${i}.fa"
            rm -f kelpieinput_${i}.fa || exit
@@ -105,7 +108,10 @@ while IFS=, read -r f1 f2 f3 f4 f5 f6
       if [ -s kelpieinput_${i}.fa ] # if kelpieinput_$i.fa exists and filesize > 0
       then # check that the commands inside the then fi statement are preceded only by spaces, no tabs!
            echo "running kelpie on line ${i}"
-           Kelpie_v2 -f CCHGAYATRGCHTTYCCHCG -r TCDGGRTGNCCRAARAAYCA -filtered -min 400 -max 500 kelpieinput_${i}.fa kelpieoutputneighbors/BF3BR2_${i}.fas
+           # Leray-Foldegenrev
+               Kelpie_v2 -f GGWACWGGWTGAACWGTWTAYCCYCC -r TANACYTCNGGRTGNCCRAARAAYCA -filtered -min 300 -max 400 kelpieinput_${i}.fa kelpieoutputneighbors/LERAY_${i}.fas
+           # BF3BR2
+               # Kelpie_v2 -f CCHGAYATRGCHTTYCCHCG -r TCDGGRTGNCCRAARAAYCA -filtered -min 400 -max 500 kelpieinput_${i}.fa kelpieoutputneighbors/BF3BR2_${i}.fas
            echo "deleting kelpieinput_${i}.fa"
            rm -f kelpieinput_${i}.fa || exit
       fi
