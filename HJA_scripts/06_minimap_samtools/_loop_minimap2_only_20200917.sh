@@ -66,8 +66,8 @@ do
 
      echo "**** start of minimap2, sam to bam conversion, sorting of bam file $(date)"
      #### minimap2 ####
-     # against kelpie_20200916_OTUs and 2 COI_spike barcodes
-     minimap2 -ax sr ~/_Oregon/2019Sep_shotgun/reference_seqs/kelpie_20200916_BF3BR2_derep_filter3_vsearch97_rmdup_spikes.fas ${sample}_1_val_1.fq.gz ${sample}_2_val_2.fq.gz | samtools sort -@15 - -o ${sample}_sorted.bam # skip the samtools view -b step
+     # against kelpie_20200916_OTUs (BF3BR2 or LERAY) and 2 COI_spike barcodes
+     minimap2 -ax sr ~/_Oregon/2019Sep_shotgun/reference_seqs/kelpie_20200916_LERAY_derep_filter3_vsearch97_rmdup_spikes.fas ${sample}_1_val_1.fq.gz ${sample}_2_val_2.fq.gz | samtools sort -@15 - -o ${sample}_sorted.bam # skip the samtools view -b step
 
      echo "**** end of minimap2, sam to bam conversion, sorting of bam file $(date)"
 

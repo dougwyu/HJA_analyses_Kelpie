@@ -60,10 +60,12 @@ parallel ls -l BWA*/${OUTPUTFOLDER}/*_{1}_q{2}_sorted_genomecov_d.txt.gz ::: ${F
 # copy
 parallel cp BWA*/${OUTPUTFOLDER}/*_{1}_q{2}_sorted_genomecov_d.txt.gz ${OUTPUTFOLDER}/ ::: ${FILTER1} ${FILTER2} ::: ${QUAL1} ${QUAL2}  # takes longer than above
 # check again
+parallel ls ${OUTPUTFOLDER}/*_{1}_q{2}_sorted_genomecov_d.txt.gz ::: ${FILTER1} ${FILTER2} ::: ${QUAL1} ${QUAL2}
 parallel ls ${OUTPUTFOLDER}/*_{1}_q{2}_sorted_genomecov_d.txt.gz ::: ${FILTER1} ${FILTER2} ::: ${QUAL1} ${QUAL2} | wc -l # 484
 
 # rename, tar, and gzip for download
-MAPDATE="20200917"
+MAPDATE="20200922"
+# TARGET="kelpie_20200916_LERAY_derep_filter3_vsearch97_rmdup_spikes"
 TARGET="kelpie_20200916_BF3BR2_derep_filter3_vsearch97_rmdup_spikes" #
 du -sh ${OUTPUTFOLDER}/ # 800M
 # set filename to something that i can understand after download

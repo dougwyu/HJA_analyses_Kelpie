@@ -108,10 +108,10 @@ while IFS=, read -r f1 f2 f3 f4 f5 f6
       if [ -s kelpieinput_${i}.fa ] # if kelpieinput_$i.fa exists and filesize > 0
       then # check that the commands inside the then fi statement are preceded only by spaces, no tabs!
            echo "running kelpie on line ${i}"
-           # Leray-Foldegenrev
-               Kelpie_v2 -f GGWACWGGWTGAACWGTWTAYCCYCC -r TANACYTCNGGRTGNCCRAARAAYCA -filtered -min 300 -max 400 kelpieinput_${i}.fa kelpieoutputneighbors/LERAY_${i}.fas
+           # Leray-FolDegenRev
+               # Kelpie_v2 -f GGWACWGGWTGAACWGTWTAYCCYCC -r TANACYTCNGGRTGNCCRAARAAYCA -filtered -min 300 -max 400 kelpieinput_${i}.fa kelpieoutputneighbors/LERAY_${i}.fas
            # BF3BR2
-               # Kelpie_v2 -f CCHGAYATRGCHTTYCCHCG -r TCDGGRTGNCCRAARAAYCA -filtered -min 400 -max 500 kelpieinput_${i}.fa kelpieoutputneighbors/BF3BR2_${i}.fas
+               Kelpie_v2 -f CCHGAYATRGCHTTYCCHCG -r TCDGGRTGNCCRAARAAYCA -filtered -min 400 -max 500 kelpieinput_${i}.fa kelpieoutputneighbors/BF3BR2_${i}.fas
            echo "deleting kelpieinput_${i}.fa"
            rm -f kelpieinput_${i}.fa || exit
       fi
