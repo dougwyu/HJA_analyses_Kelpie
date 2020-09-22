@@ -62,12 +62,12 @@ here() # should be: "/Users/Negorashi2011/Dropbox/Working_docs/Luo_Mingjie_Orego
 
 
 ```{r read data files}
-scale.env1.csv <- read_csv(here("data", "kelpie_data", "for_adagpu", "quasiP_s1m1_env_5_sample_by_species_corr_table_F2308_minimap2_20200221_kelpie20200723.csv"))
+scale.env1.csv <- read_csv(here("data", "kelpie_data", "for_adagpu", "input_data_s1m1_20200916_kelpie20200917",  "quasiP_s1m1_env_5_sample_by_species_corr_table_F2308_minimap2_20200916_kelpie20200917.csv"))
 
-XY.csv <- read_csv(here("data", "kelpie_data", "for_adagpu", "quasiP_s1m1_spatial_5_sample_by_species_corr_table_F2308_minimap2_20200221_kelpie20200723.csv")) %>% 
+XY.csv <- read_csv(here("data", "kelpie_data", "for_adagpu", "input_data_s1m1_20200916_kelpie20200917",  "quasiP_s1m1_spatial_5_sample_by_species_corr_table_F2308_minimap2_20200916_kelpie20200917.csv")) %>% 
   select(UTM_E, UTM_N)
 
-otu.data.qp.csv <- read_csv(here("data", "kelpie_data", "for_adagpu", "quasiP_s1m1_otu_5_sample_by_species_corr_table_F2308_minimap2_20200221_kelpie20200723.csv"))
+otu.data.qp.csv <- read_csv(here("data", "kelpie_data", "for_adagpu", "input_data_s1m1_20200916_kelpie20200917",  "quasiP_s1m1_otu_5_sample_by_species_corr_table_F2308_minimap2_20200916_kelpie20200917.csv"))
 # mapped reads -> FSL correction -> log(Y+0.001) -> scales::rescale()
 ```
 
@@ -111,15 +111,16 @@ otu.data.pa.csv[otu.data.pa.csv > 0] <- 1
 
 
 # # or
-# # GIS + MS + LiDAR
+# # GIS + MS + LiDAR 
 scale.env1.csv <- scale.env1.csv %>%
   select(elevation.scale, canopy.ht.scale, min.T.scale, max.T.scale, precipitation.scale, metre.road.scale, metre.stream.scale, yrs.disturb.min.scale, mean.NDVI.scale, mean.EVI.scale, mean.green.scale, mean.bright.scale, mean.wet.scale, l_Cover_2m_max.scale, l_Cover_2m_4m.scale, l_Cover_4m_16m.scale, l_p25.scale, l_p95.scale, l_rumple.scale)
 ```
 
 If i want to remove correlated predictors
 ```{r, eval=FALSE}
+# # GIS + MS + LiDAR with minimal set
 scale.env1.csv <- scale.env1.csv %>%
-  select(elevation.scale, canopy.ht.scale, min.T.scale, metre.road.scale, metre.stream.scale, yrs.disturb.min.scale, mean.NDVI.scale, mean.green.scale, l_Cover_2m_max.scale, l_Cover_2m_4m.scale, l_Cover_4m_16m.scale, l_p25.scale, l_p95.scale, l_rumple.scale)
+  select(elevation.scale, canopy.ht.scale, min.T.scale, metre.road.scale, metre.stream.scale, yrs.disturb.min.scale, mean.NDVI.scale, mean.green.scale, l_Cover_2m_max.scale, l_Cover_2m_4m.scale, l_Cover_4m_16m.scale, l_p25.scale, l_rumple.scale)
 corrplot::corrplot(cor(scale.env1.csv), method = "ellipse", type = "lower")
 ```
 
@@ -127,7 +128,7 @@ corrplot::corrplot(cor(scale.env1.csv), method = "ellipse", type = "lower")
 These files are used as input to the sjsdm_cv() and sjsdm() code
 ```{r save data files}
 # set variables
-prepdate <- 20200915 # run date
+prepdate <- 20200922 # run date
 minocc <- 5 # minimum occupancy (incidence) per OTU
 envvar <- "gismslidar" # gismslidar, gis, ms, lidar, mslidar
 (datafolder <- glue("data_{prepdate}_{minocc}minocc_{envvar}"))
@@ -143,7 +144,7 @@ write_csv(otu.data.qp.csv, here("data", "kelpie_data", "for_adagpu", datafolder,
 write_csv(otu.data.pa.csv, here("data", "kelpie_data", "for_adagpu", datafolder, "otu.data.pa.csv"))
 ```
 
-
+Upload to ~/Hja_sjsdm/
 
 <details><summary>Reproducibility receipt</summary>
 ```{r}

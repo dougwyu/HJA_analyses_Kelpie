@@ -13,11 +13,11 @@
 #SBATCH --mail-type=ALL           #Mail events (NONE, BEGIN, END, FAIL, ALL)
 
 # ran on 20200830 on ada gpu, 17.5 hrs to complete 274 spp, 87 sites, gismslidar, loocv for each dataset (qp, pa)
-# sbatch sjsdm_gpu_20200916.sub # to submit the job
+# sbatch 2.0_sjsdm_gpu_20200922.sub # to submit the job
 
 module purge
 # source /gpfs/home/b042/scratch/sjSDM_env/bin/activate # activate sjSDM environment to make pytorch available
 module add R
 
-# upload sjsdm_gpu_20200916.sub and sjsdm_gpu_20200916.R into working folder (~/sjSDM)
-Rscript --vanilla sjsdm_cv_gpu_20200916.R
+# upload 2.0_sjsdm_gpu_20200922.sub and 2.1_sjsdm_cv_gpu_20200922.R into working folder (~/sjSDM)
+Rscript --vanilla 2.1_sjsdm_cv_gpu_20200922.R

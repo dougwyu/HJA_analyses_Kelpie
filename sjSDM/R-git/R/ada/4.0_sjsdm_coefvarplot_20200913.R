@@ -6,7 +6,7 @@ library(glue)
 library(RColorBrewer)
 library(here)
 
-rundate <- 20200915 # sjsdm_cv run date
+rundate <- 20200922 # sjsdm_cv run date
 envvar <- "gismslidar" # gismslidar, mslidar, gis, ms, lidar
 abund <- "qp" # "qp" # pa is 0/1 data, qp is quasiprob data
 
@@ -22,7 +22,7 @@ result <- readRDS(here("results", "crossvalidation", resultsfolder, glue("sjsdm_
 summary.p <- readRDS(here("results", "crossvalidation", resultsfolder, glue("sjsdm_summary.p_HJA_{rundate}.RDS")))
 
 # source function
-source(here("R", "ada", "coef.figure_20200912.R"))
+source(here("R", "ada", "4.1_coef.figure_20200912.R"))
 
 # set variables
 minsize <- 1

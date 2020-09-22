@@ -19,13 +19,14 @@ library(fs)
 library(glue)
 
 # set variables
-rundate <- 20200916 # run date
+rundate <- 20200922 # run date
 minocc <- 5 # minimum occupancy (incidence) per OTU
 envvar <- "gismslidar" # gismslidar, gis, ms, lidar, mslidar
 
 abund <- "qp" # pa is 0/1 data, qp is quasiprob data
+# chk sjsdm_cv() code to see if have chosen DNN to fit the env covariates
 
-resultsfolder <- glue("results_{rundate}_{minocc}minocc_{envvar}_{abund}_loocv_DNN")
+resultsfolder <- glue("results_{rundate}_{minocc}minocc_{envvar}_{abund}_loocv")
 dir_create(resultsfolder) # create results/ directory, but only if the results/ directory does not already exist
 datafolder <- glue("data_{rundate}_{minocc}minocc_{envvar}")
   # paste0 alternative syntax
@@ -45,8 +46,8 @@ XY <- read_csv(here(datafolder, "XY.csv"))
 # sjSDM_cv
 tune_results = sjSDM_cv(
   Y = as.matrix(otu.data),
-  # env = linear(as.matrix(scale.env1)),
-  env = DNN(as.matrix(scale.env1)),
+  env = linear(as.matrix(scale.env1)),
+  # env = DNN(as.matrix(scale.env1)),
   spatial = linear(XY, ~0 + UTM_E:UTM_N),
   biotic = bioticStruct(on_diag = FALSE, inverse = FALSE), # inverse=TRUE is 'better' but much slower
   tune = "random", # random steps in tune-parameter space
