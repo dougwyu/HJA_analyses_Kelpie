@@ -63,11 +63,11 @@ samtoolsqual <- "q48"
 # this is the enclosing folder around the idxstats and genomecov files for a given set of mappings
 # outputs_F2308_f0x2_q48_minimap2_outputs_20200917_kelpie_20200916_BF3BR2_derep_filter3_vsearch97_rmdup_spikes
 # the samtoolsfilter value does not change in the folder name; it is always "F2308_f0x2"
-(idxstatsgenomecovfolder <- paste0("outputs_F2308_f0x2_", samtoolsqual, "_minimap2_outputs_20200922_kelpie_20200916_LERAY_derep_filter3_vsearch97_rmdup_spikes"))
+(idxstatsgenomecovfolder <- paste0("outputs_F2308_f0x2_", samtoolsqual, "_minimap2_outputs_20200917_kelpie_20200916_BF3BR2_derep_filter3_vsearch97_rmdup_spikes"))
 
 # this is where i store the outputs of this script
-(outputidxstatstabulatefolder <- "outputs_minimap2_20200917_F2308_q48_kelpie20200916_vsearch97")
-# dir_create(file.path("..", "..", "Kelpie_maps", outputidxstatstabulatefolder))
+(outputidxstatstabulatefolder <- "outputs_minimap2_20200917_F2308_q48_kelpie20200916_BF3BR2_vsearch97")
+dir_create(file.path("..", "..", "Kelpie_maps", outputidxstatstabulatefolder))
 
 
 idxstatsfile <- paste0("*", samtoolsfilter, "_", samtoolsqual, "_sorted\\.bam_idxstats\\.txt")  
@@ -442,11 +442,11 @@ loadFile2 <- function(x) {
 # genomecoverages_summ <- do.call(rbind, genomecoverages_summ) 
 
 
-# parallel implementation runs in 105 secs.
+# parallel implementation runs in 145 secs for the BF3BR2 dataset
 plan(multisession) # uses all available cores
 tictoc::tic()
 genomecoverages_summ <- future_map(genomecov_files, loadFile2, .progress=TRUE); notify("Your loadfile2 function has finally finished!", "Message from R", speakIt=TRUE) 
-tictoc::toc()
+tictoc::toc() # 
 # rbind the list into a dataframe 
 genomecoverages_summ <- do.call(rbind, genomecoverages_summ) 
 
