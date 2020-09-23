@@ -27,7 +27,7 @@ source(here("R", "ada", "4.1_coef.figure_20200912.R"))
 # set variables
 minsize <- 1
 maxsize <- 200000L # default 200000 to include all large OTUs
-taxon <- "Dolichovespula"
+taxon <- "all"
 
 # function(summary.p, result, minsize, maxsize=200000, taxon="all")
 p1 <- coef.figure(summary.p, result, minsize, maxsize, taxon)

@@ -432,7 +432,7 @@ loadFile2 <- function(x) {
     df
 } 
  
-# THIS STEP REQUIRES ~ 3 mins for barcodes
+# THIS STEP REQUIRES ~ several mins for barcodes
 # lapply loadFile2() function to all of the genomecov_files, save the output in genomecovfiles as a list 
 # map is equivalent to lapply 
 # tictoc::tic()
@@ -442,10 +442,10 @@ loadFile2 <- function(x) {
 # genomecoverages_summ <- do.call(rbind, genomecoverages_summ) 
 
 
-# parallel implementation
+# parallel implementation runs in 105 secs.
 plan(multisession) # uses all available cores
 tictoc::tic()
-genomecoverages_summ <- future_map(genomecov_files, loadFile2); notify("Your loadfile2 function has finally finished!", "Message from R", speakIt=TRUE) 
+genomecoverages_summ <- future_map(genomecov_files, loadFile2, .progress=TRUE); notify("Your loadfile2 function has finally finished!", "Message from R", speakIt=TRUE) 
 tictoc::toc()
 # rbind the list into a dataframe 
 genomecoverages_summ <- do.call(rbind, genomecoverages_summ) 
