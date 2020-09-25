@@ -1,0 +1,13 @@
+Start with sampleXspecies table (e.g. sample_by_species_table_F2308_minimap2_20200916_kelpie20200917.csv)
+
+FSL correction
+
+1. Lysis buffer correction. – For each sample (row), correct for the proportion of the total lysis buffer that was used for DNA extraction. For example, if half the lysis buffer of a sample was used, divide the read numbers in that sample's row by 1/2.
+
+2. Spike-in correction. – (a) For each sample (row), calculate the weighted mean_spike. For COI-SPIKE__Coleoptera_Elateridae_0.8_NA_NA_NA_NA_NA, divide by 1/8. For COI-SPIKE__Coleoptera_Mordellidae_0.4_NA_NA_NA_NA_NA, divide by 1/4. (b) Then take the mean of these two numbers, which is mean_spike. (c) Finally, divide the read number of each species in the row by mean_spike. 
+
+
+Quasi-probability correction
+
+1. For each species (column), scale to a quasiprobability:  scales::rescale(log(x + 0.001)) 
+(or .0001 i'll check after we're back)

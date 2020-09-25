@@ -16,7 +16,7 @@ coef.figure <- function(summary.p, result, minsize, maxsize=200000, taxon="all")
      )
   
   effect<-effect %>% filter(coef != "(Intercept)")
-  effect<-effect %>% dplyr::select(-c(Z.value,Pr...z..))
+  effect<-effect %>% dplyr::select(-c(Z.value, Pr...z..))
   effect$coef<-as.factor(effect$coef)
   effect$max<-NA
   #str(effect$coef)
@@ -52,17 +52,17 @@ coef.figure <- function(summary.p, result, minsize, maxsize=200000, taxon="all")
   effect <- effect %>% 
     tidyr::separate(species, into = c("OTU", "taxon"), sep = "__", remove = TRUE) %>% 
     tidyr::separate(taxon, into = c("taxon", "size"), sep = "_size.", remove = TRUE) %>% 
-    mutate(
-      taxon = str_replace(taxon, "_sp", "_genus_sp")
-    ) %>% 
-    tidyr::separate(taxon, into = c("class", "order", "family", "genus", "genus2", "species", "BOLD", "BOLDID")) %>% 
-    unite(OTU, c("OTU", "class", "order", "family"), sep = "_", ) %>% 
-    select(-genus, -genus2, -species, -BOLD, -BOLDID) %>%
+    # mutate(
+    #   taxon = str_replace(taxon, "_sp", "_genus_sp")
+    # ) %>% 
+    tidyr::separate(taxon, into = c("class", "order", "family", "genus", "species", "BOLD", "BOLDID")) %>% 
+    unite(OTU, c("OTU", "class", "order", "family", "genus", "species"), sep = "_", ) %>% 
+    select(-BOLD, -BOLDID) %>%
     mutate(
       size = as.numeric(size)
     ) %>% 
     rename(species = OTU) %>% 
-    filter(size>minsize & size < maxsize)
+    filter(size > minsize & size < maxsize)
 
   
   effect$species=as.factor(effect$species)
@@ -101,7 +101,7 @@ coef.figure <- function(summary.p, result, minsize, maxsize=200000, taxon="all")
               size = 1, fontface = "bold") + 
     # geom_errorbar(aes(ymax = Estimate + Std.Err, ymin = Estimate - Std.Err), width = 0.3) +
     scale_y_continuous(limits = c(-1.1,1)) +
-    theme(axis.text.x = element_text(size = 3)) +
+    theme(axis.text.x = element_text(size = 2)) +
     theme(axis.text.y = element_text(size = 3))
   return(p1)
 }

@@ -444,8 +444,9 @@ loadFile2 <- function(x) {
 
 # parallel implementation runs in 145 secs for the BF3BR2 dataset
 plan(multisession) # uses all available cores
+# plan(multisession, workers = 4) # uses 4 cores
 tictoc::tic()
-genomecoverages_summ <- future_map(genomecov_files, loadFile2, .progress=TRUE); notify("Your loadfile2 function has finally finished!", "Message from R", speakIt=TRUE) 
+genomecoverages_summ <- future_map(genomecov_files, loadFile2, .progress=TRUE); notify("Your loadfile2 function has finished!", "Message from R", speakIt=TRUE) 
 tictoc::toc() # 
 # rbind the list into a dataframe 
 genomecoverages_summ <- do.call(rbind, genomecoverages_summ) 
@@ -728,7 +729,7 @@ idxstats_by_mitogenome <- idx_meta_genomecov_corr %>%
 ```
 
 
-Make sample X species OTU table, with mapped_reads_corr, which are spike-corrected correlations and with mapped_reads, which are not spike-corrected. Join in Marie Tosa's environmental data.
+Make sample X species OTU table, with mapped_reads_corr, which are spike-corrected correlations and with mapped_reads, which are not spike-corrected. These tables will be joined with the environmental covariate data.
 ```{r}
 # filter out rows without confident mappings
 idx_meta_genomecov_filtered <- idx_meta_genomecov_corr %>% 
@@ -758,20 +759,6 @@ names(idx_meta_genomecov_filtered)
 # make sample X OTU table, using pivot_wider() 
 # must remove HOBO-036_M1_NA, HOBO-357-351_M1_S2 because they identify two different samples, which causes the output to be filled with list_cols
 
-# using mapped_reads_corr (spike-in corrected)
-idx_meta_genomecov_corr_filtered_wide <- idx_meta_genomecov_filtered %>% 
-  filter(site_trap_period != "HOBO-036_M1_NA") %>% 
-  filter(site_trap_period != "HOBO-357-351_M1_S2") %>% 
-  select(mitogenome, mapped_reads_corr, site_trap_period, UTM_E, UTM_N) %>%
-  mutate(
-    mitogenome = str_replace_all(mitogenome, ";", "_")
-  ) %>% 
-  pivot_wider(
-    names_from = mitogenome,
-    values_from = mapped_reads_corr,
-    values_fill = list(mapped_reads_corr = 0)
-    )  
-
 # using mapped_reads (not spike-in corrected)
 idx_meta_genomecov_filtered_wide <- idx_meta_genomecov_filtered %>% 
   filter(site_trap_period != "HOBO-036_M1_NA") %>% 
@@ -785,15 +772,38 @@ idx_meta_genomecov_filtered_wide <- idx_meta_genomecov_filtered %>%
     values_from = mapped_reads,
     values_fill = list(mapped_reads = 0)
     )  
+
+# no longer doing this because FSL correction is done in the next stage
+# using mapped_reads_corr (spike-in corrected)
+# idx_meta_genomecov_corr_filtered_wide <- idx_meta_genomecov_filtered %>% 
+#   filter(site_trap_period != "HOBO-036_M1_NA") %>% 
+#   filter(site_trap_period != "HOBO-357-351_M1_S2") %>% 
+#   select(mitogenome, mapped_reads_corr, site_trap_period, UTM_E, UTM_N) %>%
+#   mutate(
+#     mitogenome = str_replace_all(mitogenome, ";", "_")
+#   ) %>% 
+#   pivot_wider(
+#     names_from = mitogenome,
+#     values_from = mapped_reads_corr,
+#     values_fill = list(mapped_reads_corr = 0)
+#     )  
+
 ```
 
-add Marie Tosa's environmental data to idx_meta_genomecov_corr_filtered_wide and to idx_meta_genomecov_filtered_wide, and write output. 
 
-envdataTosa column descriptions are in "8_reference_sequences_datasets/biodiversity_site_info_vars_descriptions_20200214.xlsx"
-```{r sample by species tables}
-envdataTosa <- read_csv(file.path("..", "08_reference_sequences_datasets", "biodiversity_site_info_vars_20200220.csv"))
+Load environmental covariate data
+envdataGIS column descriptions are in "10_eo_data/biodiversity_site_info_GIS_vars_descriptions_20200214.xlsx
+envdataLidar column descriptions are in 10_eo_data/biodiversity_site_info_lidar_descriptions_20200518_2.rtf
+envdataMS column descriptions are in 10_eo_data/biodiversity_site_info_multispectral_vars_2020-04-13.txt
 
-envdataTosa <- envdataTosa %>% 
+```{r load env data and format}
+envdataGIS <- read_csv(file.path("..", "10_eo_data", "biodiversity_site_info_GIS_vars_20200220.csv"))
+
+envdataGIS <- envdataGIS %>% 
+  select(SiteName, UTM_E, UTM_N, oldGrowthIndex = o, clearcut = TREATMENT_,
+         elevation_m = e, canopyHeight_m = ht, minT_annual = mint, 
+         maxT_annual = maxt, precipitation_mm = p, distToRoad_m = r.d, 
+         distToStream_m = s.d, YrsSinceDist, insideHJA = hja) %>% 
   mutate(
     SiteName = case_when(
       SiteName == "81090" ~ "081090",
@@ -801,19 +811,123 @@ envdataTosa <- envdataTosa %>%
       TRUE ~ as.character(SiteName)
     )
   ) %>% 
+  mutate(
+    insideHJA = case_when(
+      insideHJA == 1 ~ "yes",
+      insideHJA == 0 ~ "no",
+      TRUE ~ as.character(insideHJA)
+    )
+  ) %>% 
+  mutate(
+    clearcut = case_when(
+      clearcut == "Clearcut" ~ "yes",
+      TRUE ~ "no"
+    )
+  ) %>%
   filter(SiteName != "290415" & SiteName != "HOBO-040") 
 # SiteName 290415 was a place where the malaise trap was stolen twice, and SiteName Hobo-040 was attacked by bears in both sessions, so these rows do not have a match with idx_meta_genomecov species data (i.e. there were no samples to sequence)
 
+envdataMS <- read_csv(file.path("..", "10_eo_data", "sjsdm_biodiversity2_site_info_multispectral_2020-04-13.csv")) %>% 
+  select(SiteName, UTM_E, UTM_N, starts_with("mean.")) %>% 
+      mutate(
+        SiteName = case_when(
+            SiteName == "76361" ~ "076361",
+            SiteName == "81090" ~ "081090",
+            TRUE ~ as.character(SiteName)
+        )
+      )
+
+envdataLidar <- read_csv(file.path("..", "10_eo_data", 
+                    "biodiversity_site_info_lidar_20200518_cleaned.csv")) %>% 
+  select(-l_Cover_4m_16m_all) # some values are NA
+
+envdataMSLidar <- full_join(envdataMS, envdataLidar, 
+                            by = c("SiteName", "UTM_E", "UTM_N")) %>% 
+  filter(SiteName != "290415" & SiteName != "HOBO-040") 
+
+
+# full environmental covariate data
+envdataGISMSLidar <- full_join(envdataGIS, envdataMSLidar, 
+                            by = c("SiteName", "UTM_E", "UTM_N")) 
+```
+
+
+join environmental covariate data to idx_meta_genomecov_corr_filtered_wide and to idx_meta_genomecov_filtered_wide, and write output. 
+```{r sample by species tables}
+# mapped_reads only
+# join idx_meta_genomecov_filtered_wide and envdataTosa
+idx_meta_genomecov_filtered_wide <- idx_meta_genomecov_filtered_wide %>% 
+  separate(site_trap_period, into = c("site", "trap", "period"), sep = "_", remove = FALSE) %>% 
+  select(site, trap, period, everything()) %>% 
+  mutate(
+    UTM_E = case_when(
+      site_trap_period == "335225_M1_S2" ~ 558228,
+      TRUE ~ as.numeric(UTM_E)
+      )
+    ) %>% 
+  mutate(
+    UTM_N = case_when(
+      site_trap_period == "335225_M1_S2" ~ 4897232,
+      TRUE ~ as.numeric(UTM_N)
+    )
+  )
+
+idx_meta_genomecov_filtered_wide <- envdataGISMSLidar %>% 
+  full_join(idx_meta_genomecov_filtered_wide, by = c("SiteName" = "site", "UTM_E", "UTM_N")) %>%
+  relocate(SiteName, UTM_E, UTM_N, period, trap, site_trap_period) 
+
+
+# to see number of reads per sample for a given taxon
+species <- select(idx_meta_genomecov_filtered_wide, contains(c("Vespidae"))) %>% colSums(); tibble::view(species)
+
+# write output
+# F2308 samtools filter
+# write_csv(idx_meta_genomecov_filtered_wide, file.path("..", "..", "Kelpie_maps", outputidxstatstabulatefolder, "sample_by_species_table_F2308_minimap2_20200916_kelpie20200917.csv"))
+# F2308_f0x2 samtools filter
+  # write_csv(idx_meta_genomecov_filtered_wide, file.path("..", "..", "Kelpie_maps", outputidxstatstabulatefolder, "sample_by_species_table_F2308_f0x2_minimap2_20200916_kelpie20200917.csv"))
+
+  # read_csv() commands
+      # mapped_reads
+      # F2308 samtools filter
+      # idx_meta_genomecov_filtered_wide <- read_csv(file.path("..", "..", "Kelpie_maps", outputidxstatstabulatefolder, "sample_by_species_table_F2308_minimap2_20200916_kelpie20200917.csv"))
+    
+      # F2308_f0x2 samtools filter
+      # not yet created
+
+# prev code,deprecate
+# idx_meta_genomecov_corr_filtered_wide <- envdataTosa %>% 
+#   full_join(idx_meta_genomecov_corr_filtered_wide, by = c("SiteName" = "site")) %>%
+#   select(SiteName, UTM_E = UTM_E.x, UTM_N = UTM_N.x, everything()) %>% 
+#   select(-rownumber, -UTM_E.y, -UTM_N.y)
+```
+
+Deprecated because FSL correction is now done in the next stage
+```{r sample by species tables for spike corrected code, eval=FALSE, include=FALSE}
 # mapped_reads_corr only
 # join idx_meta_genomecov_corr_filtered_wide and envdataTosa
-idx_meta_genomecov_corr_filtered_wide <- idx_meta_genomecov_corr_filtered_wide %>% 
-  separate(site_trap_period, into = c("site", "trap", "period"), sep = "_", remove = FALSE) %>% 
-  select(site, trap, period, everything())
+# idx_meta_genomecov_corr_filtered_wide <- idx_meta_genomecov_corr_filtered_wide %>% 
+#   separate(site_trap_period, into = c("site", "trap", "period"), 
+#            sep = "_", remove = FALSE) %>% 
+#   select(site, trap, period, everything()) %>% 
+#   mutate(
+#     UTM_E = case_when(
+#       site_trap_period == "335225_M1_S2" ~ 558228,
+#       TRUE ~ as.numeric(UTM_E)
+#       )
+#     ) %>% 
+#   mutate(
+#     UTM_N = case_when(
+#       site_trap_period == "335225_M1_S2" ~ 4897232,
+#       TRUE ~ as.numeric(UTM_N)
+#     )
+#   )
+# the UTM numbers for this sample in shotgun_samples_HJAndrews_Malaisetraps_20200108.xlsx are different from the UTM numbers in the 3 environmental covariate datasets, so i use the latter values
 
-idx_meta_genomecov_corr_filtered_wide <- envdataTosa %>% 
-  full_join(idx_meta_genomecov_corr_filtered_wide, by = c("SiteName" = "site")) %>%
-  select(SiteName, UTM_E = UTM_E.x, UTM_N = UTM_N.x, everything()) %>% 
-  select(-rownumber, -UTM_E.y, -UTM_N.y)
+# idx_meta_genomecov_corr_filtered_wide <- envdataGISMSLidar %>% 
+#   full_join(idx_meta_genomecov_corr_filtered_wide, by = c("SiteName" = "site", "UTM_E", "UTM_N")) %>%
+#   relocate(SiteName, UTM_E, UTM_N, period, trap, site_trap_period) 
+
+
 
 # write output
 # F2308 samtools filter
@@ -829,35 +943,8 @@ idx_meta_genomecov_corr_filtered_wide <- envdataTosa %>%
     # not yet created
 
 
-
-# mapped_reads only
-# join idx_meta_genomecov_filtered_wide and envdataTosa
-idx_meta_genomecov_filtered_wide <- idx_meta_genomecov_filtered_wide %>% 
-  separate(site_trap_period, into = c("site", "trap", "period"), sep = "_", remove = FALSE) %>% 
-  select(site, trap, period, everything())
-
-idx_meta_genomecov_filtered_wide <- envdataTosa %>% 
-  full_join(idx_meta_genomecov_filtered_wide, by = c("SiteName" = "site")) %>%
-  select(SiteName, UTM_E = UTM_E.x, UTM_N = UTM_N.x, everything()) %>% 
-  select(-rownumber, -UTM_E.y, -UTM_N.y)
-
-# to see number of reads per sample for a given species
-(species <- select(idx_meta_genomecov_filtered_wide, starts_with(c("R343-70__", "R6801-4"))))
-
-# write output
-# F2308 samtools filter
-# write_csv(idx_meta_genomecov_filtered_wide, file.path("..", "..", "Kelpie_maps", outputidxstatstabulatefolder, "sample_by_species_table_F2308_minimap2_20200916_kelpie20200917.csv"))
-# F2308_f0x2 samtools filter
-  # write_csv(idx_meta_genomecov_filtered_wide, file.path("..", "..", "Kelpie_maps", outputidxstatstabulatefolder, "sample_by_species_table_F2308_f0x2_minimap2_20200916_kelpie20200917.csv"))
-
-  # read_csv() commands
-      # mapped_reads
-      # F2308 samtools filter
-      # idx_meta_genomecov_filtered_wide <- read_csv(file.path("..", "..", "Kelpie_maps", outputidxstatstabulatefolder, "sample_by_species_table_F2308_minimap2_20200916_kelpie20200917.csv"))
-    
-      # F2308_f0x2 samtools filter
-      # not yet created
 ```
+
 
 
 pivot table of sample, trap, period
