@@ -107,18 +107,22 @@ result = list(beta = coef(model),
               logLik=logLik(model)
               )
 
-saveRDS(model, here(resultsfolder, glue("sjsdm_model_HJA_{rundate}.RDS")))
-saveRDS(result, here(resultsfolder, glue("sjsdm_result_HJA_{rundate}.RDS")))
-saveRDS(summary.p, here(resultsfolder, glue("sjsdm_summary.p_HJA_{rundate}.RDS")))
-# model <- readRDS(here(resultsfolder, glue("sjsdm_model_HJA_{rundate}.RDS")))
-# result <- readRDS(here(resultsfolder, glue("sjsdm_result_HJA_{rundate}.RDS")))
-# summary.p <- readRDS(here(resultsfolder, glue("sjsdm_summary.p_HJA_{rundate}.RDS")))
-
 # VP for test
 imp <- importance(model)
 pdf(file = here(resultsfolder, glue("importance_{rundate}.pdf")))
 plot(imp)
 dev.off()
+
+
+saveRDS(model, here(resultsfolder, glue("sjsdm_model_HJA_{rundate}.RDS")))
+saveRDS(result, here(resultsfolder, glue("sjsdm_result_HJA_{rundate}.RDS")))
+saveRDS(summary.p, here(resultsfolder, glue("sjsdm_summary.p_HJA_{rundate}.RDS")))
+saveRDS(imp, here(resultsfolder, glue("sjsdm_imp_HJA_{rundate}.RDS")))
+# model <- readRDS(here(resultsfolder, glue("sjsdm_model_HJA_{rundate}.RDS")))
+# result <- readRDS(here(resultsfolder, glue("sjsdm_result_HJA_{rundate}.RDS")))
+# summary.p <- readRDS(here(resultsfolder, glue("sjsdm_summary.p_HJA_{rundate}.RDS")))
+# imp <- readRDS(here(resultsfolder, glue("sjsdm_imp_HJA_{rundate}.RDS")))
+
 
 # Rsquared2(model, individual = FALSE)
 # Rsquared2(model)
