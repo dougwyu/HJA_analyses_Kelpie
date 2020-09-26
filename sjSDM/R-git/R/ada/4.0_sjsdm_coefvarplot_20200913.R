@@ -45,3 +45,8 @@ pdf(file = here("results", "crossvalidation", resultsfolder,
 print(p1)
 dev.off()
 
+# env <- imp[["res"]][["total"]][["env"]]
+# spatial <- imp[["res"]][["total"]][["spatial"]]
+# names <- imp[["names"]]
+# imp_df <- bind_cols(names, env, spatial)
+# 

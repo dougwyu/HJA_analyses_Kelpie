@@ -827,7 +827,7 @@ envdataGIS <- envdataGIS %>%
   filter(SiteName != "290415" & SiteName != "HOBO-040") 
 # SiteName 290415 was a place where the malaise trap was stolen twice, and SiteName Hobo-040 was attacked by bears in both sessions, so these rows do not have a match with idx_meta_genomecov species data (i.e. there were no samples to sequence)
 
-envdataMS <- read_csv(file.path("..", "10_eo_data", "sjsdm_biodiversity2_site_info_multispectral_2020-04-13.csv")) %>% 
+envdataMS <- read_csv(file.path("..", "10_eo_data", "biodiversity_site_info_multispectral_20200413.csv")) %>% 
   select(SiteName, UTM_E, UTM_N, starts_with("mean.")) %>% 
       mutate(
         SiteName = case_when(
