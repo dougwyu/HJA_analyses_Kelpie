@@ -42,12 +42,3 @@ then
 	mkdir filterreadsoutput
 fi
 mv */*_COI.fa filterreadsoutput/
-
-# https://unix.stackexchange.com/questions/15308/how-to-use-find-command-to-search-for-multiple-extensions
-# https://unix.stackexchange.com/questions/273207/list-all-the-files-in-ending-with-several-file-extensions
-# find ./ -maxdepth 4 -mindepth 1 -type f -iname "SM-04*.fq.gz" \
-#      -o -iname "HOBO-315*.fq.gz" \
-#      -o -iname "HOBO-308*.fq.gz" \
-#      -o -iname "248762*.fq.gz" \
-#      -o -iname "SM-02*.fq.gz" \
-#      -o -iname "HOBO-310*.fq.gz" | wc -l

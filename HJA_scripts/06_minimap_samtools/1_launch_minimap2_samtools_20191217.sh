@@ -18,10 +18,10 @@ set -o pipefail
      # this creates a bunch of files that bwa-mem2 can use
 
 ############# edit minimap2 and samtools scripts #############
-# ssh ada
-# interactive
+ssh ada
+interactive
 # to use parallel without a pathname in bsub scripts
-PATH=$PATH:~/scripts/parallel-20170722/bin/
+PATH=$PATH:~/scripts/parallel-20200922/bin/ # GNU Parallel
 
 # cd ~/_Oregon/2019Sep_shotgun/testkelpie/; ls # test
 cd ~/_Oregon/2019Sep_shotgun/2.trimmeddata/; ls # production
@@ -71,6 +71,7 @@ ls # should show working folder
 cd ~/_Oregon/2019Sep_shotgun/2.trimmeddata/BWA02; ls # 2.trimmeddata
 sbatch ${MINIMAP2_SUB}
 squeue -u b042
+ls
 
 cd ~/_Oregon/2019Sep_shotgun/2.trimmeddata/BWA03; ls # 2.trimmeddata
 sbatch ${MINIMAP2_SUB}
@@ -111,9 +112,9 @@ squeue -u b042
 
 
 squeue -u b042
-ls ~/_Oregon/2019Sep_shotgun/2.trimmeddata/BWA01/ # check if there is a working folder
-tail ~/_Oregon/2019Sep_shotgun/2.trimmeddata/BWA01/mnmp01.out
-
+ls ~/_Oregon/2019Sep_shotgun/2.trimmeddata/BWA02/ # check if there is a working folder
+tail ~/_Oregon/2019Sep_shotgun/2.trimmeddata/BWA02/mnmp02.out
+tail ~/_Oregon/2019Sep_shotgun/2.trimmeddata/BWA02/mnmp02.err
 
 
 

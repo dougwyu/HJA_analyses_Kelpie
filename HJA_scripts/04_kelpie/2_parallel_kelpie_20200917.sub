@@ -13,9 +13,10 @@
 
 module purge
 PATH=$PATH:~/scripts/vsearch-2.15.0-linux-x86_64/bin/ # downloaded 12 Jul 2020 from github
-PATH=$PATH:~/scripts/Kelpie_v2.0.8/ubuntu-16.04/
-PATH=$PATH:~/scripts/parallel-20170722/bin/ # GNU Parallel
-PATH=$PATH:~/scripts/FilterReads/ubuntu-16.04/
+# PATH=$PATH:~/scripts/parallel-20170722/bin/ # GNU Parallel
+PATH=$PATH:~/scripts/parallel-20200922/bin/ # GNU Parallel
+PATH=$PATH:~/scripts/WorkingDogs/Kelpie_v2/ubuntu-16.04/ # v 2.0.10
+PATH=$PATH:~/scripts/WorkingDogs/FilterReads/ubuntu-16.04/
 
 # upload _parallel_kelpie_YYYYMMDD.sub and _parallel_kelpie_YYYYMMDD.sh *into* ~/_Oregon/2019Sep_shotgun/2.trimmeddata/
 bash 1_parallel_kelpie_20200917.sh # this runs Kelpie

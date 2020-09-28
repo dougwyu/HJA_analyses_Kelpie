@@ -1,7 +1,8 @@
 #!/bin/sh
 #SBATCH -t 24:00:00 # 24 hours
-#SBATCH -p compute-24-96 # -p for 'partition name', where partition is the queue
+#SBATCH -p compute-16-64 # -p for 'partition name', where partition is the queue
      # compute-24-96 # 24 hrs default, 7 d max, 24 cores max, 4 GB per core, 96 GB total
+     # compute-16-64 # 24 hrs, 7 d max, 16 cores max, 4 GB per core, 64 GB total
 #SBATCH -o samtl01.out # 10 chars
 #SBATCH -e samtl01.err # 10 chars
 #SBATCH --mail-type=BEGIN # options NONE, BEGIN, END, FAIL, ALL

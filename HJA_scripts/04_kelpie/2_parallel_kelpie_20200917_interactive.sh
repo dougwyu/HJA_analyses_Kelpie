@@ -11,8 +11,8 @@ set -o pipefail
 # I run this in an interactive session because it is fast, but it could probably be run
 # as a batch job without needing editing, using sbatch
 PATH=$PATH:~/scripts/vsearch-2.15.0-linux-x86_64/bin/ # downloaded 12 Jul 2020 from github
-PATH=$PATH:~/scripts/Kelpie_v2.0.8/ubuntu-16.04/
-PATH=$PATH:~/scripts/parallel-20170722/bin/ # GNU Parallel
+PATH=$PATH:~/scripts/parallel-20200922/bin/ # GNU Parallel
+PATH=$PATH:~/scripts/WorkingDogs/Kelpie_v2/ubuntu-16.04/ # v 2.0.10
 
 # to run on testkelpie, upload into ~/_Oregon/2019Sep_shotgun/testkelpie/BWA01
 # cd ~/_Oregon/2019Sep_shotgun/testkelpie/
@@ -22,6 +22,7 @@ cd ~/_Oregon/2019Sep_shotgun/2.trimmeddata/ || exit
 ls
 
 #### copy all outputs from FilterReads run into allfilterreadsoutput/
+# Typically don't need to run this
 # create folder
 if [ ! -d allfilterreadsoutput ] # if directory allfilterreadsoutput does not exist.
 then
@@ -32,7 +33,6 @@ ls
 mv BWA*/filterreadsoutput/*_COI.fa ./allfilterreadsoutput
 ls allfilterreadsoutput
 find allfilterreadsoutput -type f -iname "*_COI.fa" | wc -l # 484 COI.fa files
-
 
 
 #### run kelpie on indiv fasta files and save to kelpieoutputindiv/
@@ -60,11 +60,15 @@ echo "There are" ${#sample_names[@]} "files that will be processed." # 242, echo
 # run Kelpie in parallel. -j n means n samples at a time, -k keep same order as in array, --dryrun see the generated commands
 # BF3BR2, -f CCHGAYATRGCHTTYCCHCG -r TCDGGRTGNCCRAARAAYCA, -max 500
 	nohup parallel -k -j 1 "Kelpie_v2 -f CCHGAYATRGCHTTYCCHCG -r TCDGGRTGNCCRAARAAYCA -filtered -min 400 -max 500 allfilterreadsoutput/{1}_?_val_?_COI.fa kelpieoutputindiv/{1}_BF3BR2.fas" ::: "${sample_names[@]}" &
+# takes about 70 mins
+ls kelpieoutputindiv/*BF3BR2.fas
 ls kelpieoutputindiv/*BF3BR2.fas | wc -l # 242
 
 # Leray Fol-degen-rev, -f GGWACWGGWTGAACWGTWTAYCCYCC -r TANACYTCNGGRTGNCCRAARAAYCA, -min 300 -max 400
-	nohup parallel -k -j 3 "Kelpie_v2 -f GGWACWGGWTGAACWGTWTAYCCYCC -r TANACYTCNGGRTGNCCRAARAAYCA -filtered -min 300 -max 400 allfilterreadsoutput/{1}_?_val_?_COI.fa kelpieoutputindiv/{1}_LERAY.fas" ::: "${sample_names[@]}" &
-ls kelpieoutputindiv/*LERAY.fas | wc -l # 242
+	# nohup parallel -k -j 1 "Kelpie_v2 -f GGWACWGGWTGAACWGTWTAYCCYCC -r TANACYTCNGGRTGNCCRAARAAYCA -filtered -min 300 -max 400 allfilterreadsoutput/{1}_?_val_?_COI.fa kelpieoutputindiv/{1}_LERAY.fas" ::: "${sample_names[@]}" &
+# takes about 70 mins
+# ls kelpieoutputindiv/*LERAY.fas
+# ls kelpieoutputindiv/*LERAY.fas | wc -l # 242
 
 
 
@@ -87,6 +91,7 @@ then
      mkdir kelpieoutputneighbors
 fi
 
+# takes about 2 hrs
 i=0 # set index to 0
 while IFS=, read -r f1 f2 f3 f4 f5 f6
   do
@@ -97,23 +102,33 @@ while IFS=, read -r f1 f2 f3 f4 f5 f6
       find ./allfilterreadsoutput -type f -iname "$f1*" -o -iname "$f2*" -o -iname "$f3*" -o -iname "$f4*" -o -iname "$f5*" -o -iname "$f6*"
       echo "$f1, $f2, $f3, $f4, $f5, $f6"
 
-      find ./allfilterreadsoutput -type f -iname "$f1*" -o -iname "$f2*" -o -iname "$f3*" -o -iname "$f4*" -o -iname "$f5*" -o -iname "$f6*" -exec cat {} + > kelpieinput_${i}.fa
+	 # cat the *_1_COI.fa files together and cat the *_2_COI.fa files together
+      find ./allfilterreadsoutput -type f -iname "$f1*_1_COI.fa" -o -iname "$f2*_1_COI.fa" -o -iname "$f3*_1_COI.fa" -o -iname "$f4*_1_COI.fa" -o -iname "$f5*_1_COI.fa" -o -iname "$f6*_1_COI.fa" -exec cat {} + > kelpieinput_${i}_1.fa
+      find ./allfilterreadsoutput -type f -iname "$f1*_2_COI.fa" -o -iname "$f2*_2_COI.fa" -o -iname "$f3*_2_COI.fa" -o -iname "$f4*_2_COI.fa" -o -iname "$f5*_2_COI.fa" -o -iname "$f6*_2_COI.fa" -exec cat {} + > kelpieinput_${i}_2.fa
 
-      if [ ! -s kelpieinput_${i}.fa ] # if kelpieinput_${i}.fa has filesize==0, then delete it and exit loop
+      if [ ! -s kelpieinput_${i}_1.fa ] # if kelpieinput_${i}_1.fa has filesize==0, delete it and exit loop
       then
-           echo "deleting kelpieinput_${i}.fa"
-           rm -f kelpieinput_${i}.fa || exit
+           echo "deleting kelpieinput_${i}_1.fa"
+           rm -f kelpieinput_${i}_1.fa || exit
+      fi
+
+	  if [ ! -s kelpieinput_${i}_2.fa ] # if kelpieinput_${i}_2.fa has filesize==0, delete it and exit loop
+       then
+            echo "deleting kelpieinput_${i}_2.fa"
+            rm -f kelpieinput_${i}_2.fa || exit
        fi
 
-      if [ -s kelpieinput_${i}.fa ] # if kelpieinput_$i.fa exists and filesize > 0
+      if [ -s kelpieinput_${i}_1.fa ] && [ -s kelpieinput_${i}_2.fa ] # if kelpieinput_$i_{1,2}.fa exist and have filesizes > 0
       then # check that the commands inside the then fi statement are preceded only by spaces, no tabs!
+
            echo "running kelpie on line ${i}"
            # Leray-FolDegenRev
-               # Kelpie_v2 -f GGWACWGGWTGAACWGTWTAYCCYCC -r TANACYTCNGGRTGNCCRAARAAYCA -filtered -min 300 -max 400 kelpieinput_${i}.fa kelpieoutputneighbors/LERAY_${i}.fas
+               # Kelpie_v2 -f GGWACWGGWTGAACWGTWTAYCCYCC -r TANACYTCNGGRTGNCCRAARAAYCA -filtered -min 300 -max 400 kelpieinput_${i}_?.fa kelpieoutputneighbors/${i}_LERAY.fas
            # BF3BR2
-               Kelpie_v2 -f CCHGAYATRGCHTTYCCHCG -r TCDGGRTGNCCRAARAAYCA -filtered -min 400 -max 500 kelpieinput_${i}.fa kelpieoutputneighbors/BF3BR2_${i}.fas
-           echo "deleting kelpieinput_${i}.fa"
-           rm -f kelpieinput_${i}.fa || exit
+               Kelpie_v2 -f CCHGAYATRGCHTTYCCHCG -r TCDGGRTGNCCRAARAAYCA -filtered -min 400 -max 500 kelpieinput_${i}_?.fa kelpieoutputneighbors/${i}_BF3BR2.fas
+
+           echo "deleting kelpieinput_${i}_1.fa and kelpieinput_${i}_2.fa"
+           rm -f kelpieinput_${i}_{1,2}.fa || exit
       fi
 done < <(tail --lines=+2 neighbors_20191204_wide.csv)
 
@@ -129,12 +144,3 @@ done < <(tail --lines=+2 neighbors_20191204_wide.csv)
 # trnL_P6 -f GGGCAATCCTGAGCCAA -r CCATYGAGTCTCTGCACCTATC
 
 # 16S rRNA V4 (Earth Microbiome Project) 515F (Parada)–806R (Apprill) -f GTGYCAGCMGCCGCGGTAA -r GGACTACNVGGGTWTCTAAT
-
-
-
-#### post-process kelpie outputs
-# concatenate all kelpie outputs from individual and nearest-neighbor runs
-# then dereplicate
-
-
-# parallel "vsearch --derep_fulllength {1}/{1}.fas --sizeout --output {1}/{1}_derep.fas" ::: "${sample_names[@]}"

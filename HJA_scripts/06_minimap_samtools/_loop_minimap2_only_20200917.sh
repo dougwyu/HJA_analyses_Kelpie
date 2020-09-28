@@ -27,6 +27,8 @@ HOMEFOLDER=$(pwd) # this sets working directory to that folder
 echo "Home folder is ${HOMEFOLDER}"
 
 # set variables
+REFSEQS="/gpfs/home/b042/_Oregon/2019Sep_shotgun/reference_seqs/kelpie_20200927_BF3BR2_derep_filter3_vsearch97_rmdup_spikes.fas"
+
 INDEX=1
 if [ ! -d minimap2_outputs ] # if directory minimap2_outputs does not exist.  this is within the HOMEFOLDER
 then
@@ -66,8 +68,8 @@ do
 
      echo "**** start of minimap2, sam to bam conversion, sorting of bam file $(date)"
      #### minimap2 ####
-     # against kelpie_20200916_OTUs (BF3BR2 or LERAY) and 2 COI_spike barcodes
-     minimap2 -ax sr ~/_Oregon/2019Sep_shotgun/reference_seqs/kelpie_20200916_LERAY_derep_filter3_vsearch97_rmdup_spikes.fas ${sample}_1_val_1.fq.gz ${sample}_2_val_2.fq.gz | samtools sort -@15 - -o ${sample}_sorted.bam # skip the samtools view -b step
+     # against the REFSEQS Kelpie OTUs: kelpie_20200927 OTUs and 2 COI_spike barcodes
+     minimap2 -ax sr ${REFSEQS} ${sample}_1_val_1.fq.gz ${sample}_2_val_2.fq.gz | samtools sort -@15 - -o ${sample}_sorted.bam # skip the samtools view -b step
 
      echo "**** end of minimap2, sam to bam conversion, sorting of bam file $(date)"
 

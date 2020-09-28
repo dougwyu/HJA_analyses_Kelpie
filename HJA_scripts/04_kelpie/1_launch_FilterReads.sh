@@ -15,7 +15,7 @@ set -o pipefail
 ssh ada
 interactive
 # path to GNU parallel
-PATH=$PATH:~/scripts/parallel-20170722/bin/
+PATH=$PATH:~/scripts/parallel-20200922/bin/ # GNU Parallel
 
 ############# copy the FilterReads shell and sub scripts into each BWA folder and edit the jobIDs
 # cd ~/_Oregon/2019Sep_shotgun/testkelpie/; ls
@@ -25,7 +25,7 @@ FILTREAD2_SH="_parallel_FilterReads_20200915.sh"; head -n60 ${FILTREAD2_SH}
 
 parallel cp ${FILTREAD2_SUB} BWA{} ::: 01 02 03 04 05 06 07 08 09 10
 parallel cp ${FILTREAD2_SH} BWA{} ::: 01 02 03 04 05 06 07 08 09 10
-parallel ls BWA{} ::: 01 02 03 04 05 06 07 08 09 10
+parallel ls -lrt BWA{} ::: 01 02 03 04 05 06 07 08 09 10
 # ls BWA{01,02,03,04,05,06,07,08,09,10}
 
 # edit the bsub files so that the correct jobID will show up (i suppose i could have instead run a job array...)
@@ -41,6 +41,7 @@ ls # BWA* folders should now sort to bottom
 
 ####### launch the FilterReads scripts #######
 # cd into each BWA folder and submit bsub job
+# each job takes about an hour to run, 4 jobs are allowed to run simultaneously on ada
 cd ~/_Oregon/2019Sep_shotgun/2.trimmeddata/BWA01; ls
 echo ${FILTREAD2_SUB}
 sbatch ${FILTREAD2_SUB}
@@ -84,6 +85,6 @@ sbatch ${FILTREAD2_SUB}
 squeue -u b042
 
 ls ~/_Oregon/2019Sep_shotgun/2.trimmeddata/BWA01/HOBO-357-M1-S2_BDSW190603169-1a/ # check
-ls ~/_Oregon/2019Sep_shotgun/2.trimmeddata/BWA01/HOBO-349-M1-S1_BDSW190603162-1a
+ls ~/_Oregon/2019Sep_shotgun/2.trimmeddata/BWA01/HOBO-349-M1-S1_BDSW190603162-1a/
 squeue -u b042
 head -n14 ${FILTREAD2_SUB}

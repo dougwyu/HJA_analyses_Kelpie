@@ -5,6 +5,8 @@ date: "15/09/2020"
 output: html_document
 ---
 
+This utility script generates a table with six columns: each site and its five nearest neighbors: 08_reference_sequences_datasets/neighbors_20191204_wide.csv, which is used as input in the Kelpie runs. 
+
 ```{r setup, eval=TRUE, include=TRUE}
 # copy the following into each script   
 knitr::opts_chunk$set(
@@ -39,11 +41,6 @@ suppressPackageStartupMessages({
   library(conflicted)
 })
 
-tidyverse_packages(include_self = TRUE) # this lists the tidyverse packages that are loaded by just running the single command `library(tidyverse)
-#  [1] "broom"      "cli"        "crayon"     "dbplyr"     "dplyr"      "forcats"    "ggplot2"    "haven"     
-#  [9] "hms"        "httr"       "jsonlite"   "lubridate"  "magrittr"   "modelr"     "pillar"     "purrr"     
-# [17] "readr"      "readxl"     "reprex"     "rlang"      "rstudioapi" "rvest"      "stringr"    "tibble"    
-# [25] "tidyr"      "xml2"       "tidyverse" 
 
 # Sometimes, two or more packages use the same function names. the {conflicted} package lets you set which package gets precedence. For example, the next line enforces that filter() refers to the {dplyr} package. If you want to use the command filter() from a different package, you just need to precede it with the desired package name, like this: stats::filter.  
 conflict_prefer("filter", "dplyr", quiet = TRUE)
@@ -66,7 +63,7 @@ options(scipen = 999)
 
 
 ```{r}
-neighbors <- read_csv("Dropbox/Working_docs/Luo_Mingjie_Oregon/HJA_analyses_Kelpie/HJA_scripts/08_reference_sequences_datasets/neighbors_20191204.txt") %>% select(-index, -Distance) %>% 
+neighbors <- read_csv("~/Dropbox/Working_docs/Luo_Mingjie_Oregon/HJA_analyses_Kelpie/HJA_scripts/08_reference_sequences_datasets/neighbors_20191204.txt") %>% select(-index, -Distance) %>% 
     mutate(SiteName = str_replace(SiteName, "HOBO-", "HOBO")) 
 
 nwide <- neighbors %>% select(SiteName) %>% distinct()
@@ -76,6 +73,6 @@ colnames(nwide2) <- c("neighbor1", "neighbor2", "neighbor3", "neighbor4", "neigh
 nwide2 <- as_tibble(nwide2)
 nwide <- bind_cols(nwide, nwide2)
 
-write_csv(nwide, "Dropbox/Working_docs/Luo_Mingjie_Oregon/HJA_analyses_Kelpie/HJA_scripts/08_reference_sequences_datasets/neighbors_20191204_wide.csv")
+# write_csv(nwide, "Dropbox/Working_docs/Luo_Mingjie_Oregon/HJA_analyses_Kelpie/HJA_scripts/08_reference_sequences_datasets/neighbors_20191204_wide.csv")
 ```
 
