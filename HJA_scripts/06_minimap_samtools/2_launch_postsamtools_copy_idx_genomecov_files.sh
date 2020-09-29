@@ -12,7 +12,7 @@ set -o pipefail
 ssh ada
 interactive
 # to use parallel without a pathname in bsub scripts
-PATH=$PATH:~/scripts/parallel-20170722/bin/
+PATH=$PATH:~/scripts/parallel-20200922/bin/ # GNU Parallel
 
 
 ####### set up output folder to hold everything before running
@@ -64,15 +64,15 @@ parallel ls ${OUTPUTFOLDER}/*_{1}_q{2}_sorted_genomecov_d.txt.gz ::: ${FILTER1} 
 parallel ls ${OUTPUTFOLDER}/*_{1}_q{2}_sorted_genomecov_d.txt.gz ::: ${FILTER1} ${FILTER2} ::: ${QUAL1} ${QUAL2} | wc -l # 484
 
 # rename, tar, and gzip for download
-MAPDATE="20200922"
+MAPDATE="20200929"
 # TARGET="kelpie_20200916_LERAY_derep_filter3_vsearch97_rmdup_spikes"
-TARGET="kelpie_20200916_BF3BR2_derep_filter3_vsearch97_rmdup_spikes" #
-du -sh ${OUTPUTFOLDER}/ # 800M
+TARGET="kelpie_20200927_BF3BR2_derep_filter3_vsearch97_rmdup_spikes" #
+du -sh ${OUTPUTFOLDER}/ # 787M
 # set filename to something that i can understand after download
 mv ${OUTPUTFOLDER} outputs_${FILTER1}_q${QUAL2}_${OUTPUTFOLDER}_${MAPDATE}_${TARGET}
 ls # outputs_F2308_f0x2_q48_minimap2_outputs_20191219_kelpie_20200916_BF3BR2_derep_filter3_vsearch97_rmdup_spikes
-# tar gzip for download
-tar -czvf outputs_${FILTER1}_q${QUAL2}_${OUTPUTFOLDER}_${MAPDATE}_${TARGET}.tar.gz outputs_${FILTER1}_q${QUAL2}_${OUTPUTFOLDER}_${MAPDATE}_${TARGET}/
+# tar gzip for download, takes about 25 mins
+nohup tar -czvf outputs_${FILTER1}_q${QUAL2}_${OUTPUTFOLDER}_${MAPDATE}_${TARGET}.tar.gz outputs_${FILTER1}_q${QUAL2}_${OUTPUTFOLDER}_${MAPDATE}_${TARGET}/
 # filename format:  outputs_F2308_f0x2_q48_minimap2_outputs_20191219_kelpie_20200916_BF3BR2_derep_filter3_vsearch97_rmdup_spikes.tar.gz
 ls
 
@@ -83,9 +83,9 @@ ls
 # use Transmit to download *.gz file to Luo_Mingjie_Oregon/HJA_analyses_Kelpie/Kelpie_maps/
 
 ######## remove the minimap2_output/ folders after i've finished the mapping jobs. these are the bam, bam.bai, idxstats, flagstats, and genomecov files left behind in the BWA folders
-PATH=$PATH:~/scripts/parallel-20170722/bin/
+PATH=$PATH:~/scripts/parallel-20200922/bin/ # GNU Parallel
 # FILTER="F2308"
-OUTPUTFOLDER="minimap2_outputs"
+# OUTPUTFOLDER="minimap2_outputs"
 
 # cd ~/_Oregon/2019Sep_shotgun/testkelpie/; ls # test
 cd ~/_Oregon/2019Sep_shotgun/2.trimmeddata/; ls # production
@@ -94,4 +94,4 @@ parallel "ls BWA{}/minimap2_outputs/" ::: 01 02 03 04 05 06 07 08 09 10
 # parallel "rm -rf BWA{}/minimap2_outputs/" ::: 01 02 03 04 05 06 07 08 09 10
 parallel "ls BWA{}/minimap2_outputs/" ::: 01 02 03 04 05 06 07 08 09 10
 # ls: should say:  cannot access BWA*/minimap2_outputs/: No such file or directory
-du -sh ~/_Oregon # 1.5 T
+du -sh ~/_Oregon # should be around 1.5 T

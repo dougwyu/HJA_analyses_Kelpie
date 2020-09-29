@@ -243,6 +243,8 @@ kelpie_otus3df <- kelpie_otus2df %>%
   unite("otu", SeqID:blastmatch, sep = "_") %>% 
   unite("name", otu, size, sep = ";")
 
+# TO ADD LATER:  CHECK THAT ALL CONSENSUSCLASSIFICATIONS ARE UNIQUE. OCCASIONALLY, MULTIPLE OTUS HAVE THE SAME SIZE VALUE AND SLICE_MAX() DOES NOT REDUCE THEM TO ONE OTU
+
 # alternatively, one could open kelpie_otus2df.csv in Excel and manually filter OTUs so that only the largest one matching to a BOLDID is retained (more details above). Save as kelpie_otus2df_rmdup.csv
 # kelpie_otus3df <- read_csv(here("kelpie_20200916_BF3BR2",
 #                                 "kelpie_otus2df_rmdup.csv")) %>% 
@@ -273,7 +275,7 @@ seqkit stats kelpie_20200927_BF3BR2_derep_filter3_vsearch97_rmdup_spikes.fas
 ```
 
 NEXT STEP
-Use kelpie_20200927_BF3BR2_derep_filter3_vsearch97_rmdup_spikes.fas as the mapping target to generate the OTU table
+Use kelpie_20200927_BF3BR2_derep_filter3_vsearch97_rmdup_spikes.fas as the mapping target to generate the OTU table. Upload to ~/_Oregon/2019Sep_shotgun/reference_seqs and change the $REFSEQS value
 
 # END
 

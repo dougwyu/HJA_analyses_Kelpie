@@ -106,7 +106,7 @@ sbatch ${MINIMAP2_SUB}
 squeue -u b042
 
 # dilution series only
-# cd ~/_Oregon/2019Sep_shotgun/2.trimmeddata/BWA11; ls # 2.trimmeddata
+# cd ~/_Oregon/2019Sep_shotgun/2.trimmeddata/_BWA11_dilution_series_only; ls # 2.trimmeddata
 # sbatch ${MINIMAP2_SUB}
 # squeue -u b042
 
@@ -166,9 +166,10 @@ sbatch ${SAMTOOLS_SUB}
 squeue -u b042
 
 # dilution series samples
-# cd ~/_Oregon/2019Sep_shotgun/2.trimmeddata/BWA11; ls # 2.trimmeddata
+# cd ~/_Oregon/2019Sep_shotgun/2.trimmeddata/_BWA11_dilution_series_only; ls # 2.trimmeddata
 # sbatch ${SAMTOOLS_SUB}
 # squeue -u b042
 
 ls ~/_Oregon/2019Sep_shotgun/2.trimmeddata/BWA01/minimap2_outputs/ # should show new genomecov files
+ls ~/_Oregon/2019Sep_shotgun/2.trimmeddata/BWA02/minimap2_outputs/ # should show new genomecov files
 squeue -u b042
