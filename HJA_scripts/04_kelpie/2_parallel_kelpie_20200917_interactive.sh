@@ -59,13 +59,13 @@ echo "There are" ${#sample_names[@]} "files that will be processed." # 242, echo
 # run kelpie on each individual COI.fa file
 # run Kelpie in parallel. -j n means n samples at a time, -k keep same order as in array, --dryrun see the generated commands
 # BF3BR2, -f CCHGAYATRGCHTTYCCHCG -r TCDGGRTGNCCRAARAAYCA, -max 500
-	nohup parallel -k -j 1 "Kelpie_v2 -f CCHGAYATRGCHTTYCCHCG -r TCDGGRTGNCCRAARAAYCA -filtered -min 400 -max 500 allfilterreadsoutput/{1}_?_val_?_COI.fa kelpieoutputindiv/{1}_BF3BR2.fas" ::: "${sample_names[@]}" &
+	nohup parallel -k -j 1 "Kelpie_v2 -f CCHGAYATRGCHTTYCCHCG -r TCDGGRTGNCCRAARAAYCA -primers -filtered -min 400 -max 500 allfilterreadsoutput/{1}_?_val_?_COI.fa kelpieoutputindiv/{1}_BF3BR2.fas" ::: "${sample_names[@]}" &
 # takes about 70 mins
 ls kelpieoutputindiv/*BF3BR2.fas
 ls kelpieoutputindiv/*BF3BR2.fas | wc -l # 242
 
 # Leray Fol-degen-rev, -f GGWACWGGWTGAACWGTWTAYCCYCC -r TANACYTCNGGRTGNCCRAARAAYCA, -min 300 -max 400
-	# nohup parallel -k -j 1 "Kelpie_v2 -f GGWACWGGWTGAACWGTWTAYCCYCC -r TANACYTCNGGRTGNCCRAARAAYCA -filtered -min 300 -max 400 allfilterreadsoutput/{1}_?_val_?_COI.fa kelpieoutputindiv/{1}_LERAY.fas" ::: "${sample_names[@]}" &
+	# nohup parallel -k -j 1 "Kelpie_v2 -f GGWACWGGWTGAACWGTWTAYCCYCC -r TANACYTCNGGRTGNCCRAARAAYCA -primers -filtered -min 300 -max 400 allfilterreadsoutput/{1}_?_val_?_COI.fa kelpieoutputindiv/{1}_LERAY.fas" ::: "${sample_names[@]}" &
 # takes about 70 mins
 # ls kelpieoutputindiv/*LERAY.fas
 # ls kelpieoutputindiv/*LERAY.fas | wc -l # 242

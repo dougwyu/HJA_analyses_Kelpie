@@ -793,6 +793,9 @@ idx_meta_genomecov_filtered_wide <- idx_meta_genomecov_filtered %>%
     values_fill = list(mapped_reads = 0)
     )  
 
+# to confirm that COI-SPIKE OTUS ARE PRESENT
+names <- names(idx_meta_genomecov_filtered_wide) %>% as_tibble()
+
 # no longer doing this because FSL correction is done in the next stage
 # using mapped_reads_corr (spike-in corrected)
 # idx_meta_genomecov_corr_filtered_wide <- idx_meta_genomecov_filtered %>% 
@@ -905,16 +908,16 @@ species <- select(idx_meta_genomecov_filtered_wide, contains(c("Vespidae"))) %>%
 # write output
 # F2308 samtools filter
 # write_csv(idx_meta_genomecov_filtered_wide, file.path("..", "..", "Kelpie_maps", outputidxstatstabulatefolder, "sample_by_species_table_F2308_minimap2_20200929_kelpie20200927.csv"))
+
 # F2308_f0x2 samtools filter
   # write_csv(idx_meta_genomecov_filtered_wide, file.path("..", "..", "Kelpie_maps", outputidxstatstabulatefolder, "sample_by_species_table_F2308_f0x2_minimap2_20200916_kelpie20200917.csv"))
 
-  # read_csv() commands
-      # mapped_reads
-      # F2308 samtools filter
-      # idx_meta_genomecov_filtered_wide <- read_csv(file.path("..", "..", "Kelpie_maps", outputidxstatstabulatefolder, "sample_by_species_table_F2308_minimap2_20200929_kelpie20200927.csv"))
+# read_csv() commands
+  # mapped_reads and F2308 samtools filter
+  # idx_meta_genomecov_filtered_wide <- read_csv(file.path("..", "..", "Kelpie_maps", outputidxstatstabulatefolder, "sample_by_species_table_F2308_minimap2_20200929_kelpie20200927.csv"))
     
-      # F2308_f0x2 samtools filter
-      # not yet created
+  # mapped_reads and F2308_f0x2 samtools filter
+  # not yet created
 
 # prev code,deprecate
 # idx_meta_genomecov_corr_filtered_wide <- envdataTosa %>% 
@@ -1035,16 +1038,30 @@ primer <- "BF3BR2" # "LERAY"
 kelpiedate <- 20200927
 glue("kelpie_{kelpiedate}_{primer}") # check
 
-match_list <- read_delim(file.path("..", "05_taxonomy", glue("kelpie_{kelpiedate}_{primer}"), "match_list.tsv"), "\t", escape_double = FALSE, col_names = FALSE, trim_ws = TRUE)
+match_list <- read_delim(file.path("..", 
+                                   "05_taxonomy",
+                                   glue("kelpie_{kelpiedate}_{primer}"),
+                                   "match_list.tsv"
+                                   ), 
+                         "\t", 
+                         escape_double = FALSE, 
+                         col_names = FALSE, 
+                         trim_ws = TRUE
+                         )
 
-curated_result <- lulu::lulu(idx_meta_genomecov_filtered_wide_lulu, match_list)
-curated_table <- rownames_to_column(curated_result$curated_table, var = "OTU")
+curated_result <- lulu::lulu(idx_meta_genomecov_filtered_wide_lulu,
+                             match_list)
+curated_table <- rownames_to_column(curated_result$curated_table, 
+                                    var = "OTU")
 curated_result[["discarded_otus"]]
-otu_map <- rownames_to_column(curated_result$otu_map, var = "OTU") %>% 
+otu_map <- rownames_to_column(curated_result$otu_map, var = "OTU") %>%
   arrange(curated)
 ```
 
-species number
+lulu finds no parent-child OTUs in idx_meta_genomecov_filtered_wide
+
+
+### species number
 ```{r}
 species_idx_meta_genomecov <- rotate_df(idx_meta_genomecov_filtered_wide_lulu, rn = "SiteName")
 
