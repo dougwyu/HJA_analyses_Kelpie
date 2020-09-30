@@ -1,6 +1,6 @@
 # Yuanheng
 # create: Jul 23, 2020 2020
-# last modified: Aug 31,
+# last modified: Sep 28
 # 1. change how to use spike-in
 # 2. add lysis buffer info
 # 3. subsets & 3 parts data for adagpu
@@ -20,11 +20,6 @@ dr_here()
 ```
 
 ```{r load files}
-# formatted data
-otu.env1.present = read.csv(here('data','kelpie_data','formatted_data','present2_lidar_mulspec_sample_by_species_corr_table_F2308_minimap2_20200221_kelpie20200214.csv'), header=T, sep=',', stringsAsFactors = F, na.strings='NA')
-dim(otu.env1.present)
-str(otu.env1.present[,1:51])
-	
 # ('HJA_analyses_Kelpie/Kelpie_maps' folder) 
 # version 20200917 (5 neighbour samples)
 otu.env1.noS2 = read.csv(here('..','..','Kelpie_maps', 'outputs_minimap2_20200917_F2308_q48_kelpie20200916_vsearch97','sample_by_species_table_F2308_minimap2_20200916_kelpie20200917.csv'), header=T, sep=',', stringsAsFactors = F, na.strings='NA')
@@ -32,12 +27,11 @@ dim(otu.env1.noS2)
 #[1]  237 1284
 names(otu.env1.noS2)[1:27]
 	
-#otu.env1.noS2 = read.csv(here('..','..','Kelpie_maps', 'outputs_minimap2_20200221_F2308_f0x2_q48_kelpie20200214_vsearch97','sample_by_species_table_F2308_minimap2_20200221_kelpie20200723.csv'), header=T, sep=',', stringsAsFactors = F, na.strings='NA')
-	
 names(otu.env1.noS2)[1:26]=c('SiteName', 'UTM_E','UTM_N','old.growth.str', 'yrs.disturb','point.ID','poly.ID','AGENCY','unit.log', 'name.log','log.yr','yrs.log.2018','log.treat','yrs.disturb.level', 'elevation','canopy.ht','min.T','max.T', 'precipitation','metre.road', 'metre.stream', 'yrs.disturb.min','hja','trap','session','site_trap_period')
 	
-a1 = dplyr::select(otu.env1.noS2, contains('spike'))
-str(a1)
+# spike input ratio from Mingjie
+names(dplyr::select(otu.env1.noS2, contains('spike')))
+	
 spike_input = c('COI.SPIKE__Coleoptera_Mordellidae_0.4_NA_NA_NA_NA_NA'=1, 'COI.SPIKE__Coleoptera_Elateridae_0.8_NA_NA_NA_NA_NA'=9)
 	
 # lysis buffer info
@@ -45,43 +39,39 @@ lysis = read.csv(here('data','kelpie_data','lysis_buffer_volume_20200724.csv'), 
 # 'lysis_buffer_volume_20200715.csv' has error
 str(lysis)
 	
-
 ```
 
-```{r formate-HMSC-course}
-# load fsl
-otu.env1.fsl = read.csv(here('data','kelpie_data','formatted_data','FSL2_lidar_mulspec_sample_by_species_corr_table_F2308_minimap2_20200221_kelpie20200723.csv'), header=T, sep=',', stringsAsFactors = F, na.strings='NA')
-dim(otu.env1.fsl)
+```{r check with old format data}
+# formatted data
+otu.env1.present = read.csv(here('data','kelpie_data','formatted_data','present2_lidar_mulspec_sample_by_species_corr_table_F2308_minimap2_20200221_kelpie20200214.csv'), header=T, sep=',', stringsAsFactors = F, na.strings='NA')
+dim(otu.env1.present)
+str(otu.env1.present[,1:51])
 	
-# explore
-names(otu.env1.present)[1:50]
-	
-unique(otu.env1.fsl$SiteName)
-unique(otu.env1.present$SiteName)
-	
-unique(otu.env1.fsl$SiteName[otu.env1.fsl$trap=="M2"])
-unique(otu.env1.present$SiteName[otu.env1.present$trap=="M2"])
-	
-unique(otu.env1.fsl$SiteName[otu.env1.fsl$session=="S2"])
-unique(otu.env1.present$SiteName[otu.env1.present$session=="S2"])
-	
-unique(otu.env1.fsl$mean.NDVI.scale)
-	
-# .. delete not-needed ground data
-names(otu.env1.present)[1:50]
-	
-otu.env.ori = select(otu.env1.noS2, -'old.growth.str', -ends_with('.ID'), -contains('log.'),-contains('.log'), -'yrs.disturb.level', -'yrs.disturb', -contains('AGENCY'))
-	
-names(otu.env.ori)[1:16]
-	
-#old.growth.str, yrs.disturb, point.ID, poly.ID, AGENCY, unit.log, name.log, log.yr, yrs.log.2018, log.treat, yrs.disturb.level
 otu.env.present = select(otu.env1.present, -'old.growth.str', -ends_with('.ID'), -contains('log.'),-contains('.log'), -'yrs.disturb.level', -'yrs.disturb', -contains('AGENCY'))
 print(c(dim(otu.env.present), dim(otu.env1.present)))
 	
-otu.env.fsl = select(otu.env1.fsl, -'old.growth.str', -ends_with('.ID'), -contains('log.'),-contains('.log'), -'yrs.disturb.level', -'yrs.disturb', -contains('AGENCY'))
-print(c(dim(otu.env.fsl), dim(otu.env1.fsl)))
+# check calculated variables
+par(mfrow=c(1,3))
+hist(otu.env.ori22$l_p95, breaks=50)
+hist(scale(otu.env.ori22$l_p95), breaks=50)
+hist(otu.env.present$l_p95.scale, breaks=50)
 	
-names(otu.env.fsl)[1:40]
+sum(otu.env.present$l_p95.scale)
+sum(scale(otu.env.ori22$l_p95))
+	
+summary(cut(round(scale(otu.env.ori22$l_p95), 6), breaks=seq(-1.7,2.5,length.out = 12)))
+summary(cut(round(otu.env.present$l_p95.scale, 6), breaks=seq(-1.7,2.5,length.out = 12)))
+	
+```
+
+
+```{r formate and combine all env-variables}
+# .. delete not-needed ground data
+otu.env.ori = select(otu.env1.noS2, -'old.growth.str', -ends_with('.ID'), -contains('log.'),-contains('.log'), -'yrs.disturb.level', -'yrs.disturb', -contains('AGENCY'))
+#old.growth.str, yrs.disturb, point.ID, poly.ID, AGENCY, unit.log, name.log, log.yr, yrs.log.2018, log.treat, yrs.disturb.level
+	
+names(otu.env.ori)[1:16]
+	
 # ... load EO data 
 mulspec.env = read.csv(here('..','..','HJA_scripts','10_eo_data','biodiversity_site_info_multispectral_2020-04-13.txt'), header=T, sep=',', stringsAsFactors = F, na.strings='NA')
 str(mulspec.env)
@@ -90,36 +80,17 @@ lidar.env = read.csv(here('..','..','HJA_scripts','10_eo_data','biodiversity_sit
 str(lidar.env)
 	
 # ... add variables
-a = str_replace(names(select(otu.env.present, starts_with('l_'))), ".scale", '') 
-sort(unique(otu.env.ori$SiteName))
-sort(lidar.env$SiteName)
-	
-otu.env.present2 = dplyr::left_join(otu.env.present, select(lidar.env,-contains('UTM_'),a), by=c('SiteName', 'SiteName'), copy=F)
-print(c(dim(otu.env.present2), dim(otu.env.present)))
-	
-unique(otu.env.ori$SiteName)
-lidar.env$SiteName
-# check which samples are not matched
-for (i in 1:length(otu.env.ori$SiteName )) {
-	if (match(otu.env.ori$SiteName[i], lidar.env$SiteName, nomatch=0)==0) {
-		print(otu.env.ori$SiteName[i])
-	}
-}
+# . lidar
+sort(unique(lidar.env$SiteName)) == sort(unique(otu.env.ori$SiteName))
 	
 otu.env.ori2 = dplyr::left_join(otu.env.ori, select(lidar.env,-contains('UTM_'),a), by=c('SiteName', 'SiteName'), copy=F)
-a = names(otu.env.ori2)[1:14]
-otu.env.ori22 = dplyr::left_join(otu.env.ori2, select(otu.env.present, -contains('__'), -a), by=c('site_trap_period', 'site_trap_period'), copy=F)
-print(c(dim(otu.env.ori2), dim(otu.env.ori22)))
+# check which samples are not matched
+is.na(otu.env.ori2$l_Cover_2m_4m)
 	
-par(mfrow=c(1,3))
-hist(otu.env.ori22$l_p95, breaks=50)
-hist(scale(otu.env.ori22$l_p95), breaks=50)
-hist(otu.env.ori22$l_p95.scale, breaks=50)
+# ... multispectral
+sort(unique(mulspec.env$SiteName)) == sort(unique(otu.env.ori2$SiteName))
 	
-summary(cut(round(scale(otu.env.ori22$l_p95), 6), breaks=seq(-1.7,2.5,length.out = 12)))
-summary(cut(round(otu.env.ori22$l_p95.scale, 6), breaks=seq(-1.7,2.5,length.out = 12)))
-	
-# ... calculate mean and add
+# .. calculate mean and add
 # calculate mean EVI, NVI, B, G, W values
 mulspec.env$mean.NDVI = base::rowMeans(select(mulspec.env, starts_with('NDVI_'))/1000)
 mulspec.env$mean.EVI = base::rowMeans(select(mulspec.env, starts_with('EVI_'))/1000)
@@ -130,28 +101,24 @@ mulspec.env$mean.green = base::rowMeans(select(mulspec.env, starts_with('G_')))
 mulspec.env$mean.wet = base::rowMeans(select(mulspec.env, starts_with('W_')))
 	
 # add mulspectual 
-otu.env.present = dplyr::left_join(otu.env.present2, select(mulspec.env,'SiteName', starts_with('mean.')), by=c('SiteName', 'SiteName'), copy=F)
-print(c(dim(otu.env.present2), dim(otu.env.present)))
-	
-otu.env.ori2 = dplyr::left_join(otu.env.ori22, select(mulspec.env,'SiteName', starts_with('mean.')), by=c('SiteName', 'SiteName'), copy=F)
+otu.env.ori22 = dplyr::left_join(otu.env.ori2, select(mulspec.env,'SiteName', starts_with('mean.')), by=c('SiteName', 'SiteName'), copy=F)
 print(c(dim(otu.env.ori22), dim(otu.env.ori2)))
 	
-names(otu.env.ori2)[1:16]
-names(otu.env.present)[1:40]
+names(otu.env.ori22)[1:16]
+names(otu.env.ori22)[1273:1290]
 	
-names(otu.env.ori2)[1273:1313]
-names(otu.env.present)[1186:1202]
+otu.env.ori2 = otu.env.ori22[,c(1:15, 1274:1289, 16:1273)]
 	
-otu.env.ori2 = otu.env.ori2[,c(1:15, 1274:1313, 16:1273)]
-otu.env.present = otu.env.present[,c(1:39, 1187:1202, 40:1186)]
+names(otu.env.ori2)[1:32]
 	
-names(otu.env.ori2)[22:56]
-names(otu.env.present)[22:56]
+# ..... scale variables .....
+a = select(otu.env.ori2, 4:11, starts_with('l_'), starts_with('mean.'))%>%rename(elevation.scale=1, canopy.ht.scale=2, min.T.scale=3, max.T.scale=4, precipitation.scale=5, metre.road.scale=6, metre.stream.scale=7, yrs.disturb.min.scale=8, l_Cover_2m_4m.scale=9, l_Cover_2m_4m_all.scale=10, l_Cover_2m_max.scale=11, l_Cover_2m_max_all.scale=12, l_Cover_4m_16m.scale=13, l_Cover_4m_16m_all.scale=14, l_p25.scale=15, l_p25_all.scale=16, l_p95.scale=17, l_p95_all.scale=18, l_rumple.scale=19, mean.NDVI.scale=20, mean.EVI.scale=21, mean.bright.scale=22, mean.green.scale=23, mean.wet.scale=24) %>% scale()
 	
-#write.table(otu.env.fsl, here('kelpie','formatted_data','fsl_hmsc_sample_by_species_corr_table_F2308_minimap2_20200221_kelpie20200723.csv'), sep = ",", row.names=F)
-#write.table(otu.env.present, here('kelpie','formatted_data','present_hmsc_sample_by_species_corr_table_F2308_minimap2_20200221_kelpie20200214.csv'), sep = ",", row.names=F)
+otu.env.ori22 = cbind(otu.env.ori2[,1:31], data.frame(a), otu.env.ori2[,32:dim(otu.env.ori2)[2]])
+names(otu.env.ori22)[1:56]
 	
-
+# write.table(otu.env.ori22, here('data', 'kelpie_data', 'formatted_data', 'data_used_during_format', 'add_variables_sample_by_species_table_F2308_minimap2_20200916_kelpie20200917.csv'), sep = ",", row.names=F)
+	
 ```
 
 ```{r explore lysis-info}
@@ -171,10 +138,10 @@ table(lysis$lysis.batch)
 
 ```{r format lysis-info}
 str(lysis)
-sort(unique(lysis$sample)) == sort(unique(otu.env.ori2$site_trap_period))
+sort(unique(lysis$sample)) == sort(unique(otu.env.ori22$site_trap_period))
 	
-names(otu.env.ori2)[1:56]
-table(is.na(otu.env.ori2$site_trap_period))
+names(otu.env.ori22)[1:56]
+table(is.na(otu.env.ori22$site_trap_period))
 	
 # change '_' to '-'
 a = str_replace(lysis$sample, "HOBO_", 'HOBO-')
@@ -182,10 +149,10 @@ a = str_replace(a, "SM_", 'SM-')
 data.frame(a, lysis$sample)
 lysis$sample = a
 	
-dim(otu.env.ori2)
+dim(otu.env.ori22)
 #[1]  237 1313
 	
-otu.env1 = dplyr::left_join(otu.env.ori2, lysis, by=c('site_trap_period'='sample'))
+otu.env1 = dplyr::left_join(otu.env.ori22, lysis, by=c('site_trap_period'='sample'))
 dim(otu.env1)
 #[1]  237 1318
 	
@@ -249,37 +216,13 @@ hist(as.vector(as.matrix(log(FSL[,4:1259]))),breaks=100)
 # ... combine with envir factors
 names(otu.env1)[1:63]
 print(c(dim(otu.env1), dim(FSL)))
-sort(otu.env1$site_trap_period) == sort(FSL$site_trap_period)
+otu.env1$site_trap_period == FSL$site_trap_period
 	
 fsl.env = dplyr::left_join(data.frame(otu.env1[,1:62]), data.frame(FSL[,c(1,4:1259)]), by=c('site_trap_period'='site_trap_period'))
 dim(fsl.env)
-sort(fsl.env$site_trap_period) == sort(otu.env1$site_trap_period)
+fsl.env$site_trap_period == otu.env1$site_trap_period
 	
 # write.table(fsl.env, here('data','kelpie_data', 'formatted_data', 'data_used_during_format', 'FSL_sample_by_species_table_F2308_minimap2_20200916_kelpie20200917.csv'), row.names=F, sep=',')
-	
-```
-
-```{r re-format OTU table}
-print(c(dim(otu.env1.present), dim(fsl.env)))
-# 237 1197  235 1318
-	
-data.frame(names(fsl.env)[1:62], c(names(otu.env1.present)[1:50],rep(NA,12)))
-#names(fsl.env)[c(1:26, 32:33)]
-data.frame(a=sort(otu.env1.present$site_trap_period), b=c(sort(fsl.env$site_trap_period),NA,NA) )
-	
-fsl.env1 = dplyr::inner_join(otu.env1.present[,c(1:50)], fsl.env[,c(26,32:33)], by=c('site_trap_period', 'site_trap_period'), copy=F) 
-dim(fsl.env1)
-	
-names(fsl.env)[34:1180] == names(otu.env1.present)[51:1197]
-	
-fsl.env1 = cbind(fsl.env1, fsl.env[,34:1180])
-	
-str(fsl.env1[,1:53])
-	
-#write.table(fsl.env1, here('data','kelpie_data','formatted_data','FSL2_lidar_mulspec_sample_by_species_corr_table_F2308_minimap2_20200916_kelpie20200917.csv'), row.names=F, sep=',')
-	
-fsl.env1 = read.table(here('data','kelpie_data','formatted_data','FSL2_lidar_mulspec_sample_by_species_corr_table_F2308_minimap2_20200221_kelpie20200723.csv'), header=T, sep=',')
-names(fsl.env1)[1:55]
 	
 ```
 
@@ -308,45 +251,41 @@ dim(fsl.env11)
 	
 fsl.env11 = select(fsl.env11, -'l_Cover_4m_16m_all.scale',-"l_Cover_4m_16m_all")
 	
-# write.table(fsl.env11, here('xxx','fsl_lidar_mulspec_5_sample_by_species_corr_table_F2308_minimap2_20200916_kelpie20200917.csv'), row.names=F, sep=',')
-	
 
 # calculate quasi-probability
 fsl.env1 = data.frame(sapply(select(fsl.env11, contains('__')), function(x) scales::rescale(log(x+0.001))))
 dim(fsl.env1)
 names(fsl.env11)[1:61]
 	
-fsl.env12 = cbind(fsl.env11[,1:60], fsl.env1)
-	
-fsl.env13 = fsl.env12
+fsl.env13 = cbind(fsl.env11[,1:60], fsl.env1)
 	
 # present dataset
 a = as.data.frame(ifelse(select(fsl.env13, contains('__'))>0, 1, 0))
 otu.env.present3 = cbind(select(fsl.env13, -contains('__')), a)
 dim(otu.env.present3)
-names(otu.env.present3)[1:62]
+names(otu.env.present3)[1:61]
 	
 rm(a)
 	
-
 dim(fsl.env13)
 dim(otu.env.present3)
 	
-# write.table(fsl.env13, here('data','kelpie_data','formatted_data','quasiP_lidar_mulspec_5_sample_by_species_corr_table_F2308_minimap2_20200916_kelpie20200917.csv'), row.names=F, sep=',')
-# write.table(otu.env.present3, here('data','kelpie_data','formatted_data','incidence_lidar_mulspec_5_sample_by_species_corr_table_F2308_minimap2_20200916_kelpie20200917.csv'), row.names=F, sep=',')
+# write.table(fsl.env13, here('data','kelpie_data','formatted_data','quasiP_lidar_mulspec_5_sample_by_species_table_F2308_minimap2_20200916_kelpie20200917.csv'), row.names=F, sep=',')
+# write.table(otu.env.present3, here('data','kelpie_data','formatted_data','incidence_lidar_mulspec_5_sample_by_species_table_F2308_minimap2_20200916_kelpie20200917.csv'), row.names=F, sep=',')
 	
 ```
 
 ```{r subsets}
 # load data 
-quasiP.env1 = read.table(here('data','kelpie_data','formatted_data','quasiP_lidar_mulspec_5_sample_by_species_corr_table_F2308_minimap2_20200916_kelpie20200917.csv'), header=T, sep=',')
-otu.env1.present = read.table(here('data','kelpie_data','formatted_data','incidence_lidar_mulspec_5_sample_by_species_corr_table_F2308_minimap2_20200916_kelpie20200917.csv'), header=T, sep=',')
+quasiP.env1 = read.table(here('data','kelpie_data','formatted_data','quasiP_lidar_mulspec_5_sample_by_species_table_F2308_minimap2_20200916_kelpie20200917.csv'), header=T, sep=',')
+otu.env1.present = read.table(here('data','kelpie_data','formatted_data','incidence_lidar_mulspec_5_sample_by_species_table_F2308_minimap2_20200916_kelpie20200917.csv'), header=T, sep=',')
 	
-str(quasiP.env1[,1:44])
+table(as.matrix(quasiP.env1) == as.matrix(fsl.env13))
+table(as.matrix(otu.env1.present) == as.matrix(otu.env.present3))
+	
 dim(otu.env1.present)
 dim(quasiP.env1)
 	
-#otu.env1.present, fsl.env1
 # ......................... subsets of data ..................................
 dataI.1.present = subset(otu.env1.present, session == 'S1' & trap == 'M1' )
 dim(dataI.1.present)
@@ -399,7 +338,6 @@ names(fsl.env13)[1:58]
 	
 rm(data,a,dimotu)
 	
-
 # separate Spatial, OTU, Env for Doug ...................
 # quasi
 quasiP_s1m1_S5 = select(dataI.1.quasiP.5, "SiteName","UTM_E","UTM_N","trap", "session","site_trap_period")
@@ -412,9 +350,9 @@ dim(quasiP_s1m1_Y5)
 quasiP_s1m1_X5 = select(dataI.1.quasiP.5, ends_with('.scale'))#"site_trap_period",
 names(quasiP_s1m1_X5)
 	
-# write.table(quasiP_s1m1_X5, here('data','kelpie_data','for_adagpu','quasiP_s1m1_env_5_sample_by_species_corr_table_F2308_minimap2_20200916_kelpie20200917.csv'), row.names=F, sep=',')
-# write.table(quasiP_s1m1_Y5, here('data','kelpie_data','for_adagpu','quasiP_s1m1_otu_5_sample_by_species_corr_table_F2308_minimap2_20200916_kelpie20200917.csv'), row.names=F, sep=',')
-# write.table(quasiP_s1m1_S5, here('data','kelpie_data','for_adagpu','quasiP_s1m1_spatial_5_sample_by_species_corr_table_F2308_minimap2_20200916_kelpie20200917.csv'), row.names=F, sep=',')
+# write.table(quasiP_s1m1_X5, here('data', 'kelpie_data', 'for_adagpu', 's1m1_20200916_kelpie20200917', 'quasiP_s1m1_env_5_sample_by_species_table_F2308_minimap2_20200916_kelpie20200917.csv'), row.names=F, sep=',')
+# write.table(quasiP_s1m1_Y5, here('data','kelpie_data','for_adagpu','s1m1_20200916_kelpie20200917','quasiP_s1m1_otu_5_sample_by_species_table_F2308_minimap2_20200916_kelpie20200917.csv'), row.names=F, sep=',')
+# write.table(quasiP_s1m1_S5, here('data','kelpie_data','for_adagpu','s1m1_20200916_kelpie20200917','quasiP_s1m1_spatial_5_sample_by_species_table_F2308_minimap2_20200916_kelpie20200917.csv'), row.names=F, sep=',')
 	
 #0/1
 #dataI.1.present.5
@@ -428,12 +366,9 @@ dim(present_s1m1_Y5)
 present_s1m1_X5 = select(dataI.1.present.5, ends_with('.scale'))#"site_trap_period",
 names(present_s1m1_X5)
 	
-# write.table(present_s1m1_X5, here('data','kelpie_data','for_adagpu','incidence_s1m1_env_5_sample_by_species_corr_table_F2308_minimap2_20200916_kelpie20200917.csv'), row.names=F, sep=',')
-# write.table(present_s1m1_Y5, here('data','kelpie_data','for_adagpu','incidence_s1m1_otu_5_sample_by_species_corr_table_F2308_minimap2_20200916_kelpie20200917.csv'), row.names=F, sep=',')
-# write.table(present_s1m1_S5, here('data','kelpie_data','for_adagpu','incidence_s1m1_spatial_5_sample_by_species_corr_table_F2308_minimap2_20200916_kelpie20200917.csv'), row.names=F, sep=',')
+# write.table(present_s1m1_X5, here('data','kelpie_data','for_adagpu','s1m1_20200916_kelpie20200917','incidence_s1m1_env_5_sample_by_species_table_F2308_minimap2_20200916_kelpie20200917.csv'), row.names=F, sep=',')
+# write.table(present_s1m1_Y5, here('data','kelpie_data','for_adagpu','s1m1_20200916_kelpie20200917','incidence_s1m1_otu_5_sample_by_species_table_F2308_minimap2_20200916_kelpie20200917.csv'), row.names=F, sep=',')
+# write.table(present_s1m1_S5, here('data','kelpie_data','for_adagpu','s1m1_20200916_kelpie20200917','incidence_s1m1_spatial_5_sample_by_species_table_F2308_minimap2_20200916_kelpie20200917.csv'), row.names=F, sep=',')
 	
 
-
-
-	
 ```
