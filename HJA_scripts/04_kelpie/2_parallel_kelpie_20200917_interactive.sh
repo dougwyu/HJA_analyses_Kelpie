@@ -10,6 +10,8 @@ set -o pipefail
 
 # I run this in an interactive session because it is fast, but it could probably be run
 # as a batch job without needing editing, using sbatch
+ssh ada
+interactive
 PATH=$PATH:~/scripts/vsearch-2.15.0-linux-x86_64/bin/ # downloaded 12 Jul 2020 from github
 PATH=$PATH:~/scripts/parallel-20200922/bin/ # GNU Parallel
 PATH=$PATH:~/scripts/WorkingDogs/Kelpie_v2/ubuntu-16.04/ # v 2.0.10
@@ -67,8 +69,8 @@ ls kelpieoutputindiv/*BF3BR2.fas | wc -l # 242
 # Leray Fol-degen-rev, -f GGWACWGGWTGAACWGTWTAYCCYCC -r TANACYTCNGGRTGNCCRAARAAYCA, -min 300 -max 400
 	# nohup parallel -k -j 1 "Kelpie_v2 -f GGWACWGGWTGAACWGTWTAYCCYCC -r TANACYTCNGGRTGNCCRAARAAYCA -primers -filtered -min 300 -max 400 allfilterreadsoutput/{1}_?_val_?_COI.fa kelpieoutputindiv/{1}_LERAY.fas" ::: "${sample_names[@]}" &
 # takes about 70 mins
-# ls kelpieoutputindiv/*LERAY.fas
-# ls kelpieoutputindiv/*LERAY.fas | wc -l # 242
+ls kelpieoutputindiv/*LERAY.fas
+ls kelpieoutputindiv/*LERAY.fas | wc -l # 242
 
 
 
@@ -82,7 +84,6 @@ ls kelpieoutputindiv/*BF3BR2.fas | wc -l # 242
 # https://www.cyberciti.biz/faq/unix-howto-read-line-by-line-from-file/
 # https://bash.cyberciti.biz/guide/While_loop#Reading_A_Text_File_With_Separate_Fields
 
-# start from here
 # allfilterreadsoutput/ should already exist from above
 cd ~/_Oregon/2019Sep_shotgun/2.trimmeddata/ || exit
 
@@ -122,11 +123,10 @@ while IFS=, read -r f1 f2 f3 f4 f5 f6
       then # check that the commands inside the then fi statement are preceded only by spaces, no tabs!
 
            echo "running kelpie on line ${i}"
-           # Leray-FolDegenRev
-               # Kelpie_v2 -f GGWACWGGWTGAACWGTWTAYCCYCC -r TANACYTCNGGRTGNCCRAARAAYCA -filtered -min 300 -max 400 kelpieinput_${i}_?.fa kelpieoutputneighbors/${i}_LERAY.fas
            # BF3BR2
-               Kelpie_v2 -f CCHGAYATRGCHTTYCCHCG -r TCDGGRTGNCCRAARAAYCA -filtered -min 400 -max 500 kelpieinput_${i}_?.fa kelpieoutputneighbors/${i}_BF3BR2.fas
-
+               # Kelpie_v2 -f CCHGAYATRGCHTTYCCHCG -r TCDGGRTGNCCRAARAAYCA -primers -filtered -min 400 -max 500 kelpieinput_${i}_?.fa kelpieoutputneighbors/${i}_BF3BR2.fas
+           # Leray-FolDegenRev
+               Kelpie_v2 -f GGWACWGGWTGAACWGTWTAYCCYCC -r TANACYTCNGGRTGNCCRAARAAYCA -primers -filtered -min 300 -max 400 kelpieinput_${i}_?.fa kelpieoutputneighbors/${i}_LERAY.fas
            echo "deleting kelpieinput_${i}_1.fa and kelpieinput_${i}_2.fa"
            rm -f kelpieinput_${i}_{1,2}.fa || exit
       fi
