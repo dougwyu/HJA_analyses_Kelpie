@@ -35,9 +35,9 @@ cd ${HOMEFOLDER}${TARGETFOLDER} # || exit
 # Now, i concatenate, deduplicate names, and clean up
 
 # concatenate the fasta files in both output folders into a single large fasta file
-primer="BF3BR2" # BF3BR2
-minlen=400 # 400 for BF3BR2, 300 for LERAY
-timestamp="20200927_${primer}" # e.g. 20200715_LERAYFOL, 20200916_BF3BR2
+primer="LERAY" # BF3BR2, LERAY
+minlen=300 # 400 for BF3BR2, 300 for LERAY
+timestamp="20201001_${primer}" # e.g. 20200715_LERAYFOL, 20200916_BF3BR2
 echo $timestamp
 
 if [ ! -d kelpie_output_${primer} ] # if directory kelpie_output_${primer} does not exist.
@@ -48,15 +48,15 @@ ls
 # cd kelpie_output_${primer}/
 cat kelpieoutputneighbors/*${primer}.fas > kelpie_output_${primer}/kelpie_${timestamp}.fas
 ls kelpie_output_${primer}/
-seqkit stats kelpie_output_${primer}/kelpie_${timestamp}.fas # 626,780 BF3BR2 seqs 2.0.10
+seqkit stats kelpie_output_${primer}/kelpie_${timestamp}.fas # 626,780 BF3BR2 seqs 2.0.10, 347,349 LERAY seqs 2.0.10
 
 cat kelpieoutputindiv/*${primer}.fas >> kelpie_output_${primer}/kelpie_${timestamp}.fas
 ls kelpie_output_${primer}/
 
 cd kelpie_output_${primer}/
-seqkit stats kelpie_${timestamp}.fas # 1,233,694 BF3BR2 2.0.10  # 1,244,402 BF3BR2 seqs 2.0.8, 714,508 LERAY seqs 2.0.8
+seqkit stats kelpie_${timestamp}.fas # 1,233,694 BF3BR2 2.0.10, 708,938 LERAY 2.0.10 # 1,244,402 BF3BR2 seqs 2.0.8, 714,508 LERAY seqs 2.0.8
 seqkit seq -m "${minlen}" kelpie_${timestamp}.fas -o kelpie_${timestamp}_min${minlen}.fas
-seqkit stats kelpie_${timestamp}_min${minlen}.fas kelpie_${timestamp}.fas # 1,233,584 seqs BF3BR2 2.0.10
+seqkit stats kelpie_${timestamp}_min${minlen}.fas kelpie_${timestamp}.fas # 1,233,584 seqs BF3BR2 2.0.10, 708,786 LERAY 2.0.10
 mv kelpie_${timestamp}_min${minlen}.fas kelpie_${timestamp}.fas
 seqkit stats kelpie_${timestamp}.fas
 
@@ -82,13 +82,13 @@ seqkit stats kelpie_${timestamp}.fas # 1,233,584 seqs BF3BR2 2.0.10
 vsearch --derep_fulllength kelpie_${timestamp}.fas --sizeout --fasta_width 0 --threads 0 --output kelpie_${timestamp}_derep.fas # --relabel_sha1
 head kelpie_${timestamp}_derep.fas
 tail kelpie_${timestamp}_derep.fas
-seqkit stats kelpie_${timestamp}_derep.fas # 5,560 uniq seqs BF3BR2 2.0.10 # 5,351 uniq BF3BR2 seqs 2.0.8; 4,227 uniq Leray seqs 2.0.8
+seqkit stats kelpie_${timestamp}_derep.fas # 5,560 uniq seqs BF3BR2 2.0.10, 4,152 uniq seqs LERAY 2.0.10 # 5,351 uniq BF3BR2 seqs 2.0.8; 4,227 uniq Leray seqs 2.0.8
 
 # uncomment when ready to run
 # rm -f kelpie_${timestamp}.fas
 ls
 
-# kelpie_${timestamp}_derep.fas is what i use as input to GBIF, after which i do a translation align to remove indels, and then cluster into 97% OTUs
+# kelpie_${timestamp}_derep.fas is what i use as input to GBIF, after which i cluster into 97% OTUs and do a translation align to remove false OTUs
 
 
 # concatenate the discard fasta files into a single large fasta file
@@ -97,7 +97,7 @@ cd ~/_Oregon/2019Sep_shotgun/2.trimmeddata/
 cat kelpieoutputindiv/*_discards.fas > kelpie_output_${primer}/kelpie_${timestamp}_discards.fas
 cat kelpieoutputneighbors/*_discards.fas >> kelpie_output_${primer}/kelpie_${timestamp}_discards.fas
 cd kelpie_output_${primer}/
-seqkit stats kelpie_${timestamp}_discards.fas # 16,455 seqs BF3BR2 2.0.10
+seqkit stats kelpie_${timestamp}_discards.fas # 16,455 seqs BF3BR2 2.0.10, 9,554 seqs LERAY 2.0.10
 head kelpie_${timestamp}_discards.fas
 grep "D1" kelpie_${timestamp}_discards.fas # duplicates have new names, plus the original name info
 seqkit rename kelpie_${timestamp}_discards.fas > kelpie_${timestamp}_discards_rename.fas # renames duplicate headers

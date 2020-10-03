@@ -8,33 +8,33 @@ set -o pipefail
 ##################################################################################################
 ##################################################################################################
 
-# I run this in an interactive session because it is fast, but it could probably be run
+# I can usually run this in an interactive session because it is fast, but it could probably be run
 # as a batch job without needing editing, using sbatch
-ssh ada
-interactive
-PATH=$PATH:~/scripts/vsearch-2.15.0-linux-x86_64/bin/ # downloaded 12 Jul 2020 from github
-PATH=$PATH:~/scripts/parallel-20200922/bin/ # GNU Parallel
-PATH=$PATH:~/scripts/WorkingDogs/Kelpie_v2/ubuntu-16.04/ # v 2.0.10
+# ssh ada
+# interactive
+# PATH=$PATH:~/scripts/vsearch-2.15.0-linux-x86_64/bin/ # downloaded 12 Jul 2020 from github
+# PATH=$PATH:~/scripts/parallel-20200922/bin/ # GNU Parallel
+# PATH=$PATH:~/scripts/WorkingDogs/Kelpie_v2/ubuntu-16.04/ # v 2.0.10
 
 # to run on testkelpie, upload into ~/_Oregon/2019Sep_shotgun/testkelpie/BWA01
 # cd ~/_Oregon/2019Sep_shotgun/testkelpie/
 
 # upload _parallel_kelpie_YYYYMMDD.sub and _parallel_kelpie_YYYYMMDD.sh *into* ~/_Oregon/2019Sep_shotgun/2.trimmeddata/
 cd ~/_Oregon/2019Sep_shotgun/2.trimmeddata/ || exit
-ls
+# ls
 
 #### copy all outputs from FilterReads run into allfilterreadsoutput/
 # Typically don't need to run this
 # create folder
-if [ ! -d allfilterreadsoutput ] # if directory allfilterreadsoutput does not exist.
-then
-     mkdir allfilterreadsoutput
-fi
-ls
-# mv files
-mv BWA*/filterreadsoutput/*_COI.fa ./allfilterreadsoutput
-ls allfilterreadsoutput
-find allfilterreadsoutput -type f -iname "*_COI.fa" | wc -l # 484 COI.fa files
+# if [ ! -d allfilterreadsoutput ] # if directory allfilterreadsoutput does not exist.
+# then
+#      mkdir allfilterreadsoutput
+# fi
+# ls
+# # mv files
+# mv BWA*/filterreadsoutput/*_COI.fa ./allfilterreadsoutput
+# ls allfilterreadsoutput
+# find allfilterreadsoutput -type f -iname "*_COI.fa" | wc -l # 484 COI.fa files
 
 
 #### run kelpie on indiv fasta files and save to kelpieoutputindiv/
@@ -61,16 +61,16 @@ echo "There are" ${#sample_names[@]} "files that will be processed." # 242, echo
 # run kelpie on each individual COI.fa file
 # run Kelpie in parallel. -j n means n samples at a time, -k keep same order as in array, --dryrun see the generated commands
 # BF3BR2, -f CCHGAYATRGCHTTYCCHCG -r TCDGGRTGNCCRAARAAYCA, -max 500
-	nohup parallel -k -j 1 "Kelpie_v2 -f CCHGAYATRGCHTTYCCHCG -r TCDGGRTGNCCRAARAAYCA -primers -filtered -min 400 -max 500 allfilterreadsoutput/{1}_?_val_?_COI.fa kelpieoutputindiv/{1}_BF3BR2.fas" ::: "${sample_names[@]}" &
-# takes about 70 mins
-ls kelpieoutputindiv/*BF3BR2.fas
-ls kelpieoutputindiv/*BF3BR2.fas | wc -l # 242
+# 	nohup parallel -k -j 3 "Kelpie_v2 -f CCHGAYATRGCHTTYCCHCG -r TCDGGRTGNCCRAARAAYCA -primers -filtered -min 400 -max 500 allfilterreadsoutput/{1}_?_val_?_COI.fa kelpieoutputindiv/{1}_BF3BR2.fas" ::: "${sample_names[@]}" &
+# # takes about 70 mins
+# ls kelpieoutputindiv/*BF3BR2.fas
+# ls kelpieoutputindiv/*BF3BR2.fas | wc -l # 242
 
 # Leray Fol-degen-rev, -f GGWACWGGWTGAACWGTWTAYCCYCC -r TANACYTCNGGRTGNCCRAARAAYCA, -min 300 -max 400
-	# nohup parallel -k -j 1 "Kelpie_v2 -f GGWACWGGWTGAACWGTWTAYCCYCC -r TANACYTCNGGRTGNCCRAARAAYCA -primers -filtered -min 300 -max 400 allfilterreadsoutput/{1}_?_val_?_COI.fa kelpieoutputindiv/{1}_LERAY.fas" ::: "${sample_names[@]}" &
-# takes about 70 mins
-ls kelpieoutputindiv/*LERAY.fas
-ls kelpieoutputindiv/*LERAY.fas | wc -l # 242
+	nohup parallel -k -j 3 "Kelpie_v2 -f GGWACWGGWTGAACWGTWTAYCCYCC -r TANACYTCNGGRTGNCCRAARAAYCA -primers -filtered -min 300 -max 400 allfilterreadsoutput/{1}_?_val_?_COI.fa kelpieoutputindiv/{1}_LERAY.fas" ::: "${sample_names[@]}" &
+# takes about 24 mins as a batch job
+# ls kelpieoutputindiv/*LERAY.fas
+# ls kelpieoutputindiv/*LERAY.fas | wc -l # 242
 
 
 
@@ -91,8 +91,9 @@ if [ ! -d kelpieoutputneighbors ] # if directory kelpieoutputneighbors does not 
 then
      mkdir kelpieoutputneighbors
 fi
+# ls
 
-# takes about 2 hrs
+# takes about 90 mins
 i=0 # set index to 0
 while IFS=, read -r f1 f2 f3 f4 f5 f6
   do
@@ -121,7 +122,6 @@ while IFS=, read -r f1 f2 f3 f4 f5 f6
 
       if [ -s kelpieinput_${i}_1.fa ] && [ -s kelpieinput_${i}_2.fa ] # if kelpieinput_$i_{1,2}.fa exist and have filesizes > 0
       then # check that the commands inside the then fi statement are preceded only by spaces, no tabs!
-
            echo "running kelpie on line ${i}"
            # BF3BR2
                # Kelpie_v2 -f CCHGAYATRGCHTTYCCHCG -r TCDGGRTGNCCRAARAAYCA -primers -filtered -min 400 -max 500 kelpieinput_${i}_?.fa kelpieoutputneighbors/${i}_BF3BR2.fas

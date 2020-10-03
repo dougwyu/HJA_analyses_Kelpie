@@ -13,8 +13,8 @@ if > 900 seqs, use seqkit split -s 900 to split into subfiles with <=900 seqs
 # send to terminal:  cmd-alt-fn-return
 # or cmd-alt-numeric_keypad_enter
 cd ~/Dropbox/Working_docs/Luo_Mingjie_Oregon/HJA_analyses_Kelpie/HJA_scripts/05_taxonomy
-cd kelpie_20200916_LERAY
-seqkit split -s 900 kelpie_20200916_LERAY_derep.fas 
+cd kelpie_20201001_LERAY
+seqkit split -s 900 kelpie_20201001_LERAY_derep.fas 
 ```
 
 
