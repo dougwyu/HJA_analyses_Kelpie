@@ -20,6 +20,7 @@ library(furrr)
 library(glue)
 library(here)
 library(scales)
+library(janitor)
 library(conflicted)
   conflict_prefer("mutate", "dplyr", quiet = TRUE)
   conflict_prefer("select", "dplyr", quiet = TRUE)
@@ -129,7 +130,9 @@ Using mutate(across()) to apply the 3 corrections
 idx_meta_genomecov_filtered_lysis <- idx_meta_genomecov_filtered_lysis %>% 
   mutate(across(contains("__"), ~ .x /spike_wt_mean)) %>% 
   mutate(across(contains("__"), ~ .x /lysis_ratio)) %>% 
-  mutate(across(contains("__"), ~ rescale(log(.x + 0.001)))) # {rescale}
+  mutate(across(contains("__"), ~ rescale(log(.x + 0.001)))) # {scales}
+
+# note:  perhaps do not include the last line (rescale(log) because i might want to generate the FSL-corrected read table and only scale to quasiprobs when making the sjsdm input otu table. Do i really need to log? doublechk spikepipe paper 
 
 hist(idx_meta_genomecov_filtered_lysis$`R1240-70__Insecta_Diptera_Syrphidae_Blera_scitula_BOLD_ABY7981_size=998`)
 ```
@@ -153,7 +156,7 @@ otuenv_M1S1 <- idx_meta_genomecov_filtered_lysis %>%
   filter(trap == "M1" & period == "S1") %>% 
   select(which(map_lgl(., 
                        ~contains("__") && 
-                         specnumber(.x, MARGIN=2) > 0) # {vegan}
+                         vegan::specnumber(.x, MARGIN=2) > 0) # {vegan}
                )
          ) 
 
@@ -197,12 +200,35 @@ writefile <- function(trap, period) {
     glue("otuenv_{trap}{period}_minimap2_{minimaprundate}_kelpie{kelpierundate}.csv")))
 }
 
-writefile(trap="M1", period="S1")
-writefile("M2", "S1")
-writefile("M1", "S2")
-writefile("M2", "S2")
+# writefile(trap="M1", period="S1")
+# writefile("M2", "S1")
+# writefile("M1", "S2")
+# writefile("M2", "S2")
 ```
 
+```{r}
+samplingdesign <- tabyl(idx_meta_genomecov_filtered_lysis, trap, SiteName, period, show_na=FALSE, show_missing_levels = FALSE)
+bind_rows(samplingdesign)
+
+sampletable <- idx_meta_genomecov_filtered_lysis %>% 
+  select(SiteName, trap, period)
+
+pt <-  PivotTable$new()
+pt$addData(sampletable)
+pt$addColumnDataGroups("period")
+pt$addColumnDataGroups("trap")
+pt$addRowDataGroups("SiteName")
+pt$defineCalculation(calculationName="Count", summariseExpression="n()")
+pt$evaluatePivot()
+sampletable_pt <- pt$asDataFrame(separator="_")
+names(sampletable_pt)
+sampletable_pt <- sampletable_pt %>% 
+  rownames_to_column(var = "SiteName") %>%
+  # filter(site !="Total") %>% 
+  arrange(desc(S1_Total)); View(sampletable_pt)
+write_csv(sampletable_pt, here("..", "..", "Kelpie_maps", 
+                 outputidxstatstabulatefolder, "HJA_samplingdesign.csv"))
+```
 
 
 <details><summary>Reproducibility receipt</summary>
