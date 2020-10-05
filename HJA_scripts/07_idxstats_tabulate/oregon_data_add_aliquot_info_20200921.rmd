@@ -22,7 +22,7 @@ dr_here()
 ```{r load files}
 # ('HJA_analyses_Kelpie/Kelpie_maps' folder) 
 # version 20200917 (5 neighbour samples)
-otu.env1.noS2 = read.csv(here('..','..','Kelpie_maps', 'outputs_minimap2_20200917_F2308_q48_kelpie20200916_BF3BR2_vsearch97','sample_by_species_table_F2308_minimap2_20200916_kelpie20200917.csv'), header=T, sep=',', stringsAsFactors = F, na.strings='NA')
+otu.env1.noS2 = read.csv(here('..','..','Kelpie_maps', 'outputs_minimap2_20200917_F2308_q48_kelpie20200916_vsearch97','sample_by_species_table_F2308_minimap2_20200916_kelpie20200917.csv'), header=T, sep=',', stringsAsFactors = F, na.strings='NA')
 dim(otu.env1.noS2) 
 #[1]  237 1284
 names(otu.env1.noS2)[1:27]

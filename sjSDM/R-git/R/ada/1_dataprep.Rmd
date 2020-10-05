@@ -16,6 +16,7 @@ knitr::opts_chunk$set(
 # script-specific libraries
 suppressPackageStartupMessages({
   library(corrplot)
+  library(vegan)
 })
 
 # general-use packages
@@ -61,95 +62,126 @@ here() # should be: "/Users/Negorashi2011/Dropbox/Working_docs/Luo_Mingjie_Orego
 ```
 
 
-```{r read data files}
-scale.env1.csv <- read_csv(here("data", "kelpie_data", "for_adagpu", "input_data_s1m1_20200916_kelpie20200917",  "quasiP_s1m1_env_5_sample_by_species_corr_table_F2308_minimap2_20200916_kelpie20200917.csv"))
+```{r read data file}
+samtoolsfilter <- "F2308" # F2308 filter only
+samtoolsqual <- "q48"
+minimaprundate <- 20200929
+kelpierundate <- 20200927
+primer <- "BF3BR2"
+trap <- "M1"
+period <- "S1"
 
-XY.csv <- read_csv(here("data", "kelpie_data", "for_adagpu", "input_data_s1m1_20200916_kelpie20200917",  "quasiP_s1m1_spatial_5_sample_by_species_corr_table_F2308_minimap2_20200916_kelpie20200917.csv")) %>% 
-  select(UTM_E, UTM_N)
+(outputidxstatstabulatefolder <- glue("outputs_minimap2_{minimaprundate}_{samtoolsfilter}_{samtoolsqual}_kelpie{kelpierundate}_{primer}_vsearch97"))
 
-otu.data.qp.csv <- read_csv(here("data", "kelpie_data", "for_adagpu", "input_data_s1m1_20200916_kelpie20200917",  "quasiP_s1m1_otu_5_sample_by_species_corr_table_F2308_minimap2_20200916_kelpie20200917.csv"))
-# mapped reads -> FSL correction -> log(Y+0.001) -> scales::rescale()
+(otuenvfilename <- glue("otuenv_{trap}{period}_minimap2_{minimaprundate}_kelpie{kelpierundate}.csv"))
+
+otuenv <- read_csv(here("..", "..", "Kelpie_maps", 
+                        outputidxstatstabulatefolder, 
+                        otuenvfilename
+                        )
+                   )
 ```
 
 ```{r edit XY.csv}
 # scale XY data
-XY.csv <- scale(XY.csv) %>% as_tibble()
+XY.csv <- otuenv %>% 
+  select(UTM_E, UTM_N)
 ```
 
 ```{r edit otu.data}
 # otu.data
 # keep OTUs with >=5 incidences
 minocc <- 5 # set to high number (e.g. 20) for testing
-otu.data.qp.csv <- otu.data.qp.csv[ , specnumber(otu.data.qp.csv, MARGIN = 2) >= minocc]
+otu.qp.csv <- otuenv %>% select(contains("__"))
+otu.qp.csv <- otu.qp.csv[ , specnumber(otu.qp.csv, MARGIN = 2) >= minocc] 
 
 # convert to 0/1 data
-otu.data.pa.csv <- otu.data.qp.csv
-otu.data.pa.csv[otu.data.pa.csv > 0] <- 1
+otu.pa.csv <- otu.qp.csv
+otu.pa.csv[otu.pa.csv > 0] <- 1
 ```
 
 ```{r edit scale.env1.csv}
 # default is all environmental covariates: GIS + MS + Lidar
 
-# GIS variables
-# scale.env1.csv <- scale.env1.csv %>%
-#   select(elevation.scale, canopy.ht.scale, min.T.scale, max.T.scale, precipitation.scale, metre.road.scale, metre.stream.scale, yrs.disturb.min.scale)
+env.scale.csv <- otuenv %>% select(!contains("__")) %>% 
+  select(-SiteName, -trap, -period, -UTM_E, -UTM_N, -clearcut) %>% 
+  mutate(insideHJA = ifelse(insideHJA == "yes", 1, 0))
 
-# # or
-# # MS (multispectral) variables + elevation.scale
-# scale.env1.csv <- scale.env1.csv %>%
-#   select(elevation.scale, mean.NDVI.scale, mean.EVI.scale, mean.green.scale, mean.bright.scale, mean.wet.scale)
+names(env.scale.csv)
+#  [1] "insideHJA"          "oldGrowthIndex"     "elevation_m"        "canopyHeight_m"    
+#  [5] "minT_annual"        "maxT_annual"        "precipitation_mm"   "distToRoad_m"      
+#  [9] "distToStream_m"     "YrsSinceDist"       "mean.NDVI"          "mean.EVI"          
+# [13] "mean.bright"        "mean.green"         "mean.wet"           "mean.NDVI.scale"   
+# [17] "mean.EVI.scale"     "mean.green.scale"   "mean.bright.scale"  "mean.wet.scale"    
+# [21] "l_Cover_2m_4m"      "l_Cover_2m_4m_all"  "l_Cover_2m_max"     "l_Cover_2m_max_all"
+# [25] "l_Cover_4m_16m"     "l_p25"              "l_p25_all"          "l_p95"             
+# [29] "l_p95_all"          "l_rumple"      
+corrplot(cor(env.scale.csv), method = "ellipse", type = "lower")
+
+# GIS variables: gis
+# env.scale.csv <- env.scale.csv %>%
+#   select(insideHJA, oldGrowthIndex, elevation_m, canopyHeight_m, minT_annual, precipitation_mm, distToRoad_m, distToStream_m, YrsSinceDist)
+# 
+# corrplot(cor(env.scale.csv), method = "ellipse", type = "lower")
+
+
+# MS variables + elevation: ms
+# env.scale.csv <- env.scale.csv %>%
+#   select(elevation_m, mean.NDVI, mean.EVI, mean.bright, mean.green, mean.wet)
+# 
+# corrplot(cor(env.scale.csv), method = "ellipse", type = "lower")
 
 # # or
 # # LiDAR variables + elevation.scale
-# scale.env1.csv <- scale.env1.csv %>%
-#   select(elevation.scale, l_Cover_2m_max.scale, l_Cover_2m_4m.scale, l_Cover_4m_16m.scale, l_p25.scale, l_p95.scale, l_rumple.scale)
+# env.scale.csv <- env.scale.csv %>%
+#   select(elevation_m, l_Cover_2m_4m, l_Cover_2m_max, l_Cover_4m_16m, l_p25, l_p95, l_rumple)
+# 
+# corrplot(cor(env.scale.csv), method = "ellipse", type = "lower")
 
 # # or
-# # MS + LiDAR + elevation.scale
-# scale.env1.csv <- scale.env1.csv %>%
-#   select(elevation.scale, mean.NDVI.scale, mean.EVI.scale, mean.green.scale, mean.bright.scale, mean.wet.scale, l_Cover_2m_max.scale, l_Cover_2m_4m.scale, l_Cover_4m_16m.scale, l_p25.scale, l_p95.scale, l_rumple.scale)
-
+# # MS + LiDAR + elevation.scale: gisms
+# env.scale.csv <- env.scale.csv %>%
+#   select(elevation_m, mean.NDVI, mean.EVI, mean.bright, mean.green, mean.wet, l_Cover_2m_4m, l_Cover_2m_max, l_Cover_4m_16m, l_p25, l_p95, l_rumple)
+# 
+# corrplot(cor(env.scale.csv), method = "ellipse", type = "lower")
 
 # # or
-# # GIS + MS + LiDAR 
-names(scale.env1.csv)
+# # GIS + MS + LiDAR:  gismslidar
+# env.scale.csv <- env.scale.csv %>%
+#   select(insideHJA, oldGrowthIndex, elevation_m, canopyHeight_m, minT_annual, precipitation_mm, distToRoad_m, distToStream_m, YrsSinceDist, mean.NDVI, mean.EVI, mean.bright, mean.green, mean.wet, l_Cover_2m_4m, l_Cover_2m_max, l_Cover_4m_16m, l_p25, l_p95, l_rumple)
+# 
+# corrplot(cor(env.scale.csv), method = "ellipse", type = "lower")
 
-scale.env1.csv <- scale.env1.csv %>%
-  select(elevation.scale, canopy.ht.scale, min.T.scale, max.T.scale, precipitation.scale, metre.road.scale, metre.stream.scale, yrs.disturb.min.scale, mean.NDVI.scale, mean.EVI.scale, mean.green.scale, mean.bright.scale, mean.wet.scale, l_Cover_2m_max.scale, l_Cover_2m_4m.scale, l_Cover_4m_16m.scale, l_p25.scale, l_p95.scale, l_rumple.scale)
+# # or
+# # GIS + MS + LiDAR minimal set: gismslidarmin
+env.scale.csv <- env.scale.csv %>%
+  select(insideHJA, oldGrowthIndex, elevation_m, canopyHeight_m, minT_annual, distToRoad_m, distToStream_m, YrsSinceDist, mean.NDVI, mean.green, l_Cover_2m_4m, l_Cover_2m_max, l_Cover_4m_16m, l_p25, l_p95, l_rumple)
 
-corrplot(cor(scale.env1.csv), method = "ellipse", type = "lower")
-```
-
-If i want to remove correlated predictors
-```{r, eval=FALSE}
-# # GIS + MS + LiDAR with minimal set
-scale.env1.csv <- scale.env1.csv %>%
-  select(-max.T.scale, -precipitation.scale, -mean.EVI.scale, -mean.wet.scale, -mean.bright.scale, -mean.green.scale, -l_p25.scale)
-
-corrplot(cor(scale.env1.csv), method = "ellipse", type = "lower")
+corrplot(cor(env.scale.csv), method = "ellipse", type = "lower")
 ```
 
 
 These files are used as input to the sjsdm_cv() and sjsdm() code
 ```{r save data files}
 # set variables
-prepdate <- 20200922 # run date
+prepdate <- 20201005 # run date
 minocc <- 5 # minimum occupancy (incidence) per OTU
-envvar <- "gismslidar" # gismslidar, gis, ms, lidar, mslidar
+envvar <- "gismslidarmin" # gismslidarmin, gismslidar, gis, ms, lidar, mslidar
 (datafolder <- glue("data_{prepdate}_{minocc}minocc_{envvar}"))
 
 dir_create(here("data", "kelpie_data", "for_adagpu", datafolder))
 
-write_csv(scale.env1.csv, here("data", "kelpie_data", "for_adagpu", datafolder,  "scale.env1.csv"))
+write_csv(env.scale.csv, here("data", "kelpie_data", "for_adagpu", datafolder,  "scale.env.csv"))
 
 write_csv(XY.csv, here("data", "kelpie_data", "for_adagpu", datafolder, "XY.csv"))
 
-write_csv(otu.data.qp.csv, here("data", "kelpie_data", "for_adagpu", datafolder,  "otu.data.qp.csv"))
+write_csv(otu.qp.csv, here("data", "kelpie_data", "for_adagpu", datafolder,  "otu.qp.csv"))
 
-write_csv(otu.data.pa.csv, here("data", "kelpie_data", "for_adagpu", datafolder, "otu.data.pa.csv"))
+write_csv(otu.pa.csv, here("data", "kelpie_data", "for_adagpu", datafolder, "otu.pa.csv"))
 ```
 
 Upload to ~/Hja_sjsdm/
+
 
 <details><summary>Reproducibility receipt</summary>
 ```{r}
@@ -160,7 +192,4 @@ Sys.time()
 git2r::repository(here::here())
 
 env_doc("table", git = FALSE)
-# this reports the R environment that you are using, especially the package and R versions. It is a good idea to include this information at the end of every report you generate, to document the details of your computing environment. If you want to really ensure replicable science, RStudio Desktop (not cloud) provides the {renv} package, which lets you create a private snapshot of packages inside your project folder. This is beyond the scope of this class, but at least you know about it now.
-# sessionInfo() # base R method
-# sessioninfo::session_info() # package sessioninfo method
 ```

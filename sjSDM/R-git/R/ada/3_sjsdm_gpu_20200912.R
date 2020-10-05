@@ -22,8 +22,8 @@ library(glue)
 library(RColorBrewer)
 dir_ls()
 
-rundate <- 20200922 # sjsdm_cv run date
-envvar <- "gismslidar" # gismslidar, mslidar, gis, ms, lidar
+rundate <- 20201005 # sjsdm_cv run date
+envvar <- "gismslidarmin" # gismslidarmin, gismslidar, mslidar, gis, ms, lidar
 abund <- "qp" # "qp" # pa is 0/1 data, qp is quasiprob data
 
 minocc <- 5 # minimum occupancy (incidence) per OTU, value from dataprep.Rmd
@@ -34,12 +34,12 @@ datafolder <- glue("data_{rundate}_{minocc}minocc_{envvar}")
 datafolder
 
 # read in data
-# env data:  scale.env1
-scale.env1 <- read_csv(here(resultsfolder, datafolder, "scale.env1.csv"))
+# env data:  scale.env
+scale.env <- read_csv(here(resultsfolder, datafolder, "scale.env.csv"))
 
 # species data:  otu.data
 # comment in the dataset that i want to use. qp == quasiprob, pa == 0/1
-otu.data <- read_csv(here(resultsfolder, datafolder, glue("otu.data.{abund}.csv")))
+otu.data <- read_csv(here(resultsfolder, datafolder, glue("otu.{abund}.csv")))
 
 # XY data: XY
 XY <- read_csv(here(resultsfolder, datafolder, "XY.csv"))
@@ -63,7 +63,7 @@ model <-  sjSDM(
   iter = 150L,
   learning_rate = 0.003, # 0.01 default, 0l002 or 0.003 recommended for high species number, try a few values and choose the one with the smoothest model history
   family = stats::binomial("probit"), # for both p/a and quasiprob data, default
-  env = linear(data = as.matrix(scale.env1),
+  env = linear(data = as.matrix(scale.env),
                formula = ~.,
                # formula = ~ elevation.scale + canopy.ht.scale +
                #   min.T.scale + max.T.scale + precipitation.scale +
