@@ -100,7 +100,7 @@ otu.pa.csv <- otu.qp.csv
 otu.pa.csv[otu.pa.csv > 0] <- 1
 ```
 
-```{r edit scale.env1.csv}
+```{r edit env.scale.csv}
 # default is all environmental covariates: GIS + MS + Lidar
 
 env.scale.csv <- otuenv %>% select(!contains("__")) %>% 

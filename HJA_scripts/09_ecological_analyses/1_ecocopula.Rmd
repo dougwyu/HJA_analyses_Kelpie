@@ -1,0 +1,177 @@
+---
+title: "ecocopula"
+author: "Douglas Yu"
+date: "04/10/2020"
+output: html_document
+---
+
+```{r setup, eval=TRUE, include=TRUE}
+# copy the following into each script   
+knitr::opts_chunk$set(
+	message = FALSE,
+	warning = FALSE,
+	include = FALSE
+)
+
+# script-specific libraries
+suppressPackageStartupMessages({
+  library(stringdist)
+  library(vegan)
+  library(mvabund)
+  library(ordinal)
+  library(ecoCopula)
+  library(corrplot)
+  library(ggrepel)
+  library(RColorBrewer)
+  library(tidygraph)
+  library(ggraph)
+})
+
+# general-use packages
+suppressPackageStartupMessages({
+  library(here)
+  library(fs)
+  library(glue)
+  library(tidyverse) # loads a bunch of packages (see below)
+  library(readxl)
+  library(cowplot)
+  library(lubridate)
+  library(patchwork)
+  library(broom)
+  library(ggeffects)
+  library(viridis)
+  library(arsenal) # for summary(comparedf())
+  library(sjmisc) # for rotate_df()
+  library(envDocument)
+  library(inspectdf)
+  library(conflicted)
+})
+
+conflict_prefer("filter", "dplyr", quiet = TRUE)
+conflict_prefer("mutate", "dplyr", quiet = TRUE)
+conflict_prefer("select", "dplyr", quiet = TRUE)
+conflict_prefer("summarise", "dplyr", quiet = TRUE)
+conflict_prefer("first", "dplyr", quiet = TRUE)
+conflict_prefer("here", "here", quiet = TRUE)
+conflict_prefer("separate", "tidyr", quiet = TRUE)
+conflict_prefer("unite", "tidyr", quiet = TRUE)
+conflict_prefer("intersect", "dplyr", quiet = TRUE)
+conflict_prefer("setdiff", "dplyr", quiet = TRUE) # w/out this, R crashes
+conflict_prefer("to_factor", "sjmisc", quiet = TRUE)
+conflict_prefer("trim", "glue", quiet = TRUE)
+
+# Provide real numbers, not scientific notation.
+options(scipen = 999)
+```
+
+Ailaoshan_environmental.rdata obviously contains the environmental metadata
+
+```{r working directory}
+here() # should be: "/Users/Negorashi2011/Dropbox/Working_docs/Luo_Mingjie_Oregon/HJA_analyses_Kelpie/HJA_scripts/09_ecological_analyses"
+```
+
+
+```{r read data file}
+samtoolsfilter <- "F2308" # F2308 filter only
+samtoolsqual <- "q48"
+minimaprundate <- 20200929
+kelpierundate <- 20200927
+primer <- "BF3BR2"
+trap <- "M1"
+period <- "S1"
+
+(outputidxstatstabulatefolder <- glue("outputs_minimap2_{minimaprundate}_{samtoolsfilter}_{samtoolsqual}_kelpie{kelpierundate}_{primer}_vsearch97"))
+
+(otuenvfilename <- glue("otuenv_{trap}{period}_minimap2_{minimaprundate}_kelpie{kelpierundate}.csv"))
+
+otuenv <- read_csv(here("..", "..", "Kelpie_maps", 
+                        outputidxstatstabulatefolder, 
+                        otuenvfilename
+                        )
+                   )
+```
+
+```{r edit XY.csv}
+# scale XY data
+XY.csv <- otuenv %>% 
+  select(UTM_E, UTM_N)
+```
+
+```{r edit otu.data}
+# otu.data
+# keep OTUs with >=5 incidences
+minocc <- 3 # set to high number (e.g. 20) for testing
+otu.qp.csv <- otuenv %>% select(contains("__"))
+otu.qp.csv <- otu.qp.csv[ , specnumber(otu.qp.csv, MARGIN = 2) >= minocc] 
+
+# convert to 0/1 data
+otu.pa.csv <- otu.qp.csv
+otu.pa.csv[otu.pa.csv > 0] <- 1
+```
+
+```{r edit env.scale.csv}
+env.scale.csv <- otuenv %>% select(!contains("__")) %>% 
+  select(-SiteName, -trap, -period, -UTM_E, -UTM_N, -clearcut) %>% 
+  mutate(insideHJA = ifelse(insideHJA == "yes", 1, 0))
+
+# # GIS + MS + LiDAR minimal set: gismslidarmin
+env.scale.csv <- env.scale.csv %>%
+  select(insideHJA, oldGrowthIndex, elevation_m, canopyHeight_m, minT_annual, distToRoad_m, distToStream_m, YrsSinceDist, mean.NDVI, mean.green, l_Cover_2m_4m, l_Cover_2m_max, l_Cover_4m_16m, l_p25, l_p95, l_rumple)
+
+corrplot(cor(env.scale.csv), method = "ellipse", type = "lower")
+```
+
+
+```{r mvabund ecoCopula SSU}
+source(here("1.1_Manyany.R"))
+
+otu.qp.ord <- otu.qp.csv %>% 
+  mutate(across(everything(), factor))
+
+otu.qp.mod0 <- Manyany("clm", otu.qp.ord, abund ~ 1, data = env.scale.csv)
+
+plot(otu.qp.mod0)
+
+otu.qp.mod0.ord <- cord(otu.qp.mod0)
+# plot(SSU_mod0_ord, biplot = TRUE)
+```
+
+```{r extract factors SSU}
+site_res <- data.frame(otu.qp.mod0.ord$scores, env.scale.csv)
+sp_res <- data.frame(otu.qp.mod0.ord$loadings, 
+                     species = colnames(otu.qp.csv))
+```
+
+```{r ggplot ecoCopula SSU}
+corrplot(cor(env.scale.csv), method = "ellipse", type = "lower")
+
+alpha <- 4
+ggplot() +
+  geom_segment(aes(x = 0, y = 0, xend = Factor1 * alpha * 0.95, yend = Factor2 * alpha * 0.95), data = sp_res, size = .1) +
+  geom_point(aes(x = Factor1, y = Factor2, color = elevation_m, size = YrsSinceDist), data = site_res) +
+  geom_text_repel(aes(x = Factor1, y = Factor2, label = otuenv$SiteName), data = site_res, size = 2) +
+  # geom_label_repel(aes(x = Factor1 * alpha, y = Factor2 * alpha, label = species), data = sp_res, size = 2.5) +
+  scale_color_gradientn(colours = brewer.pal(n = 10, name = "PuOr")) +
+  theme_classic() + # or "PuOr" or "RdYlBu"
+  labs(title = "HJA, Manyany, ecoCopula")
+```
+
+
+From the Gordana Popovic tutorial:  "We can do this using the `mvabund` package, with function `manyany` as well as `clm` from the `ordinal` package. Sadly, R version 4.0.0 has broken `manyany`, and it has not been fixed yet, so I have a substitute called `Manyany` in the `1.1_Manyany.R` file which we will need to sourced in the code below. "
+
+Manyany<-function (fn, yMat, formula, data, family = "negative.binomial", 
+          composition = FALSE, block = NULL, get.what = "details", 
+          var.power = NA, na.action = "na.exclude", ...) 
+          
+
+<details><summary>Reproducibility receipt</summary>
+
+```{r}
+# datetime
+Sys.time()
+
+# repository
+git2r::repository(here::here())
+
+envDocument::env_doc("table", git = FALSE)
+```

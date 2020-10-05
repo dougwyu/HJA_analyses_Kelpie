@@ -65,7 +65,7 @@ options(scipen = 999)
 here()
 # "/Users/Negorashi2011/Dropbox/Working_docs/Luo_Mingjie_Oregon/HJA_analyses_Kelpie/HJA_scripts/9_ecological_analyses"
 
-biodiversity_site_info_lidar_20200518 <- read.csv(here("..", "10_eo_data",  "biodiversity_site_info_lidar_20200518.txt"), row.names=1)
+biodiversity_site_info_lidar_20200518 <- read.csv(here("..", "10_eo_data", "old_incl_orig_covariate_descriptions", "biodiversity_site_info_lidar_20200518.txt"), row.names=1)
 
 lidar <- as_tibble(biodiversity_site_info_lidar_20200518)
 
@@ -74,7 +74,7 @@ rm(biodiversity_site_info_lidar_20200518)
 
 ```{r write table}
 
-write_csv(lidar, here("..", "10_eo_data",  "biodiversity_site_info_lidar_20200518_cleaned.txt"))
+write_csv(lidar, here("..", "10_eo_data",  "biodiversity_site_info_lidar_20200518_cleaned.csv"))
 
 ```
 
@@ -87,22 +87,22 @@ names(lidar)
 # [13] "l_p95_all"          "l_rumple"      
 
 p1 <- ggplot(lidar, aes(x=UTM_E, y=UTM_N)) +
-    geom_point(aes(size=l_Cover_2m_4m_all))
+    geom_point(aes(size=l_Cover_2m_max/2))
 
 p2 <- ggplot(lidar, aes(x=UTM_E, y=UTM_N)) +
-    geom_point(aes(size=l_Cover_2m_max_all))
+    geom_point(aes(size=l_Cover_2m_4m/2))
 
 p3 <- ggplot(lidar, aes(x=UTM_E, y=UTM_N)) +
-    geom_point(aes(size=l_Cover_4m_16m_all))
+    geom_point(aes(size=l_Cover_4m_16m/2))
 
 p4 <- ggplot(lidar, aes(x=UTM_E, y=UTM_N)) +
-    geom_point(aes(size=l_p25_all))
+    geom_point(aes(size=l_p25/2))
 
 p5 <- ggplot(lidar, aes(x=UTM_E, y=UTM_N)) +
-    geom_point(aes(size=l_p95_all))
+    geom_point(aes(size=l_p95/2))
 
 p6 <- ggplot(lidar, aes(x=UTM_E, y=UTM_N)) +
-    geom_point(aes(size=l_rumple))
+    geom_point(aes(size=l_rumple/2))
 
 (p1 | p2 | p3) / (p4 | p5 | p6)
 ```
