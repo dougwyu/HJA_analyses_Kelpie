@@ -19,7 +19,7 @@ library(fs)
 library(glue)
 
 # set variables
-rundate <- 20201005 # run date
+rundate <- 20201006 # run date
 minocc <- 5 # minimum occupancy (incidence) per OTU
 envvar <- "gismslidarmin" # gismslidarmin, gismslidar, gis, ms, lidar, mslidar
 

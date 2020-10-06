@@ -40,9 +40,10 @@ scale.env <- read_csv(here(resultsfolder, datafolder, "scale.env.csv"))
 # species data:  otu.data
 # comment in the dataset that i want to use. qp == quasiprob, pa == 0/1
 otu.data <- read_csv(here(resultsfolder, datafolder, glue("otu.{abund}.csv")))
-
+# head(otu.data)
 # XY data: XY
 XY <- read_csv(here(resultsfolder, datafolder, "XY.csv"))
+head(XY) # check that values are scaled
 
 
 # read in cross-validation output from resultsfolder
@@ -61,7 +62,7 @@ best
 model <-  sjSDM(
   Y = as.matrix(otu.data),
   iter = 150L,
-  learning_rate = 0.003, # 0.01 default, 0l002 or 0.003 recommended for high species number, try a few values and choose the one with the smoothest model history
+  learning_rate = 0.001, # 0.01 default, 0.002 or 0.003 recommended for high species number, try a few values and choose the one with the smoothest model history
   family = stats::binomial("probit"), # for both p/a and quasiprob data, default
   env = linear(data = as.matrix(scale.env),
                formula = ~.,
@@ -87,6 +88,11 @@ model <-  sjSDM(
   device = "gpu"
 )
 
+# model history
+# check that it has stablised
+pdf(file = here(resultsfolder, glue("model_history_{rundate}.pdf")))
+plot(model$history) # check iter
+dev.off()
 
 # summary(model)
 # calculate post-hoc p-values:
@@ -94,10 +100,6 @@ p <- getSe(model)
 summary.p <- summary(p)
 # str(summary.p)
 
-# model history
-pdf(file = here(resultsfolder, glue("model_history_{rundate}.pdf")))
-plot(model$history) # check iter
-dev.off()
 
 #save result
 result = list(beta = coef(model),

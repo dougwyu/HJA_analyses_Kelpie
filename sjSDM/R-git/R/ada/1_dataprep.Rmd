@@ -85,7 +85,9 @@ otuenv <- read_csv(here("..", "..", "Kelpie_maps",
 ```{r edit XY.csv}
 # scale XY data
 XY.csv <- otuenv %>% 
-  select(UTM_E, UTM_N)
+  select(UTM_E, UTM_N) %>% 
+  scale() %>% 
+  as_tibble()
 ```
 
 ```{r edit otu.data}
@@ -164,7 +166,7 @@ corrplot(cor(env.scale.csv), method = "ellipse", type = "lower")
 These files are used as input to the sjsdm_cv() and sjsdm() code
 ```{r save data files}
 # set variables
-prepdate <- 20201005 # run date
+prepdate <- 20201006 # run date
 minocc <- 5 # minimum occupancy (incidence) per OTU
 envvar <- "gismslidarmin" # gismslidarmin, gismslidar, gis, ms, lidar, mslidar
 (datafolder <- glue("data_{prepdate}_{minocc}minocc_{envvar}"))

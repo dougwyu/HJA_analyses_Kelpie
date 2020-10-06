@@ -6,9 +6,9 @@
 #SBATCH --mem 128G #
 #SBATCH --ntasks=2 # number of slots == number of CPU cores (match n_cpu)
 #SBATCH -t 48:00:00 # 48 hrs # time (DD-HH:MM)
-#SBATCH --job-name=sjsdmcva # job name
-#SBATCH -o sjsdmcva.out
-#SBATCH -e sjsdmcva.err
+#SBATCH --job-name=sjsdmcvp # job name
+#SBATCH -o sjsdmcvp.out
+#SBATCH -e sjsdmcvp.err
 #SBATCH --mail-user=dougwyu@mac.com #sends email to me
 #SBATCH --mail-type=ALL           #Mail events (NONE, BEGIN, END, FAIL, ALL)
 
@@ -20,4 +20,4 @@ module purge
 module add R
 
 # upload 2.0_sjsdm_cv_gpu_20201005.sub and 2.1_sjsdm_cv_gpu_20201005.R into working folder (~/sjSDM)
-Rscript --vanilla 2.1_sjsdm_cv_gpu_20201005.R
+Rscript --vanilla 2.1_sjsdm_cv_gpu_20201006_pa.R
