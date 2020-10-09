@@ -149,10 +149,10 @@ corrplot(cor(env.scale.csv), method = "ellipse", type = "lower")
 
 # # or
 # # GIS + MS + LiDAR:  gismslidar
-# env.scale.csv <- env.scale.csv %>%
-#   select(insideHJA, oldGrowthIndex, elevation_m, canopyHeight_m, minT_annual, precipitation_mm, distToRoad_m, distToStream_m, YrsSinceDist, mean.NDVI, mean.EVI, mean.bright, mean.green, mean.wet, l_Cover_2m_4m, l_Cover_2m_max, l_Cover_4m_16m, l_p25, l_p95, l_rumple)
-# 
-# corrplot(cor(env.scale.csv), method = "ellipse", type = "lower")
+env.scale.csv <- env.scale.csv %>%
+  select(insideHJA, oldGrowthIndex, elevation_m, canopyHeight_m, minT_annual, precipitation_mm, distToRoad_m, distToStream_m, YrsSinceDist, mean.NDVI, mean.EVI, mean.bright, mean.green, mean.wet, l_Cover_2m_4m, l_Cover_2m_max, l_Cover_4m_16m, l_p25, l_p95, l_rumple)
+
+corrplot(cor(env.scale.csv), method = "ellipse", type = "lower")
 
 # # or
 # # GIS + MS + LiDAR minimal set: gismslidarmin
@@ -166,9 +166,9 @@ corrplot(cor(env.scale.csv), method = "ellipse", type = "lower")
 These files are used as input to the sjsdm_cv() and sjsdm() code
 ```{r save data files}
 # set variables
-prepdate <- 20201006 # run date
+prepdate <- 20201008 # run date
 minocc <- 5 # minimum occupancy (incidence) per OTU
-envvar <- "gismslidarmin" # gismslidarmin, gismslidar, gis, ms, lidar, mslidar
+envvar <- "gismslidar" # gismslidarmin, gismslidar, gis, ms, lidar, mslidar
 (datafolder <- glue("data_{prepdate}_{minocc}minocc_{envvar}"))
 
 dir_create(here("data", "kelpie_data", "for_adagpu", datafolder))

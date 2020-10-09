@@ -24,7 +24,7 @@ dir_ls()
 
 rundate <- 20201005 # sjsdm_cv run date
 envvar <- "gismslidarmin" # gismslidarmin, gismslidar, mslidar, gis, ms, lidar
-abund <- "qp" # "qp" # pa is 0/1 data, qp is quasiprob data
+abund <- "pa" # "qp" # pa is 0/1 data, qp is quasiprob data
 
 minocc <- 5 # minimum occupancy (incidence) per OTU, value from dataprep.Rmd
 
@@ -62,14 +62,10 @@ best
 model <-  sjSDM(
   Y = as.matrix(otu.data),
   iter = 150L,
-  learning_rate = 0.001, # 0.01 default, 0.002 or 0.003 recommended for high species number, try a few values and choose the one with the smoothest model history
+  learning_rate = 0.003, # 0.01 default, 0.002 or 0.003 recommended for high species number, try a few values and choose the one with the smoothest model history
   family = stats::binomial("probit"), # for both p/a and quasiprob data, default
   env = linear(data = as.matrix(scale.env),
                formula = ~.,
-               # formula = ~ elevation.scale + canopy.ht.scale +
-               #   min.T.scale + max.T.scale + precipitation.scale +
-               #   metre.road.scale + metre.stream.scale +
-               #   yrs.disturb.min.scale,
                lambda = best[["lambda_coef"]],
                alpha = best[["alpha_coef"]]
   ),
@@ -82,14 +78,14 @@ model <-  sjSDM(
   biotic = bioticStruct(
     lambda = best[["lambda_cov"]],
     alpha = best[["alpha_cov"]],
-    on_diag = FALSE,
+    on_diag = FALSE, 
     inverse = FALSE # inverse=TRUE is 'better' but much slower
   ),
   device = "gpu"
 )
 
 # model history
-# check that it has stablised
+# check that it has stabilised
 pdf(file = here(resultsfolder, glue("model_history_{rundate}.pdf")))
 plot(model$history) # check iter
 dev.off()

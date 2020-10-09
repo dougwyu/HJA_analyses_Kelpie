@@ -6,8 +6,8 @@ library(glue)
 library(RColorBrewer)
 library(here)
 
-rundate <- 20200922 # sjsdm_cv run date
-envvar <- "gismslidar" # gismslidar, mslidar, gis, ms, lidar
+rundate <- 20201006 # sjsdm_cv run date
+envvar <- "gismslidarmin" # gismslidarmin, gismslidar, mslidar, gis, ms, lidar
 abund <- "qp" # "qp" # pa is 0/1 data, qp is quasiprob data
 
 minocc <- 5 # minimum occupancy (incidence) per OTU, value from dataprep.Rmd
@@ -30,7 +30,7 @@ source(here("R", "ada", "4.1_coef.figure_20200912.R"))
 # set variables
 minsize <- 1
 maxsize <- 200000L # default 200000 to include all large OTUs
-taxon <- "Ichneumon"
+taxon <- "Dolichovespula"
 
 # function(summary.p, result, minsize, maxsize=200000, taxon="all")
 p1 <- coef.figure(summary.p, result, minsize, maxsize, taxon)

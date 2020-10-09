@@ -19,9 +19,9 @@ library(fs)
 library(glue)
 
 # set variables
-rundate <- 20201006 # run date
+rundate <- 20201008 # run date
 minocc <- 5 # minimum occupancy (incidence) per OTU
-envvar <- "gismslidarmin" # gismslidarmin, gismslidar, gis, ms, lidar, mslidar
+envvar <- "gismslidar" # gismslidarmin, gismslidar, gis, ms, lidar, mslidar
 
 abund <- "pa" # pa is 0/1 data, qp is quasiprob data
 # chk sjsdm_cv() code to see if have chosen DNN to fit the env covariates
