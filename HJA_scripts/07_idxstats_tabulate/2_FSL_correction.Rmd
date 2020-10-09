@@ -215,7 +215,7 @@ kelpierundate # confirm kelpierundate (confirm same as outputidxstatstabulatefol
 # write uncorrected sample x species table
 write_csv(idx_meta_genomecov_filtered_lysis, 
           here("..", "..", "Kelpie_maps", 
-               outputidxstatstabulatefolder, glue("sample_by_species_table_{samtoolsfilter}_minimap2_{minimaprundate}_kelpie{kelpierundate}.csv")))
+               outputidxstatstabulatefolder, glue("sample_by_species_table_{samtoolsfilter}_minimap2_{minimaprundate}_kelpie{kelpierundate}_uncorr.csv")))
 
 # write FSL-corrected sample x species table
 write_csv(idx_meta_genomecov_filtered_lysis_FSL, 
