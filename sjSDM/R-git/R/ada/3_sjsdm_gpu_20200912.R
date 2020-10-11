@@ -22,10 +22,9 @@ library(glue)
 library(RColorBrewer)
 dir_ls()
 
-rundate <- 20201005 # sjsdm_cv run date
-envvar <- "gismslidarmin" # gismslidarmin, gismslidar, mslidar, gis, ms, lidar
+rundate <- 20201008 # sjsdm_cv run date
+envvar <- "gismslidar" # gismslidarmin, gismslidar, mslidar, gis, ms, lidar
 abund <- "pa" # "qp" # pa is 0/1 data, qp is quasiprob data
-
 minocc <- 5 # minimum occupancy (incidence) per OTU, value from dataprep.Rmd
 
 resultsfolder <- glue("results_{rundate}_{minocc}minocc_{envvar}_{abund}_loocv")
@@ -36,11 +35,11 @@ datafolder
 # read in data
 # env data:  scale.env
 scale.env <- read_csv(here(resultsfolder, datafolder, "scale.env.csv"))
-
+names(scale.env)
 # species data:  otu.data
 # comment in the dataset that i want to use. qp == quasiprob, pa == 0/1
 otu.data <- read_csv(here(resultsfolder, datafolder, glue("otu.{abund}.csv")))
-# head(otu.data)
+otu.data[, 1:2] 
 # XY data: XY
 XY <- read_csv(here(resultsfolder, datafolder, "XY.csv"))
 head(XY) # check that values are scaled
