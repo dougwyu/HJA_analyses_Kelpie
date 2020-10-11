@@ -820,7 +820,8 @@ envdataLidar column descriptions are in 10_eo_data/biodiversity_site_info_lidar_
 envdataMS column descriptions are in 10_eo_data/biodiversity_site_info_multispectral_vars_2020-04-13.txt
 
 ```{r load env data and format}
-envdataGIS <- read_csv(file.path("..", "10_eo_data", "biodiversity_site_info_GIS_vars_20200220.csv"))
+envdataGIS <- read_csv(file.path("..", "10_eo_data", 
+                                "biodiversity_site_info_GIS_vars_20200220.csv"))
 
 envdataGIS <- envdataGIS %>% 
   select(SiteName, UTM_E, UTM_N, oldGrowthIndex = o, clearcut = TREATMENT_,
