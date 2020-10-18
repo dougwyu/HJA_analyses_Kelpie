@@ -32,7 +32,7 @@ library(conflicted)
   conflict_prefer("unite", "tidyr", quiet = TRUE)
   conflict_prefer("trim", "sjmisc", quiet=TRUE)
   conflict_prefer("rescale", "scales", quiet=TRUE)
-
+  conflict_prefer("rescale", "discard", quiet=TRUE)
 # Real numbers, not scientific notation.
 options(scipen = 999)
 ```
@@ -90,7 +90,8 @@ Join lysis and idx_meta_genomecov_filtered_wide
 ```{r}
 idx_meta_genomecov_filtered_lysis <- lysis %>% 
   full_join(idx_meta_genomecov_filtered_wide, 
-            by = c("SiteName" = "SiteName", "trap" = "trap", "period" = "period")
+            by = c("SiteName" = "SiteName", 
+                   "trap" = "trap", "period" = "period")
             ) %>% 
   filter(!(SiteName == "SM-06" & trap == "M1" & period == "S1")) %>% 
   relocate(SiteName, trap, period, lysisBufferml, aliquot, starts_with("COI-SPIKE")) %>% 
@@ -111,7 +112,7 @@ spike-reads and lysis buffer correction factors
 
 ```{r}
 idx_meta_genomecov_filtered_lysis <- idx_meta_genomecov_filtered_lysis %>% 
-  mutate(spike_wt_mean = (COISpikeElaterid/9 + COISpikeMordellid)/2) %>% 
+  mutate(spike_wt_mean = (COISpikeElaterid/9 + COISpikeMordellid) /2) %>% 
   relocate(spike_wt_mean, .after = COISpikeMordellid)
 
 hist(idx_meta_genomecov_filtered_lysis$spike_wt_mean)
@@ -134,16 +135,28 @@ _Quasi-probability correction_
 Using mutate(across()) to apply the 3 corrections
 ```{r correct read numbers}
 idx_meta_genomecov_filtered_lysis_FSL <- idx_meta_genomecov_filtered_lysis %>% 
-  mutate(across(contains("__"), ~ .x /spike_wt_mean)) %>% 
-  mutate(across(contains("__"), ~ .x /lysis_ratio)) 
+  mutate(across(contains("__"), ~ .x /(spike_wt_mean*lysis_ratio))) %>% 
+  mutate(across(contains("__"), ~ log(.x + 0.001))) 
+# F/SL correction from Ji et al. (2020) section 2.5.1
+# We defined the quantity FSL for each species in each sample, defined as log(F/SL), where F is the number of reads mapped to a focal species (unit: sequence count), S is the “spike” (unit: sequence count/DNA mass), and L is the fraction of lysis buffer represented by the aliquot (unitless). The spike S was first computed for each of the three internal standards as number of reads mapped to the internal standard divided by the input amount of DNA, and then averaged over the three internal standards.
 
+# idx_meta_genomecov_filtered_lysis_FS_test <- idx_meta_genomecov_filtered_lysis %>%
+#   mutate(across(contains("__"), ~ .x /spike_wt_mean)) %>% 
+#   mutate(across(contains("__"), ~ .x /lysis_ratio)) 
+# comparedfout <- summary(comparedf(idx_meta_genomecov_filtered_lysis_FSL, idx_meta_genomecov_filtered_lysis_FSL_test)) # no values different
+
+# rescale to quasiprobability
 idx_meta_genomecov_filtered_lysis_FSL_qp <- idx_meta_genomecov_filtered_lysis_FSL %>% 
-  mutate(across(contains("__"), ~ rescale(log(.x + 0.001)))) # {scales}
+  mutate(across(contains("__"), ~ rescale(.x))) # {scales}
 
 # idx_meta_genomecov_filtered_lysis_FSL is not scaled to quasiprobabilities
 # idx_meta_genomecov_filtered_lysis_FSL_qp is scaled to quasiprobabilities
 
+par(mfrow=c(1,3))
 hist(idx_meta_genomecov_filtered_lysis$`R1240-70__Insecta_Diptera_Syrphidae_Blera_scitula_BOLD_ABY7981_size=998`)
+hist(idx_meta_genomecov_filtered_lysis_FSL$`R1240-70__Insecta_Diptera_Syrphidae_Blera_scitula_BOLD_ABY7981_size=998`)
+hist(idx_meta_genomecov_filtered_lysis_FSL_qp$`R1240-70__Insecta_Diptera_Syrphidae_Blera_scitula_BOLD_ABY7981_size=998`)
+par(mfrow=c(1,1))
 ```
 
 remove some columns and scale environmental variables
@@ -207,7 +220,7 @@ otuenv_M2S2 <- inputdf %>%
 
 
 
-```{r write csv files}
+```{r write csv files, eval=FALSE}
 outputidxstatstabulatefolder # confirm folder to save outputs in
 minimaprundate # confirm minimaprundate (confirm same as outputidxstatstabulatefolder)
 kelpierundate # confirm kelpierundate (confirm same as outputidxstatstabulatefolder)
@@ -237,10 +250,10 @@ writefile <- function(trap, period) {
     glue("otuenv_{trap}{period}_minimap2_{minimaprundate}_kelpie{kelpierundate}.csv")))
 }
 
-# writefile(trap="M1", period="S1")
-# writefile("M2", "S1")
-# writefile("M1", "S2")
-# writefile("M2", "S2")
+writefile(trap="M1", period="S1")
+writefile("M2", "S1")
+writefile("M1", "S2")
+writefile("M2", "S2")
 ```
 
 ```{r sampling design table}
@@ -262,9 +275,36 @@ sampletable_pt <- sampletable_pt %>%
   rownames_to_column(var = "SiteName") %>%
   # filter(site !="Total") %>% 
   arrange(desc(S1_Total)); View(sampletable_pt)
+
 write_csv(sampletable_pt, here("..", "..", "Kelpie_maps", 
                  outputidxstatstabulatefolder, "HJA_samplingdesign.csv"))
 ```
+
+
+compare Yuanheng's output table with her original code to my table with the new code 1.1_idxstats_tabulate.Rmd (OTU numbers only)
+The OTU numbers after FSL/qp correction are the same, but there is one more row in Doug's dataset:  HOBO-063_M1_S2
+```{r}
+otutab_yh <- read_csv(here("..", "..", "sjSDM", "R-git", "data", "kelpie_data", "formatted_data", "quasiP_lidar_mulspec_5_sample_by_species_table_F2308_minimap2_20200929_kelpie20200927.csv")) 
+
+minocc <- 5 
+otutab_dy <- idx_meta_genomecov_filtered_lysis_FSL_qp %>% 
+  unite("site_trap_period", SiteName, trap, period) %>% 
+  arrange() 
+otutab_dy <- otutab_dy[ , specnumber(otutab_dy, MARGIN = 2) >= minocc] 
+
+otutab_dyyh <- left_join(otutab_dy, otutab_yh, by = c("site_trap_period")) 
+# lowest row is the sample that is not in Yuanheng's data table
+otutab_diff <- otutab_dyyh %>% 
+  select(site_trap_period, contains("Dolichovespula")) %>% 
+  arrange(R10475.3__Insecta_Hymenoptera_Vespidae_Dolichovespula_adulterina_BOLD_AAI6347_size.972) 
+  
+otutab_dy <- otutab_dyyh %>% select(contains("__")) %>% select(contains("size="))
+otutab_yh <- otutab_dyyh %>% select(contains("__")) %>% select(contains("size."))
+colnames(otutab_yh) <- names(otutab_dy)
+comparedf(otutab_dy, otutab_yh)
+comparedfout <- summary(comparedf(otutab_dy, otutab_yh))
+```
+
 
 
 <details><summary>Reproducibility receipt</summary>

@@ -106,23 +106,23 @@ otu.pa.csv[otu.pa.csv > 0] <- 1
 # default is all environmental covariates: GIS + MS + Lidar
 
 env.scale.csv <- otuenv %>% select(!contains("__")) %>% 
-  select(-SiteName, -trap, -period, -UTM_E, -UTM_N, -clearcut) %>% 
+  select(-SiteName, -trap, -period, -UTM_E, -UTM_N, -clearcut, -oldGrowthIndex) %>% 
   mutate(insideHJA = ifelse(insideHJA == "yes", 1, 0))
 
 names(env.scale.csv)
-#  [1] "insideHJA"          "oldGrowthIndex"     "elevation_m"        "canopyHeight_m"    
-#  [5] "minT_annual"        "maxT_annual"        "precipitation_mm"   "distToRoad_m"      
-#  [9] "distToStream_m"     "YrsSinceDist"       "mean.NDVI"          "mean.EVI"          
-# [13] "mean.bright"        "mean.green"         "mean.wet"           "mean.NDVI.scale"   
-# [17] "mean.EVI.scale"     "mean.green.scale"   "mean.bright.scale"  "mean.wet.scale"    
-# [21] "l_Cover_2m_4m"      "l_Cover_2m_4m_all"  "l_Cover_2m_max"     "l_Cover_2m_max_all"
-# [25] "l_Cover_4m_16m"     "l_p25"              "l_p25_all"          "l_p95"             
-# [29] "l_p95_all"          "l_rumple"      
+#  [1] "insideHJA"          "elevation_m"        "canopyHeight_m"     "minT_annual" 
+#  [5] "maxT_annual"        "precipitation_mm"   "distToRoad_m"       "distToStream_m"    
+#  [9] "YrsSinceDist"       "mean.NDVI"          "mean.EVI"           "mean.bright" 
+# [13] "mean.green"         "mean.wet"           "mean.NDVI.scale"    "mean.EVI.scale"    
+# [17] "mean.green.scale"   "mean.bright.scale"  "mean.wet.scale"     "l_Cover_2m_max"    
+# [21] "l_Cover_2m_max_all" "l_Cover_2m_4m"      "l_Cover_2m_4m_all"  "l_Cover_4m_16m"    
+# [25] "l_p25"              "l_p25_all"          "l_p95"              "l_p95_all"   
+# [29] "l_rumple"  
 corrplot(cor(env.scale.csv), method = "ellipse", type = "lower")
 
 # GIS variables: gis
 # env.scale.csv <- env.scale.csv %>%
-#   select(insideHJA, oldGrowthIndex, elevation_m, canopyHeight_m, minT_annual, precipitation_mm, distToRoad_m, distToStream_m, YrsSinceDist)
+#   select(insideHJA, elevation_m, canopyHeight_m, minT_annual, precipitation_mm, distToRoad_m, distToStream_m, YrsSinceDist)
 # 
 # corrplot(cor(env.scale.csv), method = "ellipse", type = "lower")
 
@@ -136,28 +136,28 @@ corrplot(cor(env.scale.csv), method = "ellipse", type = "lower")
 # # or
 # # LiDAR variables + elevation.scale
 # env.scale.csv <- env.scale.csv %>%
-#   select(elevation_m, l_Cover_2m_4m, l_Cover_2m_max, l_Cover_4m_16m, l_p25, l_p95, l_rumple)
+#   select(elevation_m, l_Cover_2m_max, l_Cover_2m_4m, l_Cover_4m_16m, l_p25, l_p95, l_rumple)
 # 
 # corrplot(cor(env.scale.csv), method = "ellipse", type = "lower")
 
 # # or
 # # MS + LiDAR + elevation.scale: gisms
 # env.scale.csv <- env.scale.csv %>%
-#   select(elevation_m, mean.NDVI, mean.EVI, mean.bright, mean.green, mean.wet, l_Cover_2m_4m, l_Cover_2m_max, l_Cover_4m_16m, l_p25, l_p95, l_rumple)
+#   select(elevation_m, mean.NDVI, mean.EVI, mean.bright, mean.green, mean.wet, l_Cover_2m_max, l_Cover_2m_4m, l_Cover_4m_16m, l_p25, l_p95, l_rumple)
 # 
 # corrplot(cor(env.scale.csv), method = "ellipse", type = "lower")
 
 # # or
 # # GIS + MS + LiDAR:  gismslidar
 env.scale.csv <- env.scale.csv %>%
-  select(insideHJA, oldGrowthIndex, elevation_m, canopyHeight_m, minT_annual, precipitation_mm, distToRoad_m, distToStream_m, YrsSinceDist, mean.NDVI, mean.EVI, mean.bright, mean.green, mean.wet, l_Cover_2m_4m, l_Cover_2m_max, l_Cover_4m_16m, l_p25, l_p95, l_rumple)
+  select(insideHJA, elevation_m, canopyHeight_m, minT_annual, precipitation_mm, distToRoad_m, distToStream_m, YrsSinceDist, mean.NDVI, mean.EVI, mean.bright, mean.green, mean.wet, l_Cover_2m_max, l_Cover_2m_4m, l_Cover_4m_16m, l_p25, l_p95, l_rumple)
 
 corrplot(cor(env.scale.csv), method = "ellipse", type = "lower")
 
 # # or
 # # GIS + MS + LiDAR minimal set: gismslidarmin
 env.scale.csv <- env.scale.csv %>%
-  select(insideHJA, oldGrowthIndex, elevation_m, canopyHeight_m, minT_annual, distToRoad_m, distToStream_m, YrsSinceDist, mean.NDVI, mean.green, l_Cover_2m_4m, l_Cover_2m_max, l_Cover_4m_16m, l_p25, l_p95, l_rumple)
+  select(insideHJA, elevation_m, canopyHeight_m, minT_annual, distToRoad_m, distToStream_m, YrsSinceDist, mean.NDVI, mean.green, l_Cover_2m_max, l_Cover_2m_4m, l_Cover_4m_16m, l_p25, l_p95, l_rumple)
 
 corrplot(cor(env.scale.csv), method = "ellipse", type = "lower")
 ```
@@ -166,7 +166,7 @@ corrplot(cor(env.scale.csv), method = "ellipse", type = "lower")
 These files are used as input to the sjsdm_cv() and sjsdm() code
 ```{r save data files}
 # set variables
-prepdate <- 20201008 # run date
+prepdate <- 20201018 # run date
 minocc <- 5 # minimum occupancy (incidence) per OTU
 envvar <- "gismslidar" # gismslidarmin, gismslidar, gis, ms, lidar, mslidar
 (datafolder <- glue("data_{prepdate}_{minocc}minocc_{envvar}"))
@@ -185,7 +185,8 @@ write_csv(otu.pa.csv, here("data", "kelpie_data", "for_adagpu", datafolder, "otu
 Upload to ~/Hja_sjsdm/
 
 
-<details><summary>Reproducibility receipt</summary>
+<details>
+<summary>Reproducibility receipt</summary>
 ```{r}
 # datetime
 Sys.time()
