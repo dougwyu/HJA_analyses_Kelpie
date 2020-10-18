@@ -64,7 +64,6 @@ conflict_prefer("trim", "glue", quiet = TRUE)
 options(scipen = 999)
 ```
 
-Ailaoshan_environmental.rdata obviously contains the environmental metadata
 
 ```{r working directory}
 here() # should be: "/Users/Negorashi2011/Dropbox/Working_docs/Luo_Mingjie_Oregon/HJA_analyses_Kelpie/HJA_scripts/09_ecological_analyses"
@@ -102,7 +101,7 @@ XY.csv <- otuenv %>%
 ```{r edit otu.data}
 # otu.data
 # keep OTUs with >=5 incidences
-minocc <- 2 # set to high number (e.g. 20) for testing
+minocc <- 5 # set to high number (e.g. 20) for testing
 otu.qp.csv <- otuenv %>% select(contains("__"))
 otu.qp.csv <- otu.qp.csv[ , specnumber(otu.qp.csv, MARGIN = 2) >= minocc] 
 
@@ -112,17 +111,25 @@ otu.pa.csv[otu.pa.csv > 0] <- 1
 ```
 
 ```{r edit env.scale.csv}
-env.scale.csv <- otuenv %>% select(!contains("__")) %>% 
-  select(-SiteName, -trap, -period, -UTM_E, -UTM_N, -clearcut) %>% 
-  mutate(insideHJA = ifelse(insideHJA == "yes", 1, 0))
+env.scale.csv <- otuenv %>% 
+    select(!contains("__")) %>% 
+    select(-SiteName, -trap, -period, -UTM_E, -UTM_N, 
+           -clearcut, -oldGrowthIndex) %>%
+    mutate(insideHJA = ifelse(insideHJA == "yes", 1, 0))
 
-# # GIS + MS + LiDAR minimal set: gismslidarmin
+# # GIS + MS + LiDAR:  gismslidar
 env.scale.csv <- env.scale.csv %>%
-  select(oldGrowthIndex, elevation_m, canopyHeight_m, minT_annual, distToRoad_m, distToStream_m, YrsSinceDist, mean.NDVI, mean.green, l_Cover_2m_4m, l_Cover_2m_max, l_Cover_4m_16m, l_p25, l_p95, l_rumple)
-
-# insideHJA
+  select(insideHJA, elevation_m, canopyHeight_m, minT_annual, precipitation_mm, distToRoad_m, distToStream_m, YrsSinceDist, mean.NDVI, mean.EVI, mean.bright, mean.green, mean.wet, l_Cover_2m_max, l_Cover_2m_4m, l_Cover_4m_16m, l_p25, l_p95, l_rumple)
 
 corrplot(cor(env.scale.csv), method = "ellipse", type = "lower")
+
+# # or
+# # GIS + MS + LiDAR minimal set: gismslidarmin
+env.scale.csv <- env.scale.csv %>%
+  select(insideHJA, elevation_m, canopyHeight_m, minT_annual, distToRoad_m, distToStream_m, YrsSinceDist, mean.NDVI, mean.green, l_Cover_2m_max, l_Cover_2m_4m, l_Cover_4m_16m, l_p25, l_p95, l_rumple)
+
+corrplot(cor(env.scale.csv), method = "ellipse", type = "lower")
+
 ```
 
 Run either "Manyany qp ecoCopula" or "manyglm pa ecoCopula"
@@ -170,6 +177,7 @@ sp_res <- data.frame(otu.mod0.ord$loadings,
 ```
 
 ```{r ggplot ecoCopula}
+# save corrplot
 pdf(file = here("..", "..", "Kelpie_maps", 
                 outputidxstatstabulatefolder,
                 glue("corrplot_{trap}{period}_minimap2_{minimaprundate}_kelpie{kelpierundate}_{abund}.pdf")
@@ -177,7 +185,6 @@ pdf(file = here("..", "..", "Kelpie_maps",
     )
 corrplot(cor(site_res), method = "ellipse", type = "lower")
 dev.off()
-
 
 alpha <- 4
 p0 <- ggplot() + 
@@ -188,6 +195,8 @@ p0 <- ggplot() +
   scale_color_gradientn(colours = brewer.pal(n = 10, name = "PuOr")) +
   theme_classic() + # or "PuOr" or "RdYlBu"
   labs(title = "HJA, Manyany, ecoCopula")
+
+p0
 ```
 
 plot by XY position
@@ -201,9 +210,9 @@ p1 <- ggplot() +
   theme_classic() + # or "PuOr" or "RdYlBu"
   labs(title = "HJA, Manyany, XY, Factor1")
 
-ggsave(filename = here("..", "..", "Kelpie_maps", 
-                outputidxstatstabulatefolder,
-                glue("ggsave_ecoCopula_{trap}{period}_minimap2_{minimaprundate}_kelpie{kelpierundate}_{abund}.pdf")), p1)
+# ggsave(filename = here("..", "..", "Kelpie_maps", 
+#                 outputidxstatstabulatefolder,
+#                 glue("ggsave_ecoCopula_{trap}{period}_minimap2_{minimaprundate}_kelpie{kelpierundate}_{abund}.pdf")), p1)
 
 p2 <- ggplot() + 
   geom_point(aes(x = UTM_E, y = UTM_N, color = Factor2), 
@@ -237,8 +246,6 @@ pdf(width = 11.7, height = 8.3, file = here("..", "..", "Kelpie_maps",
     )
 p1 | p2
 dev.off()
-
-
 ```
 
 
