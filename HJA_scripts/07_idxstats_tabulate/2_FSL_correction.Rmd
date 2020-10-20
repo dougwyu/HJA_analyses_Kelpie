@@ -61,7 +61,7 @@ lysis <- read_csv(here("..",
                        "08_reference_sequences_datasets",
                        "lysis_buffer_volume_20200724.csv")
                   ) %>% 
-  select(-"WEIGHT(g)") %>% 
+  select(-"WEIGHT(g)", lysis_batch = `lysis batch`) %>% 
   rename(lysisBufferml = "added lysis buffer(ml)") %>% 
   mutate(sample = str_replace(sample, "HOBO_", "HOBO-")) %>%
   mutate(sample = str_replace(sample, "SM_", "SM-")) %>% 
@@ -74,17 +74,28 @@ lysis <- read_csv(here("..",
   filter(sample != "268453_M1_S2") %>% 
   filter(sample != "HOBO-317_M1_S1") %>% 
   separate(sample, into = c("SiteName", "trap", "period"), sep = "_", remove = TRUE) 
+# names(lysis)
 
-# HOBO-063_M1_S2 was misnamed HOBO-043_M1_S2 in lysis_buffer_volume_20200724.csv
+# add missing data
+SM_06_M1_S1 <- tribble(
+  ~SiteName, ~trap, ~period, ~lysisBufferml, ~lysis_batch, ~aliquot,
+   'SM-06', 'M1', 'S1', 15, 3, 0.6
+)
+
+lysis <- bind_rows(lysis, SM_06_M1_S1) %>% arrange(SiteName, trap, period)
+
+# HOBO-063_M1_S2 was misnamed HOBO-043_M1_S2 in lysis_buffer_volume_20200724.csv, confirmed with Mingjie
 
 # from 1.0_idxstats_tabulate.Rmd
   # SM-05_M1_S1 had no spike reads and was thus removed from idx_meta_genomecov_filtered_wide
-  # HOBO-357-M1-S2 and HOBO-351-M1-S2 were ambiguously named and were thus removed from idx_meta_genomecov_filtered_wide
+  # HOBO-351-M1-S2 and HOBO-357-M1-S2 were ambiguously named and were thus removed from idx_meta_genomecov_filtered_wide
   # HOBO-036-M1 lacked info on session (S1/S2) and thus was removed from idx_meta_genomecov_filtered_wide
 
-# 268453_M1_S2 is an extra line in lysis_buffer_volume_20200724.csv, but not in OTU table
-# HOBO-317_M1_S1 is an extra line in lysis_buffer_volume_20200724.csv, but not in OTU table
+# 268453_M1_S2 is an extra line in lysis_buffer_volume_20200724.csv, but not in OTU table. this sample should be deleted because it does not exist
+# HOBO-317_M1_S1 is an extra line in lysis_buffer_volume_20200724.csv, but not in OTU table. this sample should be deleted because it is not in my shotgunned samples (possibly a failed sample at Earlham)
+# SM-06_M1_S1: missing data is 15 ml lysis buffer, weight 2.93g, lysis batch 3, aliquot 0.6
 ```
+
 
 Join lysis and idx_meta_genomecov_filtered_wide
 ```{r}
@@ -93,20 +104,11 @@ idx_meta_genomecov_filtered_lysis <- lysis %>%
             by = c("SiteName" = "SiteName", 
                    "trap" = "trap", "period" = "period")
             ) %>% 
-  filter(!(SiteName == "SM-06" & trap == "M1" & period == "S1")) %>% 
   relocate(SiteName, trap, period, lysisBufferml, aliquot, starts_with("COI-SPIKE")) %>% 
   rename(COISpikeElaterid = `COI-SPIKE__Coleoptera_Elateridae_0.8_NA_NA_NA_NA_NA`,
          COISpikeMordellid = `COI-SPIKE__Coleoptera_Mordellidae_0.4_NA_NA_NA_NA_NA`) # backticks because the "-" causes problems
 # SM-06-M1_S1 is in OTU table but missing from lysis_buffer_volume_20200724.csv, or maybe this is the missing SM-05_M1_S1 (but i know that i removed SM-05_M1_S1 from the OTU table because it got no spike reads)
 ```
-
-To be checked with Mingjie:
-
-1. 268453_M1_S2 is in lysis_buffer_volume_20200724.csv, but not in OTU table. 
-2. HOBO-317_M1_S1 is in lysis_buffer_volume_20200724.csv, but not in OTU table
-3. SM-06-M1_S1 is missing from lysis_buffer_volume_20200724.csv, but is in OTU table
-4. HOBO-063_M1_S2 is missing from lysis_buffer_volume_20200724.csv but i think that HOBO-043_M1_S2 is this sample (there is no HOBO-043 site)
-
 
 spike-reads and lysis buffer correction factors
 
@@ -164,7 +166,7 @@ remove some columns and scale environmental variables
 colselect <- function(inputdf) {
   outputdf <- inputdf %>% 
   select(-lysisBufferml, -aliquot, -lysis_ratio, -COISpikeElaterid,
-         -COISpikeMordellid, -spike_wt_mean, -`lysis batch`, -site_trap_period) %>%
+         -COISpikeMordellid, -spike_wt_mean, -lysis_batch, -site_trap_period) %>%
   relocate(insideHJA, oldGrowthIndex, .after = clearcut) %>% 
     mutate(across(oldGrowthIndex:l_rumple, scale))
   return(outputdf)
@@ -280,30 +282,6 @@ write_csv(sampletable_pt, here("..", "..", "Kelpie_maps",
                  outputidxstatstabulatefolder, "HJA_samplingdesign.csv"))
 ```
 
-
-compare Yuanheng's output table with her original code to my table with the new code 1.1_idxstats_tabulate.Rmd (OTU numbers only)
-The OTU numbers after FSL/qp correction are the same, but there is one more row in Doug's dataset:  HOBO-063_M1_S2
-```{r}
-otutab_yh <- read_csv(here("..", "..", "sjSDM", "R-git", "data", "kelpie_data", "formatted_data", "quasiP_lidar_mulspec_5_sample_by_species_table_F2308_minimap2_20200929_kelpie20200927.csv")) 
-
-minocc <- 5 
-otutab_dy <- idx_meta_genomecov_filtered_lysis_FSL_qp %>% 
-  unite("site_trap_period", SiteName, trap, period) %>% 
-  arrange() 
-otutab_dy <- otutab_dy[ , specnumber(otutab_dy, MARGIN = 2) >= minocc] 
-
-otutab_dyyh <- left_join(otutab_dy, otutab_yh, by = c("site_trap_period")) 
-# lowest row is the sample that is not in Yuanheng's data table
-otutab_diff <- otutab_dyyh %>% 
-  select(site_trap_period, contains("Dolichovespula")) %>% 
-  arrange(R10475.3__Insecta_Hymenoptera_Vespidae_Dolichovespula_adulterina_BOLD_AAI6347_size.972) 
-  
-otutab_dy <- otutab_dyyh %>% select(contains("__")) %>% select(contains("size="))
-otutab_yh <- otutab_dyyh %>% select(contains("__")) %>% select(contains("size."))
-colnames(otutab_yh) <- names(otutab_dy)
-comparedf(otutab_dy, otutab_yh)
-comparedfout <- summary(comparedf(otutab_dy, otutab_yh))
-```
 
 
 

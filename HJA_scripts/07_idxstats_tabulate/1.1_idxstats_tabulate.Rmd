@@ -66,10 +66,10 @@ primer <- "BF3BR2"
 # this is the enclosing folder around the idxstats and genomecov files for a given set of mappings
 # outputs_F2308_f0x2_q48_minimap2_outputs_20200929_kelpie_20200927_BF3BR2_derep_filter3_vsearch97_rmdup_spikes
 # the samtoolsfilter value does not change in the folder name; it is always "F2308_f0x2"
-(idxstatsgenomecovfolder_test <- glue("outputs_F2308_f0x2_{samtoolsqual}_minimap2_outputs_{minimaprundate}_kelpie_{kelpierundate}_{primer}_derep_filter3_vsearch97_rmdup_spikes"))
+(idxstatsgenomecovfolder <- glue("outputs_F2308_f0x2_{samtoolsqual}_minimap2_outputs_{minimaprundate}_kelpie_{kelpierundate}_{primer}_derep_filter3_vsearch97_rmdup_spikes"))
 
 # this is where i store the outputs of this script
-(outputidxstatstabulatefolder_test <- glue("outputs_minimap2_{minimaprundate}_F2308_q48_kelpie{kelpierundate}_{primer}_vsearch97"))
+(outputidxstatstabulatefolder <- glue("outputs_minimap2_{minimaprundate}_F2308_q48_kelpie{kelpierundate}_{primer}_vsearch97"))
 
 dir_create(file.path("..", "..", "Kelpie_maps", outputidxstatstabulatefolder))
 
