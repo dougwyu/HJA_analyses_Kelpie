@@ -10,33 +10,62 @@ This file takes the idxstats.txt outputs of samtools and bedtools (idxstats, gen
 This code has only been checked on macOS.
 
 ```{r setup}
-# rm(list=ls())
-library(tidyverse)
-library(readxl)
-library(lubridate)
-library(knitr)
-library(beepr)
-library(arsenal) # for summary(comparedf())
-library(sjmisc) # for rotate_df()
-library(pivottabler)
-library(vegan)
-library(fs)
-library(furrr)
-library(glue)
-library(conflicted)
-  conflict_prefer("mutate", "dplyr", quiet = TRUE)
-  conflict_prefer("select", "dplyr", quiet = TRUE)
-  conflict_prefer("summarise", "dplyr", quiet = TRUE)
-  conflict_prefer("filter", "dplyr", quiet = TRUE)
-  conflict_prefer("first", "dplyr", quiet = TRUE)
-  conflict_prefer("here", "here", quiet = TRUE)
-  conflict_prefer("separate", "tidyr", quiet = TRUE)
-  conflict_prefer("unite", "tidyr", quiet = TRUE)
+knitr::opts_chunk$set(
+	message = FALSE,
+	warning = FALSE,
+	include = FALSE
+)
+
+# script-specific libraries
+suppressPackageStartupMessages({
+  library(stringdist)
+  library(vegan)
+})
+
+# general-use packages
+suppressPackageStartupMessages({
+  library(tidyverse) # loads a bunch of packages (see below)
+  library(here)
+  library(fs)
+  library(glue)
+  library(readxl)
+  library(cowplot)
+  library(lubridate)
+  library(patchwork)
+  library(broom)
+  library(ggeffects)
+  library(viridis)
+  library(arsenal) # for summary(comparedf())
+  library(sjmisc) # for rotate_df()
+  library(envDocument)
+  library(inspectdf)
+  library(conflicted)
+  library(knitr)
+  library(beepr)
+  library(pivottabler)
+  library(furrr)
+  library(scales)
+  library(janitor)
+})
+
+conflict_prefer("mutate", "dplyr", quiet = TRUE)
+conflict_prefer("select", "dplyr", quiet = TRUE)
+conflict_prefer("summarise", "dplyr", quiet = TRUE)
+conflict_prefer("filter", "dplyr", quiet = TRUE)
+conflict_prefer("first", "dplyr", quiet = TRUE)
+conflict_prefer("here", "here", quiet = TRUE)
+conflict_prefer("separate", "tidyr", quiet = TRUE)
+conflict_prefer("unite", "tidyr", quiet = TRUE)
+conflict_prefer("trim", "sjmisc", quiet=TRUE)
+conflict_prefer("rescale", "scales", quiet=TRUE)
+conflict_prefer("rescale", "discard", quiet=TRUE)
+conflict_prefer("intersect", "dplyr", quiet = TRUE)
+conflict_prefer("setdiff", "dplyr", quiet = TRUE) # w/out this, R crashes
+conflict_prefer("to_factor", "sjmisc", quiet = TRUE)
+conflict_prefer("trim", "glue", quiet = TRUE)
    
 # Provide real numbers, not scientific notation.
 options(scipen = 999)
-
-sessionInfo()
 ```
 
 

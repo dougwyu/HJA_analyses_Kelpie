@@ -5,38 +5,66 @@ date: "28/01/2018"
 output: html_document
 ---
 
-This file takes the idxstats.txt outputs of samtools and bedtools (idxstats, genomecov) and combines them with the sample metadata, does some sanity checks, and removes failed samples
+This file takes the idxstats.txt outputs of samtools and bedtools (idxstats, genomecov) and combines them with the sample metadata and environmental covariates, fixes the metadata, does sanity checks, removes failed samples, and creates sampleXspecies tables
 
 This code has only been checked on macOS.
 
 ```{r setup}
-# rm(list=ls())
-library(tidyverse)
-library(readxl)
-library(lubridate)
-library(knitr)
-library(beepr)
-library(arsenal) # for summary(comparedf())
-library(sjmisc) # for rotate_df()
-library(pivottabler)
-library(vegan)
-library(fs)
-library(furrr)
-library(glue)
-library(conflicted)
-  conflict_prefer("mutate", "dplyr", quiet = TRUE)
-  conflict_prefer("select", "dplyr", quiet = TRUE)
-  conflict_prefer("summarise", "dplyr", quiet = TRUE)
-  conflict_prefer("filter", "dplyr", quiet = TRUE)
-  conflict_prefer("first", "dplyr", quiet = TRUE)
-  conflict_prefer("here", "here", quiet = TRUE)
-  conflict_prefer("separate", "tidyr", quiet = TRUE)
-  conflict_prefer("unite", "tidyr", quiet = TRUE)
+knitr::opts_chunk$set(
+	message = FALSE,
+	warning = FALSE,
+	include = FALSE
+)
+
+# script-specific libraries
+suppressPackageStartupMessages({
+  library(vegan)
+})
+
+# general-use packages
+suppressPackageStartupMessages({
+  library(tidyverse) # loads a bunch of packages (see below)
+  library(here)
+  library(fs)
+  library(glue)
+  library(readxl)
+  library(cowplot)
+  library(lubridate)
+  library(patchwork)
+  library(broom)
+  library(ggeffects)
+  library(viridis)
+  library(arsenal) # for summary(comparedf())
+  library(sjmisc) # for rotate_df()
+  library(envDocument)
+  library(inspectdf)
+  library(conflicted)
+  library(knitr)
+  library(beepr)
+  library(pivottabler)
+  library(furrr)
+  library(scales)
+  library(janitor)
+})
+
+conflict_prefer("mutate", "dplyr", quiet = TRUE)
+conflict_prefer("select", "dplyr", quiet = TRUE)
+conflict_prefer("summarise", "dplyr", quiet = TRUE)
+conflict_prefer("filter", "dplyr", quiet = TRUE)
+conflict_prefer("first", "dplyr", quiet = TRUE)
+conflict_prefer("here", "here", quiet = TRUE)
+conflict_prefer("separate", "tidyr", quiet = TRUE)
+conflict_prefer("unite", "tidyr", quiet = TRUE)
+conflict_prefer("trim", "sjmisc", quiet=TRUE)
+conflict_prefer("rescale", "scales", quiet=TRUE)
+conflict_prefer("rescale", "discard", quiet=TRUE)
+conflict_prefer("intersect", "dplyr", quiet = TRUE)
+conflict_prefer("setdiff", "dplyr", quiet = TRUE) # w/out this, R crashes
+conflict_prefer("to_factor", "sjmisc", quiet = TRUE)
+conflict_prefer("trim", "glue", quiet = TRUE)
    
 # Provide real numbers, not scientific notation.
 options(scipen = 999)
-
-sessionInfo()
 ```
 
 
@@ -444,22 +472,21 @@ loadFile2 <- function(x) {
 } 
  
 # parallel purrr::map() implementation, using furrr::future_map_dfr()
-plan(multisession) # uses all available cores, 188 secs
-# plan(multisession, workers = 4) # uses 4 cores, 166 secs
+plan(multisession) # uses all available cores, 203 secs
+# plan(multisession, workers = 4) # uses 4 cores
 tictoc::tic()
 genomecoverages_summ <- future_map_dfr(genomecov_files, 
                                    loadFile2, 
                                    .progress=TRUE,
                                    .options = future_options(seed = TRUE)
                                    ); 
-notify("Your loadfile2 function has finished!", "Message from R", speakIt=TRUE)
-
+notify("Your loadfile2 function has finished.", "Message from R", speakIt=TRUE)
 tictoc::toc() 
 # rbind the list into a dataframe when using future_map()
 # genomecoverages_summ <- do.call(rbind, genomecoverages_summ) 
 
 
-# THIS STEP REQUIRES several mins for barcodes if using purrr:map()
+# THIS STEP REQUIRES many mins for barcodes if using purrr:map()
 # lapply loadFile2() function to all of the genomecov_files, save the output in genomecovfiles as a list 
 # map is equivalent to lapply 
 # tictoc::tic()
@@ -489,7 +516,7 @@ genomecoverages_summ <- fixidxgenomecov(genomecoverages_summ)
 
 genomecoverages_summ %>% distinct(site) %>% count()  # there should be 94 idx site names, same as the 94 correct site names in the metadata Excel file
 
-# sanity check:  all count values should be 1227, except for HOBO-357_M1_S2 and HOBO-036_M1_S2, which have two copies each (the two S2s should be S1 and S2, but we don't know which one), and thus counts of 2570
+# sanity check:  all count values should be 1227, except for HOBO-357_M1_S2 and HOBO-036_M1_S2, which have two copies each (the two S2s should be S1 and S2, but we don't know which one), and thus counts of 2454
 species_list <- genomecoverages_summ %>% 
   count(site, trap, period) %>% 
   arrange(desc(n))
@@ -593,15 +620,6 @@ idx_meta_genomecov <- idx_meta_genomecov %>%
     OTUname = str_c(OTUname, "_")
   ) %>% 
   unite(col = "mitogenome", OTUname, class, order, family, genus, species_epithet, BOLD, BOLDID, OTUsize, remove = TRUE)
-
-# deprecate, because this was based on the old OTU name syntax
-# idx_meta_genomecov <- idx_meta_genomecov %>% 
-#   mutate(
-#     mitogenome = str_replace(mitogenome, "(^R[0-9, _]+)", "\\1;")
-#     ) %>% 
-#   separate(mitogenome, c("OTUname", "consensusClassification", "OTUsize"), sep = ";", remove = FALSE) %>% 
-#   unite(col = "mitogenome2", OTUname, OTUsize, sep = "", remove = TRUE)
-# # warning message is that the COI_Spike OTUs don't match the regex and are thus ignored
 
 # sanity check:  all count values should be 1, except for HOBO-036_M1_NA (prev HOBO-036_M1_S2) and HOBO-357-351_M1_S2 (previously HOBO-357_M1_S2), which have counts of 2
 species_list <- idx_meta_genomecov %>% 
@@ -761,9 +779,10 @@ envdataGIS <- envdataGIS %>%
   filter(SiteName != "290415" & SiteName != "HOBO-040") 
 # SiteName 290415 was a place where the malaise trap was stolen twice, and SiteName Hobo-040 was attacked by bears in both sessions, so these rows do not have a match with idx_meta_genomecov species data (i.e. there were no samples to sequence)
 
-envdataMS <- read_csv(file.path("..", "10_eo_data", "biodiversity_site_info_multispectral_20200413.csv")) %>% 
-  select(SiteName, UTM_E, UTM_N, starts_with("mean.")) %>% 
-      mutate(
+envdataMS <- read_csv(file.path("..", "10_eo_data",
+                        "biodiversity_site_info_multispectral_20200413.csv")) %>%
+    relocate(SiteName, UTM_E, UTM_N) %>% # starts_with("mean.") # optional
+    mutate(
         SiteName = case_when(
             SiteName == "76361" ~ "076361",
             SiteName == "81090" ~ "081090",
@@ -819,7 +838,7 @@ idx_meta_genomecov_filtered_wide <- envdataGISMSLidar %>%
 species <- select(idx_meta_genomecov_filtered_wide, contains(c("Vespidae"))) %>% colSums() %>% as.data.frame() %>% rownames_to_column(var = "taxon"); tibble::view(species)
 
 # write output
-# check variable values
+# confirm variable values
 samtoolsfilter # <- "F2308" # F2308 or F2308_f0x2
 minimaprundate # <- 20200929
 kelpierundate # <- 20200927
@@ -832,7 +851,6 @@ write_csv(idx_meta_genomecov_filtered_wide,
                     outputidxstatstabulatefolder,
                     glue("sample_by_species_table_{samtoolsfilter}_minimap2_{minimaprundate}_kelpie{kelpierundate}.csv")))
 ```
-
 
 pivot table of sample, trap, period
 ```{r pivot table}

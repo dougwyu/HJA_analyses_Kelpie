@@ -64,10 +64,6 @@ conflict_prefer("trim", "glue", quiet = TRUE)
 options(scipen = 999)
 ```
 
-```{r setup}
-
-```
-
 ```{r read species_by_sample table}
 samtoolsfilter <- "F2308" # F2308 filter only
 samtoolsqual <- "q48"
@@ -79,8 +75,7 @@ primer <- "BF3BR2"
 
 (mappedreadsfile <- glue("sample_by_species_table_{samtoolsfilter}_minimap2_{minimaprundate}_kelpie{kelpierundate}.csv"))
 
-idx_meta_genomecov_filtered_wide <- read_csv(here("..", "..", 
-                                                  "Kelpie_maps",
+idx_meta_genomecov_filtered_wide <- read_csv(here("..", "..", "Kelpie_maps",
                                                   outputidxstatstabulatefolder,
                                                   mappedreadsfile)
                                              )
@@ -107,7 +102,7 @@ lysis <- read_csv(here("..",
   separate(sample, into = c("SiteName", "trap", "period"), sep = "_", remove = TRUE) 
 # names(lysis)
 
-# add missing data
+# add missing data row
 SM_06_M1_S1 <- tribble(
   ~SiteName, ~trap, ~period, ~lysisBufferml, ~lysis_batch, ~aliquot,
    'SM-06', 'M1', 'S1', 15, 3, 0.6
@@ -123,7 +118,7 @@ lysis <- bind_rows(lysis, SM_06_M1_S1) %>% arrange(SiteName, trap, period)
   # HOBO-036-M1 lacked info on session (S1/S2) and thus was removed from idx_meta_genomecov_filtered_wide
 
 # 268453_M1_S2 is an extra line in lysis_buffer_volume_20200724.csv, but not in OTU table. this sample should be deleted because it does not exist
-# HOBO-317_M1_S1 is an extra line in lysis_buffer_volume_20200724.csv, but not in OTU table. this sample should be deleted because it is not in my shotgunned samples (possibly a failed sample at Earlham)
+# HOBO-317_M1_S1 is an extra line in lysis_buffer_volume_20200724.csv, but not in OTU table. this sample should be deleted because it is not in my shotgunned samples (possibly a failed sample at Novogene)
 # SM-06_M1_S1: missing data is 15 ml lysis buffer, weight 2.93g, lysis batch 3, aliquot 0.6
 ```
 
@@ -138,11 +133,9 @@ idx_meta_genomecov_filtered_lysis <- lysis %>%
   relocate(SiteName, trap, period, lysisBufferml, aliquot, starts_with("COI-SPIKE")) %>% 
   rename(COISpikeElaterid = `COI-SPIKE__Coleoptera_Elateridae_0.8_NA_NA_NA_NA_NA`,
          COISpikeMordellid = `COI-SPIKE__Coleoptera_Mordellidae_0.4_NA_NA_NA_NA_NA`) # backticks because the "-" causes problems
-# SM-06-M1_S1 is in OTU table but missing from lysis_buffer_volume_20200724.csv, or maybe this is the missing SM-05_M1_S1 (but i know that i removed SM-05_M1_S1 from the OTU table because it got no spike reads)
 ```
 
-spike-reads and lysis buffer correction factors
-
+spike-reads and lysis buffer correction factors. Elaterid and MOrdellid spikes were added in a 9:1 ratio
 ```{r}
 idx_meta_genomecov_filtered_lysis <- idx_meta_genomecov_filtered_lysis %>% 
   mutate(spike_wt_mean = (COISpikeElaterid/9 + COISpikeMordellid) /2) %>% 
@@ -192,30 +185,60 @@ hist(idx_meta_genomecov_filtered_lysis_FSL_qp$`R1240-70__Insecta_Diptera_Syrphid
 par(mfrow=c(1,1))
 ```
 
-remove some columns and scale environmental variables
+ [1] "SiteName"           "trap"               "period"             "lysisBufferml"     
+ [5] "aliquot"            "lysis_ratio"        "COISpikeElaterid"   "COISpikeMordellid" 
+ [9] "spike_wt_mean"      "lysis_batch"        "UTM_E"              "UTM_N"             
+[13] "site_trap_period"   "oldGrowthIndex"     "clearcut"           "elevation_m"       
+[17] "canopyHeight_m"     "minT_annual"        "maxT_annual"        "precipitation_mm"  
+[21] "distToRoad_m"       "distToStream_m"     "YrsSinceDist"       "insideHJA"         
+[25] "mean.NDVI"          "mean.EVI"           "mean.bright"        "mean.green"        
+[29] "mean.wet"           "mean.NDVI.scale"    "mean.EVI.scale"     "mean.green.scale"  
+[33] "mean.bright.scale"  "mean.wet.scale"     "l_Cover_2m_max"     "l_Cover_2m_max_all"
+[37] "l_Cover_2m_4m"      "l_Cover_2m_4m_all"  "l_Cover_4m_16m"     "l_p25"             
+[41] "l_p25_all"          "l_p95"              "l_p95_all"          "l_rumple"    
+
+remove some columns, and log and scale environmental variables
 ```{r}
 colselect <- function(inputdf) {
-  outputdf <- inputdf %>% 
-  select(-lysisBufferml, -aliquot, -lysis_ratio, -COISpikeElaterid,
-         -COISpikeMordellid, -spike_wt_mean, -lysis_batch, -site_trap_period) %>%
-  relocate(insideHJA, oldGrowthIndex, .after = clearcut) %>% 
+  outputdf <- inputdf %>%
+    select(-lysisBufferml, -aliquot, -lysis_ratio, 
+         -COISpikeElaterid, -COISpikeMordellid, 
+         -spike_wt_mean, -lysis_batch, -site_trap_period
+         ) %>%
+    relocate(insideHJA, oldGrowthIndex, .after = clearcut)
+  return(outputdf)
+  }
+
+logandscale <- function(inputdf) {
+  outputdf <- inputdf %>%
+    mutate(across(c(distToRoad_m, distToStream_m, YrsSinceDist), ~log(.x + 0.001))) %>% 
     mutate(across(oldGrowthIndex:l_rumple, scale))
   return(outputdf)
 }
 
 idx_meta_genomecov_filtered_lysis <- 
-  colselect(idx_meta_genomecov_filtered_lysis)
+  colselect(idx_meta_genomecov_filtered_lysis) %>% 
+  logandscale()
 
 idx_meta_genomecov_filtered_lysis_FSL <-
-  colselect(idx_meta_genomecov_filtered_lysis_FSL)
+  colselect(idx_meta_genomecov_filtered_lysis_FSL) %>% 
+  logandscale()
 
 idx_meta_genomecov_filtered_lysis_FSL_qp <-
-  colselect(idx_meta_genomecov_filtered_lysis_FSL_qp)
+  colselect(idx_meta_genomecov_filtered_lysis_FSL_qp) %>% 
+  logandscale()
+
+#test code onlylog <- function(inputdf) {
+#   outputdf <- inputdf %>%
+#     mutate(across(c(distToRoad_m, distToStream_m, YrsSinceDist), ~log(.x + 0.001))) 
+#   return(outputdf)
+# }
 ```
 
 
 select subsets by trap and period, remove OTUs with column sums==0 (OTUs that are not present in the subdataset)
 ```{r subset by trap and period}
+# choose an input dataset
 inputdf <- idx_meta_genomecov_filtered_lysis_FSL_qp
 
 otuenv_M1S1 <- inputdf %>% 
@@ -250,7 +273,6 @@ otuenv_M2S2 <- inputdf %>%
                )
          ) 
 ```
-
 
 
 ```{r write csv files, eval=FALSE}
@@ -316,7 +338,8 @@ write_csv(sampletable_pt, here("..", "..", "Kelpie_maps",
 
 
 
-<details><summary>Reproducibility receipt</summary>
+<details>
+<summary>Reproducibility receipt</summary>
 ```{r}
 # datetime
 Sys.time() 
