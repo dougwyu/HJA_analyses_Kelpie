@@ -6,8 +6,8 @@ library(glue)
 library(RColorBrewer)
 library(here)
 
-rundate <- 20201006 # sjsdm_cv run date
-envvar <- "gismslidarmin" # gismslidarmin, gismslidar, mslidar, gis, ms, lidar
+rundate <- 20201019 # sjsdm_cv run date
+envvar <- "gismslidar" # gismslidarmin, gismslidar, mslidar, gis, ms, lidar
 abund <- "qp" # "qp" # pa is 0/1 data, qp is quasiprob data
 
 minocc <- 5 # minimum occupancy (incidence) per OTU, value from dataprep.Rmd

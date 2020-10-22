@@ -185,7 +185,6 @@ corrplot(cor(env.scale.csv), method = "ellipse", type = "lower", tl.cex = 0.5)
 #   select(elevation_m, mean.NDVI, mean.EVI, mean.bright, mean.green, mean.wet, l_Cover_2m_max, l_Cover_2m_4m, l_Cover_4m_16m, l_p25, l_p95, l_rumple)
 # 
 # corrplot(cor(env.scale.csv), method = "ellipse", type = "lower")
-
 ```
 
 

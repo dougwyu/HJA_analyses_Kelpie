@@ -20,17 +20,18 @@ library(tidyverse)
 library(fs)
 library(glue)
 library(RColorBrewer)
-dir_ls()
 
-rundate <- 20201018 # sjsdm_cv run date
+rundate <- 20201021 # sjsdm_cv run date
 envvar <- "gismslidar" # gismslidarmin, gismslidar, mslidar, gis, ms, lidar
-abund <- "qp" # "qp" # pa is 0/1 data, qp is quasiprob data
+abund <- "pa" # "qp" # pa is 0/1 data, qp is quasiprob data
 minocc <- 5 # minimum occupancy (incidence) per OTU, value from dataprep.Rmd
 
 resultsfolder <- glue("results_{rundate}_{minocc}minocc_{envvar}_{abund}_loocv")
-resultsfolder
 datafolder <- glue("data_{rundate}_{minocc}minocc_{envvar}")
+
+dir_ls()
 datafolder
+resultsfolder
 
 # read in data
 # env data:  scale.env
@@ -124,7 +125,7 @@ saveRDS(imp, here(resultsfolder, glue("sjsdm_imp_HJA_{rundate}.RDS")))
 # Rsquared2(model, individual = FALSE)
 # Rsquared2(model)
 
-# does eight runs, each ~22 secs, total 3 mins
+# does eight runs, each ~47 secs, total 6 mins
 an <- anova(model, cv = FALSE)
 pdf(file = here(resultsfolder, glue("anova_{rundate}.pdf")))
 plot(an, percent = FALSE)

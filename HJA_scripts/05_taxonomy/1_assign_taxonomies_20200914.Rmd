@@ -57,12 +57,12 @@ writeFasta <- function(data, filename){
 
 ```{r import and reformat}
 here()
-gbifotufolder <- "kelpie_20201001_LERAY" # kelpie_20200927_BF3BR2
-blastresultname <- "blastresult_"
+gbifotufolder <- "kelpie_20200927_BF3BR2" # "kelpie_20201001_LERAY" # 
+blastresultname <- "blastresult-"
 
 gbifresultlist <- list()
 # set n, gbifotufolder, and gbifresult
-n <- 5 # number of GBIF output files
+n <- 7 # number of GBIF output files
 for(i in 1:n){
   gbifresult <- glue("{blastresultname}{i}.csv")
   gbifresultlist[[i]] <- read.csv(here(gbifotufolder, gbifresult))
@@ -90,9 +90,11 @@ gbifdf <- gbifdf %>%
 
 Remove BLAST_NO_MATCH and non-Insecta, non-Arachnida
 ```{r filter}
-gbifdf <- gbifdf %>% 
+gbifdf %<>% 
     filter(matchType != "BLAST_NO_MATCH") %>% 
     filter(Class %in% c("Insecta", "Arachnida"))
+
+hist(gbifdf$identity, breaks = 20)
 # 20200214:  5291 to 5221 seqs (70 seqs removed) 
 # 20200716:  3215 to 3199 seqs
 # 20200916:  5351 tp 5215 seqs
@@ -113,10 +115,48 @@ gbifdf <- gbifdf %>%
         matchType == "BLAST_WEAK_MATCH" ~ str_c(str_replace_na(Class), str_replace_na(Order), "NA", "NA", "NA", scientificName, "BLAST-WEAK-MATCH", sep = "_"),
         )
     ) %>% 
-    select(occurrenceId, size, identity, consensusClassification, matchType, everything())
+    select(occurrenceId, size, identity, consensusClassification, matchType, everything()) 
+``` 
+
+Divide the sequences into reliable and less_reliable (_lr) ones, using the sequence identity to a BOLD sequence
+```{r macse input files}
+gbifdf_seqs <- gbifdf %>% 
+  filter(identity >= 99.5)
+gbifdf_seqs_lr <- gbifdf %>% 
+  filter(identity < 99.5)
+
+kelpie_otus_seqs <- gbifdf_seqs %>% 
+  unite(col = name1, seqID, consensusClassification, sep = "_") %>%
+  mutate(
+    name1 = str_c(name1, ";size=")
+  ) %>% 
+  unite(col = name, name1, size, sep = "") %>% 
+  mutate(
+    name = str_replace(name, "BOLD:", "BOLD_"),
+    name = str_replace(name, " ", "_")
+  ) %>% 
+    select(name, seq = sequence)
+
+kelpie_otus_seqs_lr <- gbifdf_seqs_lr %>% 
+  unite(col = name1, seqID, consensusClassification, sep = "_") %>%
+  mutate(
+    name1 = str_c(name1, ";size=")
+  ) %>% 
+  unite(col = name, name1, size, sep = "") %>% 
+  mutate(
+    name = str_replace(name, "BOLD:", "BOLD_"),
+    name = str_replace(name, " ", "_")
+  ) %>% 
+    select(name, seq = sequence)
+
+# write to working directory
+writeFasta(kelpie_otus_seqs, here(glue("{gbifotufolder}"), glue("{gbifotufolder}_derep_filter1_macse.fas")))
+
+writeFasta(kelpie_otus_seqs_lr, here(glue("{gbifotufolder}"), glue("{gbifotufolder}_derep_filter1_macse_lr.fas")))
 ```
 
-Save the sequences as a fasta file
+
+Save all the sequences as a fasta file (filter1)
 ```{r}
 kelpie_otus <- gbifdf %>% 
   unite(col = name1, seqID, consensusClassification, sep = "_") %>%
@@ -139,8 +179,8 @@ writeFasta(kelpie_otus, here(glue("{gbifotufolder}"), glue("{gbifotufolder}_dere
 cd /Users/Negorashi2011/Dropbox/Working_docs/Luo_Mingjie_Oregon/HJA_analyses_Kelpie/HJA_scripts/05_taxonomy/
 
 datestamp="20201001"
-primer="LERAY" # BF3BR2
-minlen=300 # 400
+primer="BF3BR2" # "LERAY"
+minlen=400 # 300
 echo kelpie_${datestamp}_${primer}
 cd kelpie_${datestamp}_${primer}
 
@@ -153,6 +193,9 @@ seqkit stats kelpie_${datestamp}_${primer}_derep_filter2_vsearch97.fas
 # LERAY 1,594 OTUs, min 300, avg 313, max 400
 ```
 
+filter1 = remove blast-no-match and non-arthropoda/non-arachnida
+filter2 = 97% OTUs
+filter3 = reverse translation alignment and removal of non-alignable sequences
 
 The next stage is to curate the Kelpie output to remove sequences that contain errors. Note that we have only dereplicated the sequences, so in theory, we could use OTU clustering to remove many erroneous sequences, but in our opinion, it is better to identify and remove errors before clustering, in the sense that the resulting OTUs will be more likely to represent true biological species. The removed sequences are usually rare (size<10) and have low-resolution taxonomic assignments. The bias at this stage should be to remove all false sequences even at the expense of some true ones. This bias is acceptable because true species are more likely be represented by other sequences in the dataset. 
 
@@ -184,7 +227,7 @@ mv dna.aligned.revtrans6.fa kelpie_${datestamp}_${primer}_derep_filter3_vsearch9
 
 Occasionally, i have hand-corrected indels in some OTU sequences, which means that you might want to re-assign taxonomies by re-uploading to GBIF, downloading the CSV file, and re-running the above script.
 
-Cluster the sequences and add the spike-in sequences.  This is not a fully resolved problem because even with 97% and 96% clustering, there are still some size=1 OTUs that receive the same species ID as larger OTUs.  
+Remove gaps and add the spike-in sequences.  This is not a fully resolved problem because even with 97% and 96% clustering, there are still some size=1 OTUs that receive the same species ID as larger OTUs.  
 ```{bash}
 # remove gaps and set min length to 400 or 313, depending on primer set
 head kelpie_${datestamp}_${primer}_derep_filter3_vsearch97.fas
