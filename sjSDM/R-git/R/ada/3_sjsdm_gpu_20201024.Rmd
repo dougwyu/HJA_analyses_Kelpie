@@ -24,9 +24,9 @@ library(RColorBrewer)
 ```{r sjsdm}
 dir_ls()
 
-rundate <- 20201024 # sjsdm_cv run date
+rundate <- 20201030 # sjsdm_cv run date
 envvar <- "gismslidar" # gismslidarmin, gismslidar, mslidar, gis, ms, lidar
-abund <- "pa" # "qp" # pa is 0/1 data, qp is quasiprob data
+abund <- "qp" # "qp" # pa is 0/1 data, qp is quasiprob data
 minocc <- 5 # minimum occupancy (incidence) per OTU, value from dataprep.Rmd
 
 resultsfolder <- glue("results_{rundate}_{minocc}minocc_{envvar}_{abund}_loocv")
@@ -47,6 +47,7 @@ otu.data[, 1:2]
 # XY data: XY
 XY <- read_csv(here(resultsfolder, datafolder, "XY.csv"))
 head(XY) # check that values are scaled
+objects() # look for "otu.data", "scale.env", and "XY"
 
 
 # read in cross-validation output from resultsfolder
