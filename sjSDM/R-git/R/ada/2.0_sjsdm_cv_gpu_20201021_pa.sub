@@ -1,6 +1,5 @@
 #!/bin/bash
-#SBATCH -p gpu # -p for 'partition name'
-     # gpu 24 hrs default, 7 d max, 2 GPUs max, 192GB per GPU
+#SBATCH -p gpu-P5000-2 # -p for 'partition name', P5000-2 is the orig ada gpu
 #SBATCH --qos=gpu # QOS to be allowed to use GPU servers
 #SBATCH --gres=gpu:2 # Number of GPUs (per node)  # gpu:1 is the default. if I set gpu:1, but i use n_gpu=2 in sjsdm_cv() code, sjsdm_cv() will grab 2 gpus, including from jobs by other users
 #SBATCH --mem 128G #
@@ -11,6 +10,18 @@
 #SBATCH -e sjsdmcvp.err
 #SBATCH --mail-user=dougwyu@mac.com #sends email to me
 #SBATCH --mail-type=ALL           #Mail events (NONE, BEGIN, END, FAIL, ALL)
+
+# For P5000
+# #SBATCH -p gpu-P5000-2
+# #SBATCH --qos=gpu
+#
+# For K40
+# #SBATCH -p gpu-K40-1
+# #SBATCH --qos=gpu-K40-1
+#
+# For V100 # this might be the fastest.  need to check
+# #SBATCH -p gpu-V100-2
+# #SBATCH --qos=gpu
 
 # ran on 20200830 on ada gpu, 17.5 hrs to complete 274 spp, 87 sites, gismslidar, loocv for each dataset (qp, pa)
 # sbatch 2.0_sjsdm_cv_gpu_20201005.sub # to submit the job
