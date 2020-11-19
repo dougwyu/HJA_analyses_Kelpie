@@ -62,6 +62,9 @@ conflict_prefer("intersect", "dplyr", quiet = TRUE)
 conflict_prefer("setdiff", "dplyr", quiet = TRUE) # w/out this, R crashes
 conflict_prefer("to_factor", "sjmisc", quiet = TRUE)
 conflict_prefer("trim", "glue", quiet = TRUE)
+conflict_prefer("discard", "purrr", quiet = TRUE)
+
+R.version.string
    
 # Provide real numbers, not scientific notation.
 options(scipen = 999)
@@ -99,7 +102,8 @@ primer <- "BF3BR2"
 # this is where i store the outputs of this script
 (outputidxstatstabulatefolder <- glue("outputs_minimap2_{minimaprundate}_F2308_q48_kelpie{kelpierundate}_{primer}_vsearch97"))
 
-dir_create(file.path("..", "..", "Kelpie_maps", outputidxstatstabulatefolder))
+# only need to run once. if run, will not create dir if one already present
+# dir_create(file.path("..", "..", "Kelpie_maps", outputidxstatstabulatefolder))
 
 (idxstatsfile <- paste0("*", samtoolsfilter, "_", samtoolsqual, "_sorted\\.bam_idxstats\\.txt")) 
     # e.g. "*F2308_q48_sorted\\.bam_idxstats\\.txt"
@@ -472,13 +476,13 @@ loadFile2 <- function(x) {
 } 
  
 # parallel purrr::map() implementation, using furrr::future_map_dfr()
-plan(multisession) # uses all available cores, 203 secs
+plan(multisession) # uses all available cores, 190.6 secs
 # plan(multisession, workers = 4) # uses 4 cores
 tictoc::tic()
 genomecoverages_summ <- future_map_dfr(genomecov_files, 
                                    loadFile2, 
                                    .progress=TRUE,
-                                   .options = future_options(seed = TRUE)
+                                   .options = furrr_options(seed = TRUE)
                                    ); 
 notify("Your loadfile2 function has finished.", "Message from R", speakIt=TRUE)
 tictoc::toc() 
@@ -743,7 +747,9 @@ idx_meta_genomecov_filtered_wide <- idx_meta_genomecov_filtered %>%
 
 Load environmental covariate data
 envdataGIS column descriptions are in "10_eo_data/biodiversity_site_info_GIS_vars_descriptions_20200214.xlsx
+
 envdataLidar column descriptions are in 10_eo_data/biodiversity_site_info_lidar_descriptions_20200518_2.rtf
+
 envdataMS column descriptions are in 10_eo_data/biodiversity_site_info_multispectral_vars_2020-04-13.txt
 
 ```{r load env data and format}
@@ -835,7 +841,12 @@ idx_meta_genomecov_filtered_wide <- envdataGISMSLidar %>%
   relocate(SiteName, UTM_E, UTM_N, period, trap, site_trap_period) 
 
 # to see number of reads per sample for a given taxon
-species <- select(idx_meta_genomecov_filtered_wide, contains(c("Vespidae"))) %>% colSums() %>% as.data.frame() %>% rownames_to_column(var = "taxon"); tibble::view(species)
+species <- select(idx_meta_genomecov_filtered_wide, 
+                  contains(c("Vespidae"))
+                  ) %>% 
+    colSums() %>% 
+    as.data.frame() %>% 
+    rownames_to_column(var = "taxon"); tibble::view(species)
 
 # write output
 # confirm variable values

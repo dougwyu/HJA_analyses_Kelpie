@@ -5,6 +5,10 @@ date: "19/05/2020"
 output: html_document
 ---
 
+run once to create a csv file that is used in 07_idxstats_tabulate/1.1_idxstats_tabulate.Rmd
+
+no need to run anymore
+
 ```{r setup chunk, eval=TRUE, include=TRUE}
 # copy the following into each script   
 knitr::opts_chunk$set(
@@ -49,15 +53,10 @@ conflict_prefer("unite", "tidyr", quiet = TRUE)
 conflict_prefer("intersect", "dplyr", quiet = TRUE)
 conflict_prefer("setdiff", "dplyr", quiet = TRUE) # w/out this, R crashes
   
-env_doc("table", git = FALSE)
-# sessionInfo() # base R method
-# sessioninfo::session_info() # package sessioninfo method
+R.version.string
 
 # Provide real numbers, not scientific notation.
 options(scipen = 999)
-
-# rm(list=ls())
-
 ```
 
 
@@ -107,3 +106,12 @@ p6 <- ggplot(lidar, aes(x=UTM_E, y=UTM_N)) +
 (p1 | p2 | p3) / (p4 | p5 | p6)
 ```
 
+```{r}
+# datetime
+Sys.time()
+
+# repository
+git2r::repository(here::here())
+
+envDocument::env_doc("table", git = FALSE)
+```

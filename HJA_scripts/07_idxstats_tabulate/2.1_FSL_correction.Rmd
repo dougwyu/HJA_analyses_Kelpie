@@ -5,6 +5,8 @@ date: "02/10/2020"
 output: html_document
 ---
 
+Applies log(FSL) correction, qp transformation, remove some non-useful columns, subset to a specific malaise trap and period (e.g. M1S1), save the otuenv files, and create a table of sampling effort by site, trap, and period
+
 ```{r setup}
 knitr::opts_chunk$set(
 	message = FALSE,
@@ -75,7 +77,8 @@ primer <- "BF3BR2"
 
 (mappedreadsfile <- glue("sample_by_species_table_{samtoolsfilter}_minimap2_{minimaprundate}_kelpie{kelpierundate}.csv"))
 
-idx_meta_genomecov_filtered_wide <- read_csv(here("..", "..", "Kelpie_maps",
+idx_meta_genomecov_filtered_wide <- read_csv(here("..", "..",
+                                                  "Kelpie_maps",
                                                   outputidxstatstabulatefolder,
                                                   mappedreadsfile)
                                              )
@@ -122,7 +125,6 @@ lysis <- bind_rows(lysis, SM_06_M1_S1) %>% arrange(SiteName, trap, period)
 # SM-06_M1_S1: missing data is 15 ml lysis buffer, weight 2.93g, lysis batch 3, aliquot 0.6
 ```
 
-
 Join lysis and idx_meta_genomecov_filtered_wide
 ```{r}
 idx_meta_genomecov_filtered_lysis <- lysis %>% 
@@ -135,7 +137,7 @@ idx_meta_genomecov_filtered_lysis <- lysis %>%
          COISpikeMordellid = `COI-SPIKE__Coleoptera_Mordellidae_0.4_NA_NA_NA_NA_NA`) # backticks because the "-" causes problems
 ```
 
-spike-reads and lysis buffer correction factors. Elaterid and MOrdellid spikes were added in a 9:1 ratio
+spike-reads and lysis buffer correction factors. Elaterid and Mordellid spikes were added in a 9:1 ratio
 ```{r}
 idx_meta_genomecov_filtered_lysis <- idx_meta_genomecov_filtered_lysis %>% 
   mutate(spike_wt_mean = (COISpikeElaterid/9 + COISpikeMordellid) /2) %>% 
@@ -155,21 +157,18 @@ _FSL corrections_ from Ji et al. (2020) SPIKEPIPE paper
 
 2. Spike-in correction. – (a) For each sample (row), calculate the spike_wt_mean. Divide COISpikeElaterid by 9 and then take the mean of COISpikeElaterid and COISpikeMordellid. Finally, divide the read number of each species in the row by spike_wt_mean. 
 
-_Quasi-probability correction_
+_Quasi-probability transformation_
 3. For each species (column), scale to a quasiprobability: scales::rescale(log(x + 0.001))
 
-Using mutate(across()) to apply the 3 corrections
-```{r correct read numbers}
+Using mutate(across()) to apply the log(FSL) correction and the quasiprobability transformation
+```{r FSL correction and qp transformation}
 idx_meta_genomecov_filtered_lysis_FSL <- idx_meta_genomecov_filtered_lysis %>% 
   mutate(across(contains("__"), ~ .x /(spike_wt_mean*lysis_ratio))) %>% 
   mutate(across(contains("__"), ~ log(.x + 0.001))) 
+
 # F/SL correction from Ji et al. (2020) section 2.5.1
 # We defined the quantity FSL for each species in each sample, defined as log(F/SL), where F is the number of reads mapped to a focal species (unit: sequence count), S is the “spike” (unit: sequence count/DNA mass), and L is the fraction of lysis buffer represented by the aliquot (unitless). The spike S was first computed for each of the three internal standards as number of reads mapped to the internal standard divided by the input amount of DNA, and then averaged over the three internal standards.
-
-# idx_meta_genomecov_filtered_lysis_FS_test <- idx_meta_genomecov_filtered_lysis %>%
-#   mutate(across(contains("__"), ~ .x /spike_wt_mean)) %>% 
-#   mutate(across(contains("__"), ~ .x /lysis_ratio)) 
-# comparedfout <- summary(comparedf(idx_meta_genomecov_filtered_lysis_FSL, idx_meta_genomecov_filtered_lysis_FSL_test)) # no values different
+# Ji et al. (2020) Fig. S1 displays a linear relationship between ln(FSL-corrected read count) and ln(input DNA)
 
 # rescale to quasiprobability
 idx_meta_genomecov_filtered_lysis_FSL_qp <- idx_meta_genomecov_filtered_lysis_FSL %>% 
@@ -185,6 +184,7 @@ hist(idx_meta_genomecov_filtered_lysis_FSL_qp$`R1240-70__Insecta_Diptera_Syrphid
 par(mfrow=c(1,1))
 ```
 
+
  [1] "SiteName"           "trap"               "period"             "lysisBufferml"     
  [5] "aliquot"            "lysis_ratio"        "COISpikeElaterid"   "COISpikeMordellid" 
  [9] "spike_wt_mean"      "lysis_batch"        "UTM_E"              "UTM_N"             
@@ -197,7 +197,7 @@ par(mfrow=c(1,1))
 [37] "l_Cover_2m_4m"      "l_Cover_2m_4m_all"  "l_Cover_4m_16m"     "l_p25"             
 [41] "l_p25_all"          "l_p95"              "l_p95_all"          "l_rumple"    
 
-remove some columns, and log and scale environmental variables
+remove some non-useful columns
 ```{r}
 colselect <- function(inputdf) {
   outputdf <- inputdf %>%
@@ -209,30 +209,14 @@ colselect <- function(inputdf) {
   return(outputdf)
   }
 
-logandscale <- function(inputdf) {
-  outputdf <- inputdf %>%
-    mutate(across(c(distToRoad_m, distToStream_m, YrsSinceDist), ~log(.x + 0.001))) %>% 
-    mutate(across(oldGrowthIndex:l_rumple, scale))
-  return(outputdf)
-}
-
 idx_meta_genomecov_filtered_lysis <- 
-  colselect(idx_meta_genomecov_filtered_lysis) %>% 
-  logandscale()
+  colselect(idx_meta_genomecov_filtered_lysis) 
 
 idx_meta_genomecov_filtered_lysis_FSL <-
-  colselect(idx_meta_genomecov_filtered_lysis_FSL) %>% 
-  logandscale()
+  colselect(idx_meta_genomecov_filtered_lysis_FSL) 
 
 idx_meta_genomecov_filtered_lysis_FSL_qp <-
-  colselect(idx_meta_genomecov_filtered_lysis_FSL_qp) %>% 
-  logandscale()
-
-#test code onlylog <- function(inputdf) {
-#   outputdf <- inputdf %>%
-#     mutate(across(c(distToRoad_m, distToStream_m, YrsSinceDist), ~log(.x + 0.001))) 
-#   return(outputdf)
-# }
+  colselect(idx_meta_genomecov_filtered_lysis_FSL_qp) 
 ```
 
 
@@ -241,37 +225,57 @@ select subsets by trap and period, remove OTUs with column sums==0 (OTUs that ar
 # choose an input dataset
 inputdf <- idx_meta_genomecov_filtered_lysis_FSL_qp
 
-otuenv_M1S1 <- inputdf %>% 
+# M1S1
+otuenv_M1S1_env <- inputdf %>% 
   filter(trap == "M1" & period == "S1") %>% 
-  select(which(map_lgl(., 
-                       ~contains("__") && 
-                         vegan::specnumber(.x, MARGIN=2) > 0) # {vegan}
-               )
-         ) 
+  select(!contains("__")) 
 
-otuenv_M2S1 <- inputdf %>% 
+otuenv_M1S1_otu <- inputdf %>% 
+    filter(trap == "M1" & period == "S1") %>%
+    select(contains("__")) %>% 
+    select(which(map_lgl(., ~vegan::specnumber(.x, MARGIN=2) > 0))) # vegan
+
+otuenv_M1S1 <- bind_cols(otuenv_M1S1_env, otuenv_M1S1_otu)
+rm(otuenv_M1S1_env, otuenv_M1S1_otu)
+
+# M2S1
+otuenv_M2S1_env <- inputdf %>% 
   filter(trap == "M2" & period == "S1") %>% 
-  select(which(map_lgl(., 
-                       ~contains("__") && 
-                         specnumber(.x, MARGIN=2) > 0) # {vegan}
-               )
-         ) 
+  select(!contains("__")) 
 
-otuenv_M1S2 <- inputdf %>% 
+otuenv_M2S1_otu <- inputdf %>% 
+    filter(trap == "M2" & period == "S1") %>%
+    select(contains("__")) %>% 
+    select(which(map_lgl(., ~vegan::specnumber(.x, MARGIN=2) > 0))) # vegan
+
+otuenv_M2S1 <- bind_cols(otuenv_M2S1_env, otuenv_M2S1_otu)
+rm(otuenv_M2S1_env, otuenv_M2S1_otu)
+
+# M1S2
+otuenv_M1S2_env <- inputdf %>% 
   filter(trap == "M1" & period == "S2") %>% 
-  select(which(map_lgl(., 
-                       ~contains("__") && 
-                         specnumber(.x, MARGIN=2) > 0) # {vegan}
-               )
-         ) 
+  select(!contains("__")) 
 
-otuenv_M2S2 <- inputdf %>% 
+otuenv_M1S2_otu <- inputdf %>% 
+    filter(trap == "M1" & period == "S2") %>%
+    select(contains("__")) %>% 
+    select(which(map_lgl(., ~vegan::specnumber(.x, MARGIN=2) > 0))) # vegan
+
+otuenv_M1S2 <- bind_cols(otuenv_M1S2_env, otuenv_M1S2_otu)
+rm(otuenv_M1S2_env, otuenv_M1S2_otu)
+
+# M2S2
+otuenv_M2S2_env <- inputdf %>% 
   filter(trap == "M2" & period == "S2") %>% 
-  select(which(map_lgl(., 
-                       ~contains("__") && 
-                         specnumber(.x, MARGIN=2) > 0) # {vegan}
-               )
-         ) 
+  select(!contains("__")) 
+
+otuenv_M2S2_otu <- inputdf %>% 
+    filter(trap == "M2" & period == "S2") %>%
+    select(contains("__")) %>% 
+    select(which(map_lgl(., ~vegan::specnumber(.x, MARGIN=2) > 0))) # vegan
+
+otuenv_M2S2 <- bind_cols(otuenv_M2S2_env, otuenv_M2S2_otu)
+rm(otuenv_M2S2_env, otuenv_M2S2_otu)
 ```
 
 
@@ -334,8 +338,6 @@ sampletable_pt <- sampletable_pt %>%
 write_csv(sampletable_pt, here("..", "..", "Kelpie_maps", 
                  outputidxstatstabulatefolder, "HJA_samplingdesign.csv"))
 ```
-
-
 
 
 <details>
