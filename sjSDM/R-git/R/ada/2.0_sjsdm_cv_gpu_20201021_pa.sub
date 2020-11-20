@@ -28,6 +28,7 @@
 
 module purge
 # source /gpfs/home/b042/scratch/sjSDM_env/bin/activate # activate sjSDM environment to make pytorch available
+module add python/anaconda/2019.10/3.7
 module add R
 
 # upload 2.0_sjsdm_cv_gpu_20201005.sub and 2.1_sjsdm_cv_gpu_20201005.R into working folder (~/sjSDM)
