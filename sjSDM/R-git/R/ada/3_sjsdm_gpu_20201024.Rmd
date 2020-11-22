@@ -1,7 +1,11 @@
 ```{bash}
 ssh ada
-interactive-gpu # or ssh into a running g** node
+interactive-gpu 
+# or ssh into a running g** node
+# or 
+srun -n1 -p gpu-P5000-2 -J interactive --qos=gpu --gres=gpu:1 --time=12:00:00 --mem=4G --pty bash
 cd ~/Hja_sjsdm
+module add python/anaconda/2019.10/3.7
 module add R
 R
 ```
@@ -9,7 +13,7 @@ R
 send all R commands to Terminal: ctrl-alt-fn-return
 ```{r setup}
 # set some general options
-options(echo=TRUE) # if you want see commands in output file
+# options(echo=TRUE) # if you want see commands in output file
 Sys.setenv(RETICULATE_PYTHON="/gpfs/scratch/b042/sjSDM_env/bin/python")
 
 # packages
@@ -26,7 +30,7 @@ dir_ls()
 
 rundate <- 20201119 # sjsdm_cv run date
 envvar <- "gismslidar" # gismslidarmin, gismslidar, mslidar, gis, ms, lidar
-abund <- "pa" # "qp" # pa is 0/1 data, qp is quasiprob data
+abund <- "qp" # "qp" # pa is 0/1 data, qp is quasiprob data
 minocc <- 5 # minimum occupancy (incidence) per OTU, value from dataprep.Rmd
 
 resultsfolder <- glue("results_{rundate}_{minocc}minocc_{envvar}_{abund}_loocv")
@@ -85,7 +89,8 @@ model <-  sjSDM(
     on_diag = FALSE, 
     inverse = FALSE # inverse=TRUE is 'better' but much slower
   ),
-  device = "gpu"
+  device = "gpu",
+  sampling = 5000L # default is 5000L
 )
 
 # model history
@@ -116,7 +121,8 @@ dev.off()
 
 saveRDS(model, here(resultsfolder, glue("sjsdm_model_HJA_{rundate}.RDS")))
 saveRDS(result, here(resultsfolder, glue("sjsdm_result_HJA_{rundate}.RDS")))
-saveRDS(summary.p, here(resultsfolder, glue("sjsdm_summary.p_HJA_{rundate}.RDS")))
+saveRDS(summary.p, here(resultsfolder,
+                        glue("sjsdm_summary.p_HJA_{rundate}.RDS")))
 saveRDS(imp, here(resultsfolder, glue("sjsdm_imp_HJA_{rundate}.RDS")))
 # model <- readRDS(here(resultsfolder, glue("sjsdm_model_HJA_{rundate}.RDS")))
 # result <- readRDS(here(resultsfolder, glue("sjsdm_result_HJA_{rundate}.RDS")))

@@ -114,33 +114,50 @@ otu.pa.csv[otu.pa.csv > 0] <- 1
 env.scale.csv <- otuenv %>% 
     select(!contains("__")) %>% 
     select(-SiteName, -trap, -period, -UTM_E, -UTM_N, 
-           -clearcut, -oldGrowthIndex) %>%
+           -clearcut, -oldGrowthIndex, -starts_with("nor.")) %>%
     mutate(insideHJA = ifelse(insideHJA == "yes", 1, 0))
 
 # # GIS + MS + LiDAR:  gismslidar
 msdate <- c("20180726") # choose date of multispectral data
 env.scale.csv <- env.scale.csv %>%
   select(insideHJA, elevation_m, canopyHeight_m, minT_annual, precipitation_mm, distToRoad_m, distToStream_m, YrsSinceDist, contains(all_of(msdate)), l_Cover_2m_max, l_Cover_2m_4m, l_Cover_4m_16m, l_p25, l_rumple)
-    # contains("20180726") # alternative
-corrplot(cor(env.scale.csv), method = "ellipse", type = "lower")
 
-# # or
-# # GIS + MS + LiDAR minimal set: gismslidarmin
-# env.scale.csv <- env.scale.csv %>%
-#   select(insideHJA, elevation_m, canopyHeight_m, minT_annual, distToRoad_m, distToStream_m, YrsSinceDist, mean.NDVI, mean.green, l_Cover_2m_max, l_Cover_2m_4m, l_Cover_4m_16m, l_p25, l_p95, l_rumple)
-# corrplot(cor(env.scale.csv), method = "ellipse", type = "lower")
+corrplot(cor(env.scale.csv), method = "ellipse", type = "lower")
 ```
 
 Run either "Manyany qp ecoCopula" or "manyglm pa ecoCopula"
-```{r ordinal stackedstdm qp ecoCopula}
+```{r ordinal stackedsdm qp ecoCopula}
+abund <- "qp"
+glue("otu.{abund}.csv")
+get(glue("otu.{abund}.csv"))[1:5, 1:5]
+
+# beta
+otu.ord <- (get(glue("otu.{abund}.csv")))
+otu.mod0 <- stackedsdm(otu.ord, formula_X = ~ 1, data = env.scale.csv,
+                       family="beta", ncores = 4)
+
+# ordinal
+otu.ord <- (get(glue("otu.{abund}.csv"))) %>% 
+    mutate(across(everything(), ~rank(.x, ties.method = "min")))
+otu.mod0 <- stackedsdm(otu.ord, formula_X = ~ 1, data = env.scale.csv,
+                       family="ordinal", ncores = 4)
+
+plot(otu.mod0) # chk residuals
+
+otu.mod0.ord <- cord(otu.mod0)
+# plot(SSU_mod0_ord, biplot = TRUE)
+```
+OR
+```{r Manyany qp ecoCopula}
+source(here("1.1_Manyany.R"))
+
 abund <- "qp"
 glue("otu.{abund}.csv")
 
-otu.ord <- (get(glue("otu.{abund}.csv"))) %>% 
-    mutate(across(everything(), ~rank(.x, ties.method = "min")))
+otu.ord <- get(glue("otu.{abund}.csv")) %>% 
+  mutate(across(everything(), factor))
 
-otu.mod0 <- stackedsdm(otu.ord, formula_X = ~ 1, data = env.scale.csv,
-                       family="ordinal", ncores = 2)
+otu.mod0 <- Manyany("clm", otu.ord, abund ~ 1, data = env.scale.csv)
 
 plot(otu.mod0) # chk residuals
 
