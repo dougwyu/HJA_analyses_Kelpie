@@ -5,7 +5,7 @@ date: "19/05/2020"
 output: html_document
 ---
 
-run once to create a csv file that is used in 07_idxstats_tabulate/1.1_idxstats_tabulate.Rmd
+run once to convert a txt file to a csv file that is used in 07_idxstats_tabulate/1.1_idxstats_tabulate.Rmd
 
 no need to run anymore
 

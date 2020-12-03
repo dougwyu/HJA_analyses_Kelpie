@@ -64,11 +64,9 @@ conflict_prefer("trim", "glue", quiet = TRUE)
 options(scipen = 999)
 ```
 
-
 ```{r working directory}
 here() # should be: "/Users/Negorashi2011/Dropbox/Working_docs/Luo_Mingjie_Oregon/HJA_analyses_Kelpie/HJA_scripts/09_ecological_analyses"
 ```
-
 
 ```{r read data file}
 samtoolsfilter <- "F2308" # F2308 filter only
@@ -115,56 +113,19 @@ env.scale.csv <- otuenv %>%
     select(!contains("__")) %>% 
     select(-SiteName, -trap, -period, -UTM_E, -UTM_N, 
            -clearcut, -oldGrowthIndex, -starts_with("nor.")) %>%
-    mutate(insideHJA = ifelse(insideHJA == "yes", 1, 0))
+    mutate(insideHJA = ifelse(insideHJA == "yes", 1, 0)) 
 
 # # GIS + MS + LiDAR:  gismslidar
 msdate <- c("20180726") # choose date of multispectral data
 env.scale.csv <- env.scale.csv %>%
-  select(insideHJA, elevation_m, canopyHeight_m, minT_annual, precipitation_mm, distToRoad_m, distToStream_m, YrsSinceDist, contains(all_of(msdate)), l_Cover_2m_max, l_Cover_2m_4m, l_Cover_4m_16m, l_p25, l_rumple)
+  select(insideHJA, elevation_m, canopyHeight_m, minT_annual, precipitation_mm, distToRoad_m, distToStream_m, YrsSinceDist, contains(all_of(msdate)), l_Cover_2m_max, l_Cover_2m_4m, l_Cover_4m_16m, l_p25, l_rumple) %>% 
+    scale() %>% 
+    as_tibble()
 
 corrplot(cor(env.scale.csv), method = "ellipse", type = "lower")
 ```
 
 Run either "Manyany qp ecoCopula" or "manyglm pa ecoCopula"
-```{r ordinal stackedsdm qp ecoCopula}
-abund <- "qp"
-glue("otu.{abund}.csv")
-get(glue("otu.{abund}.csv"))[1:5, 1:5]
-
-# beta
-otu.ord <- (get(glue("otu.{abund}.csv")))
-otu.mod0 <- stackedsdm(otu.ord, formula_X = ~ 1, data = env.scale.csv,
-                       family="beta", ncores = 4)
-
-# ordinal
-otu.ord <- (get(glue("otu.{abund}.csv"))) %>% 
-    mutate(across(everything(), ~rank(.x, ties.method = "min")))
-otu.mod0 <- stackedsdm(otu.ord, formula_X = ~ 1, data = env.scale.csv,
-                       family="ordinal", ncores = 4)
-
-plot(otu.mod0) # chk residuals
-
-otu.mod0.ord <- cord(otu.mod0)
-# plot(SSU_mod0_ord, biplot = TRUE)
-```
-OR
-```{r Manyany qp ecoCopula}
-source(here("1.1_Manyany.R"))
-
-abund <- "qp"
-glue("otu.{abund}.csv")
-
-otu.ord <- get(glue("otu.{abund}.csv")) %>% 
-  mutate(across(everything(), factor))
-
-otu.mod0 <- Manyany("clm", otu.ord, abund ~ 1, data = env.scale.csv)
-
-plot(otu.mod0) # chk residuals
-
-otu.mod0.ord <- cord(otu.mod0)
-# plot(SSU_mod0_ord, biplot = TRUE)
-```
-OR
 ```{r manyglm pa ecoCopula}
 abund <- "pa"
 glue("otu.{abund}.csv")
@@ -177,14 +138,79 @@ otu.mod0 <- manyglm(otu.ord ~ 1, family = "binomial")
 plot(otu.mod0) # chk residuals
 
 otu.mod0.ord <- cord(otu.mod0)
+# plot(otu.mod0.ord, biplot = TRUE)
+
+
+# with elevation
+otu.mod1 <- manyglm(otu.ord ~ env.scale.csv$elevation_m, family = "binomial")
+
+plot(otu.mod1) # chk residuals
+
+otu.mod1.ord <- cord(otu.mod1)
+# plot(otu.mod1.ord, biplot = TRUE)
+```
+OR
+```{r Manyany qp ecoCopula}
+source(here("1.1_Manyany.R"))
+
+abund <- "qp"
+glue("otu.{abund}.csv")
+
+otu.ord <- get(glue("otu.{abund}.csv")) %>% 
+  mutate(across(everything(), factor))
+
+# Now fit a model using the clm function:
+otu.mod0 <- Manyany("clm", otu.ord, abund ~ 1, data = env.scale.csv)
+
+plot(otu.mod0) # chk residuals
+
+otu.mod0.ord <- cord(otu.mod0)
+# plot(SSU_mod0_ord, biplot = TRUE)
+
+# with elevation
+otu.mod1 <- Manyany("clm", otu.ord, abund ~ elevation_m, data = env.scale.csv)
+
+plot(otu.mod1) # chk residuals
+
+otu.mod1.ord <- cord(otu.mod1)
+# plot(otu.mod1.ord, biplot = TRUE)
+```
+OR
+```{r ordinal stackedsdm qp ecoCopula}
+abund <- "pa"
+glue("otu.{abund}.csv")
+get(glue("otu.{abund}.csv"))[1:5, 1:5]
+
+# binomial
+otu.ord <- (get(glue("otu.{abund}.csv")))
+otu.mod0 <- stackedsdm(otu.ord, formula_X = ~ 1, data = env.scale.csv,
+                       family="binomial", do_parallel = TRUE, ncores = 4)
+plot(otu.mod0) # chk residuals
+
+# gaussian
+otu.ord <- (get(glue("otu.{abund}.csv"))) 
+otu.mod0 <- stackedsdm(otu.ord, formula_X = ~ 1, data = env.scale.csv,
+                       family="gaussian", do_parallel = TRUE, ncores = 4)
+plot(otu.mod0) # chk residuals
+
+# ordinal
+otu.ord <- (get(glue("otu.{abund}.csv"))) %>%
+    mutate(across(everything(), ~rank(.x, ties.method = "min")))
+otu.mod0 <- stackedsdm(otu.ord, formula_X = ~ 1, data = env.scale.csv,
+                       family="ordinal", do_parallel = TRUE, ncores = 4)
+plot(otu.mod0) # chk residuals
+
+otu.mod0.ord <- cord(otu.mod0)
 # plot(SSU_mod0_ord, biplot = TRUE)
 ```
 
 Process output of cord()
 ```{r extract factors}
-site_res <- data.frame(otu.mod0.ord$scores, env.scale.csv, XY.csv)
+ord_to_plot <- otu.mod0.ord # otu.mod1.ord
 
-sp_res <- data.frame(otu.mod0.ord$loadings, 
+site_res <- data.frame(ord_to_plot$scores, env.scale.csv, XY.csv)
+
+sp_res <- data.frame(ord_to_plot$loadings, 
                      species = colnames(get(glue("otu.{abund}.csv")))) %>%
     separate(species, into = c("OTU", "empty", "class", "order", "family",
                                "genus", "epithet", "BOLD", "BOLDID",
@@ -192,21 +218,6 @@ sp_res <- data.frame(otu.mod0.ord$loadings,
     select(-empty)
 ```
 
-```{r ggplot ecoCopula}
-corrplot(cor(site_res), method = "ellipse", type = "lower", 
-         title = glue({abund}))
-
-# save corrplot
-pdf(file = here("..", "..", "Kelpie_maps", 
-                outputidxstatstabulatefolder,
-                glue("corrplot_{trap}{period}_minimap2_{minimaprundate}_kelpie{kelpierundate}_{abund}.pdf")
-                )
-    )
-
-corrplot(cor(site_res), method = "ellipse", type = "lower", 
-         title = glue({abund}))
-dev.off()
-```
 
 ```{r plot ecoCopula ordination}
 alpha <- 4
@@ -270,6 +281,24 @@ p2 <- ggplot() +
 p1 | p2
 ```
 
+
+```{r corrplot environmental covariates and factors, eval=FALSE}
+corrplot(cor(site_res), method = "ellipse", type = "lower", 
+         title = glue({abund}))
+
+# save corrplot
+pdf(file = here("..", "..", "Kelpie_maps", 
+                outputidxstatstabulatefolder,
+                glue("corrplot_{trap}{period}_minimap2_{minimaprundate}_kelpie{kelpierundate}_{abund}.pdf")
+                )
+    )
+
+corrplot(cor(site_res), method = "ellipse", type = "lower", 
+         title = glue({abund}))
+dev.off()
+```
+
+
 ```{r save ecoCopula plots}
 # pdf(width = 11.7, height = 8.3, file = here("..", "..", "Kelpie_maps", 
 #                 outputidxstatstabulatefolder,
@@ -324,3 +353,4 @@ git2r::repository(here::here())
 
 envDocument::env_doc("table", git = FALSE)
 ```
+</details>
