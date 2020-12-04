@@ -40,7 +40,8 @@ suppressPackageStartupMessages({
   library(broom)
   library(ggeffects)
   library(viridis)
-  library(arsenal) # for summary(comparedf())
+  library(waldo) # for compare()
+  library(arsenal) # for tableby()
   library(sjmisc) # for rotate_df()
   library(envDocument)
   library(inspectdf)
@@ -163,12 +164,9 @@ p0
 
 Questions start here
 
-1. offset(log(spikeins))
+1. offset(log(spikeins)) or do what i do, which is divide by spike in reads
 2. mvabund requires integers
-4. Or should i use stackedsdm?  needs manual coding
-
-
-offset(log(spikein))
+4. Or should i use stackedsdm?  needs manual coding to make it work for this.  thus, use mvabund
 
 manyglm QP 
 ```{r manyglm qp}
