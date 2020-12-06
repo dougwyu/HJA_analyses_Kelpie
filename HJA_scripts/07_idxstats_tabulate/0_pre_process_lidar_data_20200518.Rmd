@@ -1,0 +1,117 @@
+---
+title: "Pre-process_lidar_data_20200518"
+author: "Douglas Yu"
+date: "19/05/2020"
+output: html_document
+---
+
+run once to convert a txt file to a csv file that is used in 07_idxstats_tabulate/1.1_idxstats_tabulate.Rmd
+
+no need to run anymore
+
+```{r setup chunk, eval=TRUE, include=TRUE}
+# copy the following into each script   
+knitr::opts_chunk$set(
+	message = FALSE,
+	warning = FALSE,
+	include = FALSE
+)
+
+# script-specific libraries
+suppressPackageStartupMessages({
+    library(stringdist)
+    library(vegan)
+})
+
+# general-use packages
+suppressPackageStartupMessages({
+    library(here)
+    library(tidyverse) 
+    library(readxl)
+    library(cowplot)
+    library(lubridate)
+    library(patchwork)
+    library(broom)
+    library(ggeffects)
+    library(ggeasy)
+    library(viridis)
+    library(here)
+    library(arsenal) # for summary(comparedf())
+    library(sjmisc) # for rotate_df()
+    library(envDocument)
+    library(conflicted)
+})
+
+conflict_prefer("filter", "dplyr", quiet = TRUE)
+conflict_prefer("mutate", "dplyr", quiet = TRUE)
+conflict_prefer("select", "dplyr", quiet = TRUE)
+conflict_prefer("summarise", "dplyr", quiet = TRUE)
+conflict_prefer("first", "dplyr", quiet = TRUE)
+conflict_prefer("here", "here", quiet = TRUE)
+conflict_prefer("separate", "tidyr", quiet = TRUE)
+conflict_prefer("unite", "tidyr", quiet = TRUE)
+conflict_prefer("intersect", "dplyr", quiet = TRUE)
+conflict_prefer("setdiff", "dplyr", quiet = TRUE) # w/out this, R crashes
+  
+R.version.string
+
+# Provide real numbers, not scientific notation.
+options(scipen = 999)
+```
+
+
+```{r import dataset}
+here()
+# "/Users/Negorashi2011/Dropbox/Working_docs/Luo_Mingjie_Oregon/HJA_analyses_Kelpie/HJA_scripts/9_ecological_analyses"
+
+biodiversity_site_info_lidar_20200518 <- read.csv(here("..", "10_eo_data", "old_incl_orig_covariate_descriptions", "biodiversity_site_info_lidar_20200518.txt"), row.names=1)
+
+lidar <- as_tibble(biodiversity_site_info_lidar_20200518)
+
+rm(biodiversity_site_info_lidar_20200518)
+```
+
+```{r write table}
+
+write_csv(lidar, here("..", "10_eo_data",  "biodiversity_site_info_lidar_20200518_cleaned.csv"))
+
+```
+
+```{r explore data}
+names(lidar)
+#  [1] "SiteName"           "UTM_E"              "UTM_N"             
+#  [4] "l_Cover_2m_4m"      "l_Cover_2m_4m_all"  "l_Cover_2m_max"    
+#  [7] "l_Cover_2m_max_all" "l_Cover_4m_16m"     "l_Cover_4m_16m_all"
+# [10] "l_p25"              "l_p25_all"          "l_p95"             
+# [13] "l_p95_all"          "l_rumple"      
+
+p1 <- ggplot(lidar, aes(x=UTM_E, y=UTM_N)) +
+    geom_point(aes(size=l_Cover_2m_max/2))
+
+p2 <- ggplot(lidar, aes(x=UTM_E, y=UTM_N)) +
+    geom_point(aes(size=l_Cover_2m_4m/2))
+
+p3 <- ggplot(lidar, aes(x=UTM_E, y=UTM_N)) +
+    geom_point(aes(size=l_Cover_4m_16m/2))
+
+p4 <- ggplot(lidar, aes(x=UTM_E, y=UTM_N)) +
+    geom_point(aes(size=l_p25/2))
+
+p5 <- ggplot(lidar, aes(x=UTM_E, y=UTM_N)) +
+    geom_point(aes(size=l_p95/2))
+
+p6 <- ggplot(lidar, aes(x=UTM_E, y=UTM_N)) +
+    geom_point(aes(size=l_rumple/2))
+
+(p1 | p2 | p3) / (p4 | p5 | p6)
+```
+
+```{r}
+# datetime
+Sys.time()
+
+# repository
+git2r::repository(here::here())
+
+envDocument::env_doc("table", git = FALSE)
+```

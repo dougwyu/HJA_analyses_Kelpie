@@ -5,20 +5,31 @@ date: "02/10/2020"
 output: html_document
 ---
 
-Applies log(FSL) correction, qp transformation, remove some non-useful columns, subset to a specific malaise trap and period (e.g. M1S1), save the otuenv files, and create a table of sampling effort by site, trap, and period
+The output of 1.1_idxstats_tabulate.Rmd is a sampleXOTU table from a kelpie run and the associated environmental covariates. However, there are two corrections that are needed: correcting for the proportion of the total lysis buffer (lysis_ratio) that was used from each sample and the number of COI DNA spike in reads (COISpike_sum). These two corrections are needed to remove row noise and thus to recover within-species abundance information. 
+
+Creates input tables for ecoCopula, HMSC, and sjSDM, removes some non-useful columns, saves to outputidxstatstabulatefolder/ 
+
+1. for ecoCopula and HMSC (presence/absence). uncorr means no log(FSL) correction, no QP transformation.
+sample_by_species_table_F2308_minimap2_20200929_kelpie20200927_uncorr.csv
+
+2. for sjSDM. FSL means log(FSL) transformed using the SPIKEPIPE instructions (see below for details). qp means quasiprobability transformed using scales::rescale()
+sample_by_species_table_F2308_minimap2_20200929_kelpie20200927_FSL.csv
+sample_by_species_table_F2308_minimap2_20200929_kelpie20200927_FSL_qp.csv
+
+3. Subset the otuenv table to malaise trap and period (e.g. M1S1), save the otuenv files. Currently, the trap/period subsets are FSL_qp transformed.
+otuenv_M2S2_minimap2_20200929_kelpie20200927.csv
+otuenv_M2S1_minimap2_20200929_kelpie20200927.csv
+otuenv_M1S2_minimap2_20200929_kelpie20200927.csv
+otuenv_M1S1_minimap2_20200929_kelpie20200927.csv
+
+3. for reference
+HJA_samplingdesign.csv:  table of sampling effort by site, trap, and period
 
 ```{r setup}
-knitr::opts_chunk$set(
-	message = FALSE,
-	warning = FALSE,
-	include = FALSE
-)
-
 # script-specific libraries
 suppressPackageStartupMessages({
   library(stringdist)
-  library(vegan)
-})
+    })
 
 # general-use packages
 suppressPackageStartupMessages({
@@ -44,7 +55,7 @@ suppressPackageStartupMessages({
   library(furrr)
   library(scales)
   library(janitor)
-})
+    })
 
 conflict_prefer("mutate", "dplyr", quiet = TRUE)
 conflict_prefer("select", "dplyr", quiet = TRUE)
@@ -84,7 +95,7 @@ idx_meta_genomecov_filtered_wide <- read_csv(here("..", "..",
                                              )
 ```
 
-read in lysis data, correct sample names, remove missing samples, separate into site, trap, period
+read in lysis data, correct sample names, remove missing samples, separate sample variable into site, trap, period columns
 ```{r read FSL data}
 lysis <- read_csv(here("..", 
                        "08_reference_sequences_datasets",
@@ -125,7 +136,7 @@ lysis <- bind_rows(lysis, SM_06_M1_S1) %>% arrange(SiteName, trap, period)
 # SM-06_M1_S1: missing data is 15 ml lysis buffer, weight 2.93g, lysis batch 3, aliquot 0.6
 ```
 
-Join lysis and idx_meta_genomecov_filtered_wide
+Join lysis and idx_meta_genomecov_filtered_wide, rename COI-spike columns
 ```{r}
 idx_meta_genomecov_filtered_lysis <- lysis %>% 
   full_join(idx_meta_genomecov_filtered_wide, 
@@ -137,13 +148,19 @@ idx_meta_genomecov_filtered_lysis <- lysis %>%
          COISpikeMordellid = `COI-SPIKE__Coleoptera_Mordellidae_0.4_NA_NA_NA_NA_NA`) # backticks because the "-" causes problems
 ```
 
-spike-reads and lysis buffer correction factors. Elaterid and Mordellid spikes were added in a 9:1 ratio
+calculate sum COIspike-reads, weighted average COIspike-reads, and lysis-buffer ratios. Used for offset and correction factors. Elaterid and Mordellid spikes were added in a 9:1 ratio
 ```{r}
 idx_meta_genomecov_filtered_lysis <- idx_meta_genomecov_filtered_lysis %>% 
-  mutate(spike_wt_mean = (COISpikeElaterid/9 + COISpikeMordellid) /2) %>% 
-  relocate(spike_wt_mean, .after = COISpikeMordellid)
+  mutate(COISpike_wt_mean = (COISpikeElaterid/9 + COISpikeMordellid) /2) %>% 
+  relocate(COISpike_wt_mean, .after = COISpikeMordellid)
 
-hist(idx_meta_genomecov_filtered_lysis$spike_wt_mean)
+hist(idx_meta_genomecov_filtered_lysis$COISpike_wt_mean)
+
+idx_meta_genomecov_filtered_lysis <- idx_meta_genomecov_filtered_lysis %>% 
+  mutate(COISpike_sum = COISpikeElaterid + COISpikeMordellid) %>% 
+  relocate(COISpike_sum, .after = COISpikeMordellid)
+
+hist(idx_meta_genomecov_filtered_lysis$COISpike_sum)
 
 idx_meta_genomecov_filtered_lysis <- idx_meta_genomecov_filtered_lysis %>% 
   mutate(lysis_ratio = aliquot / lysisBufferml) %>% 
@@ -163,7 +180,7 @@ _Quasi-probability transformation_
 Using mutate(across()) to apply the log(FSL) correction and the quasiprobability transformation
 ```{r FSL correction and qp transformation}
 idx_meta_genomecov_filtered_lysis_FSL <- idx_meta_genomecov_filtered_lysis %>% 
-  mutate(across(contains("__"), ~ .x /(spike_wt_mean*lysis_ratio))) %>% 
+  mutate(across(contains("__"), ~ .x /(COISpike_wt_mean*lysis_ratio))) %>% 
   mutate(across(contains("__"), ~ log(.x + 0.001))) 
 
 # F/SL correction from Ji et al. (2020) section 2.5.1
@@ -201,9 +218,9 @@ remove some non-useful columns
 ```{r}
 colselect <- function(inputdf) {
   outputdf <- inputdf %>%
-    select(-lysisBufferml, -aliquot, -lysis_ratio, 
+    select(-lysisBufferml, -aliquot, 
          -COISpikeElaterid, -COISpikeMordellid, 
-         -spike_wt_mean, -lysis_batch, -site_trap_period
+         -COISpike_wt_mean, -lysis_batch, -site_trap_period
          ) %>%
     relocate(insideHJA, oldGrowthIndex, .after = clearcut)
   return(outputdf)
@@ -352,3 +369,4 @@ git2r::repository(here::here())
 # environment doc
 envDocument::env_doc("table", git = FALSE) 
 ```
+</details>

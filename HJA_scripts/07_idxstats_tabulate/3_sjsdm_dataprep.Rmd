@@ -5,26 +5,23 @@ date: "30/08/2020"
 output: html_document
 ---
 
-Prepares datasets for jSDM analysis
+Prepares datasets for sjSDM analysis
 
-1.  Reads in one of the otuenv datasets output by 2.1_FSL_correction.Rmd (currently M1S1). This file has been log(FSL)-corrected, subset to M1S1, M2S1, M1S2, M2S2, and saved as separate csv files.
+1.  Reads in one of the otuenv sub-datasets output by 2.1_FSL_correction.Rmd (currently M1S1). This file has been log(FSL)-corrected, subset to M1S1, M2S1, M1S2, or M2S2, and saved as a csv file:
+    otuenv_M1S1_minimap2_20200929_kelpie20200927.csv
+    otuenv_M2S1_minimap2_20200929_kelpie20200927.csv
+    otuenv_M1S2_minimap2_20200929_kelpie20200927.csv
+    otuenv_M2S2_minimap2_20200929_kelpie20200927.csv
 
 2.  Creates a scaled XY file for sampling locations
 
-3.  Creates two sample X OTU tables, limited to OTUs that appear \>= minocc times (currently 5), one with quasiprobabilities and one with presence-absence
+3.  Creates two sample X OTU tables, limited to OTUs that appear >=minocc times (currently 5), one with quasiprobabilities and one with presence-absence:  otu.pa.csv and otu.qp.csv
 
-4.  
+4.  Create an environmental covariates table from a subset of all the env covariates, some of which are averaged, some are logged, and numeric ones are scaled
 
-5.  saves the files to a data folder in the sjSDM folder
+5.  Save the files to a data folder in the sjSDM folder
 
 ```{r setup, eval=TRUE, include=TRUE}
-# copy the following into each script   
-knitr::opts_chunk$set(
-	message = FALSE,
-	warning = FALSE,
-	include = FALSE
-)
-
 # script-specific libraries
 suppressPackageStartupMessages({
   library(corrplot)
@@ -45,6 +42,7 @@ suppressPackageStartupMessages({
   library(ggeffects)
   library(viridis)
   library(arsenal) # for summary(comparedf())
+  library(waldo) # for compare()
   library(sjmisc) # for rotate_df()
   library(envDocument)
   library(inspectdf)
@@ -120,70 +118,81 @@ min(colSums(otu.pa.csv)) == minocc # should be TRUE
 
 log and scale env variables
 
-
-
-```{r create env.scale.csv}
+```{r create scale.env.csv}
 # default is all environmental covariates: GIS + MS + Lidar
 
 scale.env.csv <- otuenv %>% 
   select(!contains("__")) %>% # remove OTUs
-  select(-SiteName, -trap, -period, -UTM_E, -UTM_N, 
-         -clearcut, -oldGrowthIndex, -starts_with("nor")) %>% 
-  mutate(insideHJA = ifelse(insideHJA == "yes", 1, 0)) 
+  select(-SiteName, -trap, -period, -UTM_E, -UTM_N, -lysis_ratio, 
+         -COISpike_sum, -starts_with("nor"))  # %>% 
+  mutate(insideHJA = ifelse(insideHJA == "yes", 1, 0)) %>% 
+  mutate(clearcut = ifelse(clearcut == "yes", 1, 0))
 
 names(scale.env.csv)
-#  [1] "insideHJA"          "elevation_m"        "canopyHeight_m"    
-#  [4] "minT_annual"        "maxT_annual"        "precipitation_mm"  
-#  [7] "distToRoad_m"       "distToStream_m"     "YrsSinceDist"      
-# [10] "B1_20180717"        "B2_20180717"        "B3_20180717"       
-# [13] "B4_20180717"        "B5_20180717"        "B6_20180717"       
-# [16] "B7_20180717"        "B10_20180717"       "B11_20180717"      
-# [19] "NDVI_20180717"      "EVI_20180717"       "B_20180717"        
-# [22] "G_20180717"         "W_20180717"         "B1_20180726"       
-# [25] "B2_20180726"        "B3_20180726"        "B4_20180726"       
-# [28] "B5_20180726"        "B6_20180726"        "B7_20180726"       
-# [31] "B10_20180726"       "B11_20180726"       "NDVI_20180726"     
-# [34] "EVI_20180726"       "B_20180726"         "G_20180726"        
-# [37] "W_20180726"         "B1_20180802"        "B2_20180802"       
-# [40] "B3_20180802"        "B4_20180802"        "B5_20180802"       
-# [43] "B6_20180802"        "B7_20180802"        "B10_20180802"      
-# [46] "B11_20180802"       "NDVI_20180802"      "EVI_20180802"      
-# [49] "B_20180802"         "G_20180802"         "W_20180802"        
-# [52] "B1_20180818"        "B2_20180818"        "B3_20180818"       
-# [55] "B4_20180818"        "B5_20180818"        "B6_20180818"       
-# [58] "B7_20180818"        "B10_20180818"       "B11_20180818"      
-# [61] "NDVI_20180818"      "EVI_20180818"       "B_20180818"        
-# [64] "G_20180818"         "W_20180818"         "mean.NDVI"         
-# [67] "mean.EVI"           "mean.bright"        "mean.green"        
-# [70] "mean.wet"           "mean.NDVI.scale"    "mean.EVI.scale"    
-# [73] "mean.green.scale"   "mean.bright.scale"  "mean.wet.scale"    
-# [76] "l_Cover_2m_max"     "l_Cover_2m_max_all" "l_Cover_2m_4m"     
-# [79] "l_Cover_2m_4m_all"  "l_Cover_4m_16m"     "l_p25"             
-# [82] "l_p25_all"          "l_p95"              "l_p95_all"         
-# [85] "l_rumple"      
+#  [1] "clearcut"           "insideHJA"          "oldGrowthIndex"    
+#  [4] "elevation_m"        "canopyHeight_m"     "minT_annual"       
+#  [7] "maxT_annual"        "precipitation_mm"   "distToRoad_m"      
+# [10] "distToStream_m"     "YrsSinceDist"       "B1_20180717"       
+# [13] "B2_20180717"        "B3_20180717"        "B4_20180717"       
+# [16] "B5_20180717"        "B6_20180717"        "B7_20180717"       
+# [19] "B10_20180717"       "B11_20180717"       "NDVI_20180717"     
+# [22] "EVI_20180717"       "B_20180717"         "G_20180717"        
+# [25] "W_20180717"         "B1_20180726"        "B2_20180726"       
+# [28] "B3_20180726"        "B4_20180726"        "B5_20180726"       
+# [31] "B6_20180726"        "B7_20180726"        "B10_20180726"      
+# [34] "B11_20180726"       "NDVI_20180726"      "EVI_20180726"      
+# [37] "B_20180726"         "G_20180726"         "W_20180726"        
+# [40] "B1_20180802"        "B2_20180802"        "B3_20180802"       
+# [43] "B4_20180802"        "B5_20180802"        "B6_20180802"       
+# [46] "B7_20180802"        "B10_20180802"       "B11_20180802"      
+# [49] "NDVI_20180802"      "EVI_20180802"       "B_20180802"        
+# [52] "G_20180802"         "W_20180802"         "B1_20180818"       
+# [55] "B2_20180818"        "B3_20180818"        "B4_20180818"       
+# [58] "B5_20180818"        "B6_20180818"        "B7_20180818"       
+# [61] "B10_20180818"       "B11_20180818"       "NDVI_20180818"     
+# [64] "EVI_20180818"       "B_20180818"         "G_20180818"        
+# [67] "W_20180818"         "mean.NDVI"          "mean.EVI"          
+# [70] "mean.bright"        "mean.green"         "mean.wet"          
+# [73] "mean.NDVI.scale"    "mean.EVI.scale"     "mean.green.scale"  
+# [76] "mean.bright.scale"  "mean.wet.scale"     "l_Cover_2m_max"    
+# [79] "l_Cover_2m_max_all" "l_Cover_2m_4m"      "l_Cover_2m_4m_all" 
+# [82] "l_Cover_4m_16m"     "l_p25"              "l_p25_all"         
+# [85] "l_p95"              "l_p95_all"          "l_rumple"         
 
 corrplot(cor(scale.env.csv), method = "ellipse", type = "lower", tl.cex = 0.5)
 
 # GIS + MS + LiDAR:  gismslidar
-msdate <- c("20180717") # alternative "20180726" # date of MS data 
-
-logenv <- c("distToRoad_m", "distToStream_m", "YrsSinceDist") # 3 variables for which the short distances are more important than long distances
-
-# select, scale, and optionally log some env covariates
+# average, optionally log, select, and scale env covariates
+# using a set of covariates chosen by Christian
 scale.env.csv <- scale.env.csv %>%
-  select(insideHJA, elevation_m, canopyHeight_m, minT_annual, precipitation_mm, distToRoad_m, distToStream_m, YrsSinceDist, contains(all_of(msdate)), starts_with("mean."), l_Cover_2m_max, l_Cover_2m_4m, l_Cover_4m_16m, l_p25, l_p95, l_rumple) %>% 
-    select(!ends_with(".scale")) %>% 
-    mutate(across(all_of(logenv), ~log(.x + 0.001))) %>% # optionally comment out
-    mutate(across(everything(), scale))
+    mutate(B1_mean = rowMeans(across(starts_with("B1_")))) %>% 
+    mutate(B4_mean = rowMeans(across(starts_with("B4_")))) %>%  
+    mutate(lg_DistStream = log(distToStream_m + 0.001)) %>% 
+    mutate(lg_DistRoad = log(distToRoad_m + 0.001)) %>% 
+    mutate(lg_YrsDisturb = log(YrsSinceDist + 0.001)) %>% 
+    mutate(lg_cover2m_max = log(l_Cover_2m_max + 0.001)) %>% 
+    mutate(lg_cover2m_4m = log(l_Cover_2m_4m + 0.001)) %>%
+    mutate(lg_cover4m_16m = log(l_Cover_4m_16m + 0.001)) %>%   
+    select(clearcut, insideHJA, oldGrowthIndex, elevation_m, canopyHeight_m, precipitation_mm, mean.NDVI, mean.EVI, mean.green, mean.wet, l_p25, l_rumple, B1_mean, B4_mean, lg_DistStream, lg_DistRoad, lg_YrsDisturb, lg_cover2m_max, lg_cover2m_4m, lg_cover4m_16m) %>% 
+    mutate(across(where(is.numeric), scale))
 
-corrplot(cor(scale.env.csv), method = "ellipse", type = "lower", tl.cex = 0.5)
+# msdate <- c("20180717") # alternative "20180726" # date of MS data 
+# logenv <- c("distToRoad_m", "distToStream_m", "YrsSinceDist") # 3 variables for which the short distances are more important than long distances
+# scale.env.csv <- scale.env.csv %>%
+#   select(insideHJA, elevation_m, canopyHeight_m, minT_annual, precipitation_mm, distToRoad_m, distToStream_m, YrsSinceDist, contains(all_of(msdate)), starts_with("mean."), l_Cover_2m_max, l_Cover_2m_4m, l_Cover_4m_16m, l_p25, l_p95, l_rumple) %>% 
+#     select(!ends_with(".scale")) %>% 
+#     mutate(across(all_of(logenv), ~log(.x + 0.001))) %>% # optionally comment out
+#     mutate(across(everything(), scale))
+
+corrplot(cor(scale.env.csv[, -c(1:2)]), method = "ellipse", type = "lower", tl.cex = 0.5)
 ```
+
 
 These files are used as input to the sjsdm_cv() and sjsdm() code
 
 ```{r save data files}
 # set variables
-prepdate <- 20201119 # data prep date
+prepdate <- 20201205 # data prep date
 minocc <- 5 # minimum occupancy (incidence) per OTU
 envvar <- "gismslidar" # gismslidarmin, gismslidar, gis, ms, lidar, mslidar
 (datafolder <- glue("data_{prepdate}_{minocc}minocc_{envvar}"))
@@ -201,8 +210,8 @@ write_csv(otu.pa.csv, here("..", "..", "sjSDM", "R-git", "data", "kelpie_data", 
 
 Upload the datafiles to ~/Hja_sjsdm/
 
-<details>
-<summary>Reproducibility receipt</summary>
+<details><summary>Reproducibility receipt</summary>
+
 ```{r}
 # datetime
 Sys.time()
@@ -212,3 +221,5 @@ git2r::repository(here::here())
 
 env_doc("table", git = FALSE)
 ```
+
+</details>

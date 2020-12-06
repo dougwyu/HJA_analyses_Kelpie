@@ -1,0 +1,448 @@
+---
+title: "idxstats_cbind"
+author: "Douglas Yu"
+date: "28/01/2018"
+output: html_document
+---
+
+This file takes the idxstats.txt outputs of samtools and bedtools (idxstats, genomecov) and combines them with the sample metadata, does some sanity checks, and removes failed samples
+
+This version is only for the dilution_series samples that i mapped on 20200221 (also using the 20200214 Kelpie OTUs). The purpose of this dataset is to check if the spike-in worked. Multiple samples were diluted by 0.8 in series to make between 4 to 6 samples in a series. If the spike-in worked, then we should see OTU counts vary with a slope ~ 0.8 across the samples. Then we conclude that we can 
+
+This code has only been checked on macOS.
+
+```{r load packages}
+# rm(list=ls())
+library(tidyverse)
+library(conflicted)
+  conflict_prefer("mutate", "dplyr", quiet = TRUE)
+  conflict_prefer("select", "dplyr", quiet = TRUE)
+  conflict_prefer("summarise", "dplyr", quiet = TRUE)
+  conflict_prefer("filter", "dplyr", quiet = TRUE)
+  conflict_prefer("first", "dplyr", quiet = TRUE)
+  conflict_prefer("here", "here", quiet = TRUE)
+  conflict_prefer("separate", "tidyr", quiet = TRUE)
+  conflict_prefer("unite", "tidyr", quiet = TRUE)
+library(readxl)
+library(lubridate)
+library(knitr)
+library(beepr)
+library(arsenal) # for summary(comparedf())
+library(sjmisc) # for rotate_df()
+library(pivottabler)
+library(cowplot)
+library(patchwork)
+    
+# Provide real numbers, not scientific notation.
+options(scipen = 999)
+
+sessionInfo()
+```
+
+
+```{r notify function}
+# function to allow macOS system notifications at end of a long command (read genomecov files)
+notify <- function(msgString='Message from R', titleString='Message from R', speakIt=FALSE) {
+    cmd <- paste('terminal-notifier -message ', '"', msgString, '"  -title "', titleString, '"', sep='')
+    system(cmd)
+
+    if (speakIt) {
+        system(paste('say', msgString))
+    }
+}
+```
+
+
+```{r set paths and filenames}
+# setwd("~/Dropbox/Working_docs/Luo_Mingjie_Oregon/Kelpie_maps")
+
+# samtoolsfilter <- "F2308_f0x2" # f0x2 is for PROPER PAIR, which might be too much to ask of the short 418 bp target
+samtoolsfilter <- "F2308" # F2308 filter only
+samtoolsqual <- "q48"
+
+# this is the enclosing folder around the idxstats and genomecov files for a given set of mappings
+# outputs_F2308_f0x2_q48_minimap2_outputs_20200221_kelpie_20200214_BF3BR2_derep_filtered_geneious_vsearch97_min2_spikes
+# the samtoolsfilter value does not change in the folder name, always "F2308_f0x2"
+idxstatsgenomecovfolder <- paste0("outputs_F2308_f0x2_", samtoolsqual, "_minimap2_outputs_20200221_kelpie_20200214_BF3BR2_derep_filtered_geneious_vsearch97_min2_spikes_BWA11_dilutionseries")  
+
+# this is where i store the outputs of this script
+# mkdir outputs_minimap2_20200221_F2308_f0x2_q48_kelpie20200214_vsearch97
+outputidxstatstabulatefolder <- "outputs_minimap2_20200221_F2308_f0x2_q48_kelpie20200214_vsearch97_BWA11_dilutionseries"
+
+idxstatsfile <- paste0("*", samtoolsfilter, "_", samtoolsqual, "_sorted\\.bam_idxstats\\.txt")  # idxstatsfile
+    # e.g. "*F2308_f0x2_q1_sorted.bam_idxstats.txt"
+    # e.g. 076361-M1-S1_BDSW190602952-1a_F2308_f0x2_q48_sorted.bam_idxstats.txt
+# choose the filename suffix to match the desired samtools filter. precede with * as a wildcard. \\ is used to escape the . before txt (because it is read with grep as "any character" in list.files() below)
+
+genomecovfile <- paste0("*", samtoolsfilter, "_", samtoolsqual, "_sorted_genomecov_d\\.txt\\.gz")  
+    # e.g. _F2308_f0x2_q48_sorted_genomecov_d.txt.gz
+    # e.g. *F2308_f0x2_q1_sorted_genomecov_d\\.txt\\.gz
+# choose the filename pattern to match the desired samtools filter. precede with * as a wildcard for the sample names (e.g. Sample_IPO3916_A10_).      
+
+samplemetadatafolder <- "../HJA_scripts/8_reference_sequences_datasets/"  # this is the enclosing folder around the sample metadata spreadsheet
+
+samplemetadatafilename <- "shotgun_samples_HJAndrews_Malaisetraps_20200108.xlsx"
+
+assignedtaxonomies <- "~/Dropbox/Working_docs/Luo_Mingjie_Oregon/HJA_scripts/5_taxonomy/kelpie_20191217_vsearch97_filtered_geneious.xlsx"
+```
+
+
+Read in all idx_stats files, add metadata to columns, and merge into one big table in long format (vertically by time)
+```{r 1. read and tabulate idx files}
+# produces a list of unique idx filenames (full filenames but no path)
+# use this command if i have a particular folder2 value (e.g. BWA02) to pull from
+# idx_files <- list.files(file.path(idxstatsgenomecovfolder, folder2), pattern = "*F2308_f0x2_q1_sorted.bam_idxstats\\.txt")
+
+# make sure to unzip the output folder:  outputs_F2308_f0x2_q48_minimap2_outputs_20200221_kelpie_20200214_BF3BR2_derep_filtered_geneious_vsearch97_min2_spikes.tar.gz
+
+cat("idxstatsgenomecoverfolder is: ", idxstatsgenomecovfolder)
+cat("idxstatsfile search pattern is: ", idxstatsfile)
+cat(genomecovfile)
+
+idx_files <- list.files(Sys.glob(file.path("..", "..", "Kelpie_maps", idxstatsgenomecovfolder)), pattern = idxstatsfile, full.names = TRUE)
+
+head(idx_files); cat("    ", length(idx_files), "total files")
+    # Sys.glob:  [1] "outputs_F2308_f0x2_q48_minimap2_outputs_20191219_kelpie2091217_vsearch97_filtered_geneious_filtered/076361-M1-S1_BDSW190602952-1a_F2308_f0x2_q48_sorted.bam_idxstats.txt" and so on
+    # list.files is used to look for files matching "*F2308_f0x2_q1_sorted.bam_idxstats\\.txt"
+    # full.names = TRUE is used to return the pathnames
+    # \\ is used to escape the . before txt (because it is otherewise read with grep as "any character". R needs a second \)
+
+# column names of idx files
+idx_cols <- c("mitogenome", "mt_length", "mapped_reads", "unmapped_reads")
+
+# function to read_tsv the file and extract metadata from the filename and pathname
+loadFile1 <- function(x) {
+    # read in the four columns and store in df
+    df <- read_tsv(x,   # previously file.path(x)
+    col_names = idx_cols, na = "NA",
+    col_types = cols(
+        mitogenome = col_character(), # calling the target sequence 'mitogenome' is from the SPIKEPIPE paper. really a barcode
+        mt_length = col_integer(),
+        mapped_reads = col_integer(),
+        unmapped_reads = col_integer()
+        ))
+
+    # read in filename, extract and sub in the first bit of the name, remove any filepaths (using basename) and store in df$sample.  example filename:  
+    # old: SM-PG-M1-S2_BDSW190603195-1a_F2308_f0x2_q48_sorted.bam_idxstats.txt
+    # 123545-M1-S1-A_BDSW202056795-1a_F2308_q48_sorted.bam_idxstats.txt
+    # HOBO216-M1-S1-B_BDSW202056824-1a_F2308_q48_sorted.bam_idxstats.txt
+
+  df$site <- sub("(^[0-9, A-Z, a-z]+)-(M[1-2]{1})-(S[1-2])-([A-Z])_[0-9, A-Z, a-z, -]+_([\\w]+)_(q[0-9]{2})_sorted.bam_idxstats.txt", "\\1", basename(x), perl=TRUE)
+# #     # extract site number from filename
+# #     # \\w any letter, digit, underscore
+# #     # \\D any non-digit, \\d any digit
+# # 
+    df$trap <- sub("(^[0-9, A-Z, a-z]+)-(M[1-2]{1})-(S[1-2])-([A-Z])_[0-9, A-Z, a-z, -]+_([\\w]+)_(q[0-9]{2})_sorted.bam_idxstats.txt", "\\2", basename(x), perl=TRUE)
+# #     # extract trap number from filename
+# #     # \\w any letter, digit, underscore
+# # 
+    df$period <- sub("(^[0-9, A-Z, a-z]+)-(M[1-2]{1})-(S[1-2])-([A-Z])_[0-9, A-Z, a-z, -]+_([\\w]+)_(q[0-9]{2})_sorted.bam_idxstats.txt", "\\3", basename(x), perl=TRUE)
+# #     # extract time period from filename
+# # 
+    df$dilution <- sub("(^[0-9, A-Z, a-z]+)-(M[1-2]{1})-(S[1-2])-([A-Z])_[0-9, A-Z, a-z, -]+_([\\w]+)_(q[0-9]{2})_sorted.bam_idxstats.txt", "\\4", basename(x), perl=TRUE)
+# #     # extract trap number from filename
+# #     # \\w any letter, digit, underscore
+# # 
+    df$samtools_filter <- sub("(^[0-9, A-Z, a-z]+)-(M[1-2]{1})-(S[1-2])-([A-Z])_[0-9, A-Z, a-z, -]+_([\\w]+)_(q[0-9]{2})_sorted.bam_idxstats.txt", "\\5", basename(x), perl=TRUE)
+# #     # extract samtools filter parameters from filename
+# # 
+    df$mapqual_filter <- sub("(^[0-9, A-Z, a-z]+)-(M[1-2]{1})-(S[1-2])-([A-Z])_[0-9, A-Z, a-z, -]+_([\\w]+)_(q[0-9]{2})_sorted.bam_idxstats.txt", "\\6", basename(x), perl=TRUE)
+#     # extract mapping quality threshlold from filename
+# 
+    df$pathname <- x
+#     # store full pathname in df$pathname
+
+    # output is df
+    df
+ }
+
+# lapply the loadFile() function to all of the idx_files, save the output in idx as a list
+# I sometimes include package name in the command (purrr::map) when the command is generic enough that it might collide with command in another package. this is programming tic.
+idx <- purrr::map(idx_files, loadFile1) # map is equivalent to lapply 
+  # or could use map_dfr() instead of map followed by do.call(rbind, idx)
+
+# Code from:  Location 6472 in Buffalo, Vince. Bioinformatics Data Skills: Reproducible and Robust Research with Open Source Tools (Kindle Location 6493). O'Reilly Media. Kindle Edition.
+
+# combine lists into a single dataframe (using do.call(rbind, idx)), reorder columns, delete unmapped_reads column, and remove rows that have "*" in the mitogenome field (the last line of each idxstats table)
+idx <- do.call(rbind, idx) %>% 
+    dplyr::select(mitogenome, mt_length, mapped_reads, site, trap, period, dilution, samtools_filter, mapqual_filter, pathname) %>%
+    dplyr::filter(mitogenome != "*")
+
+# sanity checks
+idx %>% distinct(site) %>% count()  # there should be 7 idx filenames
+idx %>% distinct(trap) %>% count()  # there should be 2 trap names
+idx %>% distinct(trap)  # M1, M2
+idx %>% distinct(dilution)  # A,B,C,D,E,F
+idx %>% distinct(site, dilution)  # 33
+idx %>% distinct(pathname) %>% count()  # number of distinct values of filenames:  33  
+idx %>% distinct(samtools_filter) %>% count() # number of distinct values of samtools_filter: should be 1
+idx %>% distinct(samtools_filter) # should look something like:  F2308_f0x2 or F2308, depending on samtoolsfilter
+
+# sanity check:  7 sites
+site_list_idx <- idx %>% 
+  count(site, trap, period) %>% 
+  arrange(desc(n))
+
+```
+
+
+```{r 4. read in genomecov_d.txt.gz files and add to idx_meta}
+# genomecovfile <- "*F2308_f0x2_q1_sorted_genomecov_d\\.txt\\.gz"  # choose the filename pattern to match the desired samtools filter. precede with * as a wildcard for the sample names (e.g. Sample_IPO3916_A10_).      
+# \\ is used to escape the . before txt (because it is read with grep as "any character" in list.files()
+
+cat("Pattern search is for: ", genomecovfile)
+
+genomecov_files <- list.files(Sys.glob(file.path("..", "..", "Kelpie_maps", idxstatsgenomecovfolder)), pattern = genomecovfile, full.names = TRUE)
+
+head(genomecov_files); cat("    ", length(genomecov_files), "total files")
+    # Sys.glob is used to generate:  
+        # [1] "outputs_F2308_f0x2_q48_minimap2_outputs_20191219_kelpie2091217_vsearch97_filtered_geneious_filtered/076361-M1-S1_BDSW190602952-1a_F2308_f0x2_q48_sorted_genomecov_d.txt.gz"
+    # list.files is used to look in those folders for files matching "*F2308_f0x2_q1_sorted_genomecov_d\\.txt\\.gz"
+    # full.names = TRUE is used to return the pathnames
+    # \\ is used to escape the . before txt and gz (because it is read with grep as "any character" in list.files()
+
+# column names of genomecov_files
+columnnames <- c("mitogenome", "position", "coverage")
+
+# function to read_tsv the file
+loadFile2 <- function(x) {
+    df <- read_tsv(gzfile(x),   
+        # e.g. "HOBO-064-M1-S1_BDSW190603110-1a_F2308_f0x2_q48_sorted_genomecov_d.txt.gz"
+    col_names = columnnames, na = "NA",
+    # originally, i hand-set col_types, but very large coverage numbers are returned in sci notation by bedtools and this requires col_double(). So I let R parse column types. R is able to read sci notation.
+    # If i wanted to set col_types by hand, i should use col_double():
+    # col_types = cols(
+    #     mitogenome = col_character(),
+    #     position = col_integer(),
+    #     coverage = col_double()),
+    trim_ws = TRUE
+    )
+    
+# read in filename, extract and sub in the first bit of the name, remove any filepaths (using basename) and store in df$sample. example: 123545-M1-S1-D_BDSW202056798-1a_F2308_q48_sorted_genomecov_d.txt.gz
+        df$site <- sub("(^[0-9, A-Z, a-z, -]+)-(M[1-2]{1})-(S[1-2])-([A-Z])_[0-9, A-Z, a-z, -]+_([\\w]+)_(q[0-9]{2})_sorted_genomecov_d.txt.gz", "\\1", basename(x), perl=TRUE) 
+        # #     # extract site number from filename 
+        # #     # \\w any letter, digit, underscore 
+        # #     # \\D any non-digit, \\d any digit 
+ 
+        df$trap <- sub("(^[0-9, A-Z, a-z, -]+)-(M[1-2]{1})-(S[1-2])-([A-Z])_[0-9, A-Z, a-z, -]+_([\\w]+)_(q[0-9]{2})_sorted_genomecov_d.txt.gz", "\\2", basename(x), perl=TRUE)
+    # #     # extract trap number from filename
+    # #     # \\w any letter, digit, underscore
+
+        df$period <- sub("(^[0-9, A-Z, a-z, -]+)-(M[1-2]{1})-(S[1-2])-([A-Z])_[0-9, A-Z, a-z, -]+_([\\w]+)_(q[0-9]{2})_sorted_genomecov_d.txt.gz", "\\3", basename(x), perl=TRUE)
+    # #     # extract time period from filename
+    # # 
+        df$dilution <- sub("(^[0-9, A-Z, a-z, -]+)-(M[1-2]{1})-(S[1-2])-([A-Z])_[0-9, A-Z, a-z, -]+_([\\w]+)_(q[0-9]{2})_sorted_genomecov_d.txt.gz", "\\4", basename(x), perl=TRUE)
+    # #     # extract samtools filter parameters from filename
+    # # 
+        df$samtools_filter <- sub("(^[0-9, A-Z, a-z, -]+)-(M[1-2]{1})-(S[1-2])-([A-Z])_[0-9, A-Z, a-z, -]+_([\\w]+)_(q[0-9]{2})_sorted_genomecov_d.txt.gz", "\\5", basename(x), perl=TRUE)
+    # #     # extract samtools filter parameters from filename
+    # # 
+        df$mapqual_filter <- sub("(^[0-9, A-Z, a-z, -]+)-(M[1-2]{1})-(S[1-2])-([A-Z])_[0-9, A-Z, a-z, -]+_([\\w]+)_(q[0-9]{2})_sorted_genomecov_d.txt.gz", "\\6", basename(x), perl=TRUE)
+    #     # extract mapping quality threshlold from filename
+
+    df$pathname_genomecov <- x
+    # store full pathname in df$pathname
+
+    # originally, we used coefficient of variation to calculate coverage, but pct_coverage is better because at high pct_coverage, CV can *increase*, causing some high coverage mappings to be deleted wrongly.  I leave the calculations of stdev and coefvar in. 
+    df <- df %>% 
+      dplyr::group_by(mitogenome) %>%
+      summarise(sum_coverage = sum((as.integer(coverage))),
+                mean_coverage = mean(as.integer(coverage)),
+                stddev = sd(as.integer(coverage)),
+                coefvar = sd(as.integer(coverage))/mean(as.integer(coverage)),
+                length = n(),
+                pct_coverage = sum(as.integer(coverage)>0)/n(), # % of positions that have 1 or more reads mapped
+                site = first(site),
+                trap = first(trap),
+                period = first(period),
+                dilution = first(dilution),
+                samtools_filter = first(samtools_filter),
+                mapqual_filter = first(mapqual_filter),
+                pathname_genomecov = first(pathname_genomecov)
+                )
+
+    # output is df
+    df
+} 
+ 
+# THIS STEP REQUIRES ~ 1 min for barcodes
+# lapply loadFile2() function to all of the genomecov_files, save the output in genomecovfiles as a list 
+# map is equivalent to lapply 
+genomecoverages_summ <- purrr::map(genomecov_files, loadFile2); notify("Your loadfile2 function has finally finished!", "Message from R", speakIt=TRUE) 
+ 
+# rbind the list into a dataframe 
+genomecoverages_summ <- do.call(rbind, genomecoverages_summ) 
+```
+
+
+```{r sanity checks}
+genomecoverages_summ %>% distinct(site) %>% count()  # there should be 7 genomecov filenames
+
+# sanity check:  all count values should 1213 (the number of Kelpie OTUs + 2 spike species)
+site_list_gcov <- genomecoverages_summ %>% 
+  count(site, trap, period, dilution) %>% 
+  arrange(desc(n))
+```
+
+
+```{r join genomecov and idx files}
+# left_join genomecoverages_summ to idx_meta
+idx_genomecov <- left_join(idx, genomecoverages_summ) # R message:  Joining, by = c("mitogenome", "site", "trap", "period", "dilution", "samtools_filter", "mapqual_filter")
+
+idx_genomecov <- idx_genomecov %>% 
+  select(mitogenome, mt_length, mapped_reads, pct_coverage, site, trap, period, dilution, samtools_filter, mapqual_filter, everything()) %>% 
+  arrange(site, trap, period, dilution)
+
+# use grepl() to find mitogenome names that are COI spike names
+# this regex works for both the mitogenome and barcode datasets
+idx_genomecov$COI_Species <- if_else(grepl("COI_SPIKE", idx_genomecov$mitogenome), "COI_Spike", "Oregon_Species") 
+
+# names(idx_meta_genomecov)
+# reorder the columns for convenience
+idx_genomecov <- idx_genomecov %>% 
+  select(mitogenome, COI_Species, everything()) 
+
+# sanity check:  all count values should 1211 (the number of Kelpie OTUs) 
+species_list <- idx_genomecov %>% 
+  filter(COI_Species != "COI_Spike") %>% 
+  count(site, trap, period, dilution) %>% 
+  arrange(desc(n))
+
+names(idx_genomecov)
+#  [1] "COI_Species"        "mitogenome"         "mt_length"          "mapped_reads"  
+#  [5] "pct_coverage"       "site"               "trap"               "period"        
+#  [9] "samtools_filter"    "mapqual_filter"     "pathname"           "index"         
+# [13] "fastq_files"        "sample"             "UTM_E"              "UTM_N"         
+# [17] "Note"               "sum_coverage"       "mean_coverage"      "stddev"        
+# [21] "coefvar"            "length"             "pathname_genomecov"
+```
+
+Sometimes, there might be failed samples with no mapped reads for COI_spikes. This did not happen here, but i check and leave the code in anyway. 
+```{r}
+# calculate sum of all COI spike reads for each sample. 
+sum_idx_genomecov <- idx_genomecov %>%
+    group_by(site, trap, period, dilution, COI_Species) %>%
+    summarise_at(vars(mapped_reads), ~sum(as.numeric(.))) %>%
+    arrange(COI_Species, site, trap, period, dilution) %>% 
+  unite(col = site_trap_period_dil, site, trap, period, dilution, remove = FALSE)
+
+# visual inspection reveals no sample that has 0 COI_spike mapped reads. 
+sample_names <- sum_idx_genomecov %>% 
+    dplyr::filter(COI_Species == "COI_Spike" && mapped_reads < 1) %>% 
+    dplyr::select(site_trap_period_dil) %>% 
+    distinct(site_trap_period_dil); View(sample_names)
+
+samples_to_remove <- sample_names %>% 
+  dplyr::pull(site_trap_period_dil) # pull out a single variable
+samples_to_remove # 1 sample to remove
+
+idx_genomecov <- idx_genomecov %>%
+    unite(col = site_trap_period_dil, site, trap, period, dilution, remove = FALSE) %>% 
+    filter(!site_trap_period_dil %in% samples_to_remove) 
+
+# sanity check:  33 samples, which is correct since i started with 33 samples, and i removed 0 samples. 
+idx_genomecov %>% 
+    distinct(site_trap_period_dil) %>% 
+    count()  # number of distinct values of site_trap_period
+```
+
+
+Spike-in correction, creating a new column mapped_reads_corr
+```{r}
+coispike <- idx_genomecov %>% 
+  filter(COI_Species == "COI_Spike") %>% 
+  select(mitogenome, site_trap_period_dil, site, trap, period, dilution, mapped_reads, pct_coverage) %>% 
+  group_by(site_trap_period_dil) %>% 
+  summarise(mapped_reads = sum(mapped_reads))
+
+idx_genomecov_sp <- idx_genomecov %>% 
+  filter(COI_Species == "Oregon_Species")
+
+idx_genomecov_corr <- idx_genomecov_sp %>% 
+  left_join(coispike, by = "site_trap_period_dil") %>% 
+  select(site_trap_period_dil, site, trap, period, dilution, mitogenome, mt_length, mapped_reads = mapped_reads.x, spike_reads = mapped_reads.y, everything()) %>% 
+  mutate(
+    mapped_reads_corr = round(100 * (mapped_reads / spike_reads), 0)
+  ) %>% 
+  select(site_trap_period_dil, mitogenome, site, trap, period, dilution, mt_length, mapped_reads, mapped_reads_corr, spike_reads, everything())
+```
+
+
+Sanity checks
+```{r save idx_genomecov_corr}
+# there should be a 1 in all rows of column "n"
+idxstats_by_site_trap_period_dil <- idx_genomecov_corr %>% 
+    dplyr::group_by(site_trap_period_dil) %>% 
+    dplyr::distinct(site_trap_period_dil) %>% 
+    dplyr::count() %>% 
+    dplyr::arrange(desc(n)); View(idxstats_by_site_trap_period_dil)
+
+# there should be 1211 in all rows of column "n"
+idxstats_by_mitogenome <- idx_genomecov_corr %>% 
+    dplyr::group_by(site_trap_period_dil) %>% 
+    dplyr::distinct(mitogenome) %>% 
+    dplyr::count() %>% 
+    dplyr::arrange(desc(n)); View(idxstats_by_mitogenome)
+
+# save F2308 filter only
+# write_tsv(idx_genomecov_corr, gzfile(file.path("..", "..", "Kelpie_maps", outputidxstatstabulatefolder, "idx_genomecov_corr_F2308_minimap20200221_kelpie20200214.txt.gz"))) # output file
+# save F2308_f0x2 filter
+# write_tsv(idx_genomecov_corr, gzfile(file.path(outputidxstatstabulatefolder, "idx_genomecov_corr_F2308_f0x2_minimap20200221_kelpie20200214.txt.gz"))) # output file
+
+# to import the datafile
+idx_genomecov_corr <- read_tsv(file.path("..", "..", "Kelpie_maps", outputidxstatstabulatefolder, "idx_genomecov_corr_F2308_minimap20200221_kelpie20200214.txt.gz"))
+
+# idx_genomecov_corr <- read_tsv(file.path("..", "..", "Kelpie_maps", outputidxstatstabulatefolder, "idx_genomecov_corr_F2308_f0x2_minimap20200221_kelpie20200214.txt.gz"))
+```
+
+
+Make graphs of the dilution effect
+```{r}
+idx_genomecov_corr <- idx_genomecov_corr %>% 
+  mutate(
+    dilu.tion_num = case_when(
+      dilution == "A" ~ 1,
+      dilution == "B" ~ .8,
+      dilution == "C" ~ .64,
+      dilution == "D" ~ .51,
+      dilution == "E" ~ .41,
+      dilution == "F" ~ 0.33
+      )
+  ) %>% 
+  select(mitogenome, site_trap_period_dil, site, trap, period, dilution, dilution_num, mt_length, mapped_reads, mapped_reads_corr, pct_coverage, samtools_filter, mapqual_filter) 
+
+idx_genomecov_corr_subset <- idx_genomecov_corr %>% 
+  filter(mapped_reads_corr > 0)
+
+# without spike-in
+p1 <- ggplot(idx_genomecov_corr_subset, aes(x = dilution_num, y = mapped_reads, group = mitogenome, colour = mitogenome)) +
+  geom_point(size = 0.3) +
+  geom_smooth(method = "lm", se = FALSE, size = 0.3) +
+  scale_x_log10() +
+  scale_y_log10() +
+  theme_cowplot() +
+  theme(legend.position='none') +
+  scale_colour_viridis_d(option = "magma") +
+  labs(title = "Without spike-in", x = "Dilution", y = "Mapped reads per species") +
+  facet_wrap( ~ site)
+
+# with spike-in
+p2 <- ggplot(idx_genomecov_corr_subset, aes(x = dilution_num, y = mapped_reads_corr, group = mitogenome, colour = mitogenome)) +
+  geom_point(size = 0.3) +
+  geom_smooth(method = "lm", se = FALSE, size = 0.3) +
+  scale_x_log10() +
+  scale_y_log10() +
+  theme_cowplot() +
+  theme(legend.position='none') +
+  scale_colour_viridis_d(option = "magma") +
+  labs(title = "With spike-in", x = "Dilution", y = "Mapped reads per species") +
+  facet_wrap( ~ site)
+
+# {patchwork} package
+p1 + p2
+```
+
+
+
+
+
