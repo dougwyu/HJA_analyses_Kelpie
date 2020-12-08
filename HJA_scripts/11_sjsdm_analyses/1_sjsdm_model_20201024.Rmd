@@ -1,3 +1,10 @@
+fit sjSDM model after crossvalidation tuning
+produce initial outputs
+
+Note that these commands are all run on the server with GPU support
+The second script, 2_sjsdm_model2_20201207.Rmd, can also be run on the server or on one's laptop with only CPU support.
+
+
 ```{bash}
 ssh ada
 interactive-gpu 
@@ -142,7 +149,7 @@ dir_ls(resultsfolder)
 
 # END
 
-```{r sjSDM test code, }
+```{r sjSDM test code, eval=FALSE, include=FALSE}
 # community <- simulate_SDM(sites = 100, species = 10, env = 5)
 # Env <- community$env_weights
 # Occ <- community$response

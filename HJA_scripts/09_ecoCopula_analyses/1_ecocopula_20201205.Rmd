@@ -319,8 +319,8 @@ otu.mod1.ord <- cord(otu.mod1)
 # make plots
 # mod0: no covariates
 # mod1: elevation_m 
-cordord <- "otu.mod1.ord"
-model <- "otu.ord ~ elevation_m"
+cordord <- "otu.mod0.ord"
+model <- "otu.ord ~ 1" # "otu.ord ~ elevation_m"
 site_res <- site_res_fxn(cordord = get(cordord), env.csv, XY.csv)
 sp_res <- sp_res_fxn(cordord =  get(cordord), abund = abund)
 p0 <- plot_factors(alphanum = 4, 
@@ -337,18 +337,18 @@ p1 | p2 # if "Viewport has zero dimension(s)" error, enlarge plot window
 
 plot_corrplot(abund = abund, model = model)
 
-ggsave(filename = here("..", "..", "Kelpie_maps", 
-                outputidxstatstabulatefolder,
-                glue("ecoCopula_{trap}{period}_minimap2_{minimaprundate}_kelpie{kelpierundate}_{abund}.pdf")
+ggsave(here("..", "..", "Kelpie_maps", 
+            outputidxstatstabulatefolder,
+            glue("ecoCopula_{trap}{period}_minimap2_{minimaprundate}_kelpie{kelpierundate}_{abund}.pdf")
                 ), 
        width = 11.7, 
        height = 8.3, 
        device = "pdf",
        p0)
 
-ggsave(filename = here("..", "..", "Kelpie_maps", 
-                outputidxstatstabulatefolder,
-                glue("ecoCopulaXY_{trap}{period}_minimap2_{minimaprundate}_kelpie{kelpierundate}_{abund}.pdf")
+ggsave(here("..", "..", "Kelpie_maps", 
+            outputidxstatstabulatefolder,
+            glue("ecoCopulaXY_{trap}{period}_minimap2_{minimaprundate}_kelpie{kelpierundate}_{abund}.pdf")
                 ), 
        width = 11.7, 
        height = 8.3, 
@@ -383,8 +383,8 @@ otu.mod3.ord <- cord(otu.mod3)
 # make plots
 # mod2: no covariates
 # mod3: elevation_m 
-cordord <- "otu.mod3.ord"
-model <- "otu.ord ~ elevation_m" # "otu.ord ~ 1"
+cordord <- "otu.mod2.ord"
+model <- "otu.ord ~ 1" # "otu.ord ~ elevation_m" 
 site_res <- site_res_fxn(cordord = get(cordord), env.csv, XY.csv)
 sp_res <- sp_res_fxn(cordord =  get(cordord), abund = abund)
 p0 <- plot_factors(alphanum = 4, 
@@ -449,8 +449,8 @@ otu.mod5.ord <- cord(otu.mod5)
 # make plots
 # mod4: no covariates
 # mod5: elevation_m 
-cordord <- "otu.mod5.ord"
-model <- "otu.ord ~ elevation_m" # "otu.ord ~ 1"
+cordord <- "otu.mod4.ord"
+model <- "otu.ord ~ 1" # "otu.ord ~ elevation_m" 
 site_res <- site_res_fxn(cordord = get(cordord), env.csv, XY.csv)
 sp_res <- sp_res_fxn(cordord =  get(cordord), abund = abund)
 p0 <- plot_factors(alphanum = 4, 
@@ -508,6 +508,7 @@ envDocument::env_doc("table", git = FALSE)
 </details>
 
 
+Deprecate
 ```{r plot ecoCopula ordination, include=FALSE, eval=FALSE}
 alpha <- 4
 p0 <- ggplot() + 

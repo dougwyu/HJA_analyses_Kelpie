@@ -6,9 +6,9 @@ library(glue)
 library(RColorBrewer)
 library(here)
 
-rundate <- 20201019 # sjsdm_cv run date
+rundate <- 20201119 # sjsdm_cv run date
 envvar <- "gismslidar" # gismslidarmin, gismslidar, mslidar, gis, ms, lidar
-abund <- "qp" # "qp" # pa is 0/1 data, qp is quasiprob data
+abund <- "pa" # "qp" # pa is 0/1 data, qp is quasiprob data
 
 minocc <- 5 # minimum occupancy (incidence) per OTU, value from dataprep.Rmd
 
@@ -35,18 +35,11 @@ taxon <- "Dolichovespula"
 # function(summary.p, result, minsize, maxsize=200000, taxon="all")
 p1 <- coef.figure(summary.p, result, minsize, maxsize, taxon)
 
-p1 
+p1
 
-pdf(file = here("results", "crossvalidation", resultsfolder, 
-      glue("coef_figure_min{minsize}_max{maxsize}_{taxon}_{rundate}.pdf")),
-    width = 20, 
-    height = 11
-    )
-print(p1)
-dev.off()
-
-# env <- imp[["res"]][["total"]][["env"]]
-# spatial <- imp[["res"]][["total"]][["spatial"]]
-# names <- imp[["names"]]
-# imp_df <- bind_cols(names, env, spatial)
-# 
+ggsave(here(pathtosjsdm, cvfolder,
+    glue("coef_figure_min{minsize}_max{maxsize}_{taxon}_{rundate}.pdf")), 
+       width = 11.7, 
+       height = 8.3, 
+       device = "pdf",
+       p1)

@@ -1,0 +1,246 @@
+# created: Sep 11, 2020
+# last modified:
+
+```{r setup}
+#setwd("/Volumes/Black_WD/HJA_analyses_Kelpie/sjSDM/R-git")
+#setwd('/media/yuanheng/SD-64g2/Downloads/backup2/HJA_analyses_Kelpie/sjSDM/R-git')
+	
+lapply(c("ggplot2",'vegan', 'tidyverse','gridBase', 'grid', 'ggcorrplot','here', 'conflicted','reticulate','sjSDM','mgsub','vcd','RColorBrewer'), library, character.only=T)
+# "gridExtra",'scatterplot3d', 'labdsv',
+	
+conflict_prefer("filter", "dplyr")
+conflict_prefer("select", "dplyr")
+conflict_prefer("importance", "sjSDM")
+	
+dr_here()
+packageVersion('sjSDM')
+#[1] ‘0.1.0.9000’
+	
+source(here("R", "source", "sjsdm_function.r"))
+source(here("R", "source", "sjsdm-analyse-functions.r"))
+	
+```
+
+```{r load files, echo=FALSE}
+# kelpie, remote sensing data 
+# ('formatted_data' folder, load data formatted for sjsdm, 0/1, >=5 occurrence) 
+otu.env1.present = read.csv(here('data','kelpie_data','formatted_data',  'incidence_lidar_mulspec_5_sample_by_species_corr_table_F2308_minimap2_20200221_kelpie20200723.csv'), header=T, sep=',', stringsAsFactors = F, na.strings='NA')
+str(otu.env1.present[,1:50])
+	
+otu.env1.quasiP = read.csv(here('data','kelpie_data','formatted_data', 'quasiP_lidar_mulspec_5_sample_by_species_corr_table_F2308_minimap2_20200221_kelpie20200723.csv'), header=T, sep=',', stringsAsFactors = F, na.strings='NA')
+str(otu.env1.quasiP[,40:56])
+	
+print(c(dim(otu.env1.present), dim(otu.env1.quasiP)))
+	
+```
+
+```{r subsets of data}
+dataI.1.present = subset(otu.env1.present, session == 'S1' & trap == 'M1' )
+	
+dataI.1.quasiP = subset(otu.env1.quasiP, session == 'S1' & trap == 'M1' )
+	
+# .... if there's all zero OTUs ....
+# .... S1
+b = data.frame(otu=colnames(select(dataI.1.quasiP, contains('__'))), zero=apply(select(dataI.1.quasiP, contains('__')),2,sum)==0)
+b$otu=as.character(b$otu)
+table(b$zero)
+	
+dataI.1.quasiP5 = dplyr::select(dataI.1.quasiP, -contains('__'),b$otu[b$zero==F])
+dim(dataI.1.quasiP5)
+dataI.1.quasiP5[1:5,34:40]
+	
+b = data.frame(otu=colnames(select(dataI.1.present,contains('__'))), zero=apply(select(dataI.1.present,contains('__')),2,sum)==0)
+b$otu=as.character(b$otu)
+dim(b)
+	
+dataI.1.present5 = dplyr::select(dataI.1.present, -contains('__'),b$otu[b$zero==F])
+dim(dataI.1.present5)
+dataI.1.present5[1:5,34:40]
+	
+print(c(dim(dataI.1.quasiP5), dim(dataI.1.present5)))
+	
+
+```
+
+```{r delete-singleton-forSJSDM}
+# use OTUs that appears in at least 5 sites
+# make a dataset with FSL >=5
+
+# data = dataI.1.quasiP5
+	
+data = dataI.1.present5
+	
+dim(as.data.frame(select(data, -contains('__'))))
+	
+dimotu=56
+	
+a = data.frame(index=dimotu:dim(data)[2], sel=specnumber(as.data.frame(select(data, contains('__'))), MARGIN=2) >4)
+str(a)
+table(a$sel)
+	
+#dataI.1.quasiP5 = select(data, 1:(dimotu-1), a$index[a$sel==T])
+	
+#dim(dataI.1.quasiP5)
+	
+dataI.1.present5 = select(data, 1:(dimotu-1), a$index[a$sel==T])
+dim(dataI.1.present5)
+	
+rm(data,a,dimotu)
+	
+
+```
+
+
+```{r load-sjsdm-models-gis}
+# . sjSDM-version = ‘0.1.0.9000’
+# 0/1, >=5
+all.data = dataI.1.present5
+otu.data = as.data.frame(select(all.data, contains('__'))) 
+	
+env.data = read.csv(here('results', 'crossvalidation', 'results_20200909_5minocc_gis_pa_loocv', 'data_20200909_5minocc_gis', 'scale.env1.csv'), header=T, sep=',')
+names(env.data)
+scale.env1 = as.data.frame(select(all.data, names(env.data)))
+str(scale.env1)
+	
+XY = as.data.frame(select(all.data, starts_with('UTM_')) %>% scale)
+#XY = as.data.frame(select(all.data, starts_with('UTM_')) )
+	
+model.pa = readRDS(here('results','sjsdm-model-RDS', 'sjsdm-0.1.0.9000','s-jSDM_model_s1_m1_present_no4_gis_20200909_0.1.0.RDS'))
+result.pa = readRDS(here('results','sjsdm-model-RDS', 'sjsdm-0.1.0.9000','s-jSDM_result_s1_m1_present_no4_gis_20200909_0.1.0.RDS') )
+	
+summary(model.pa)
+	
+model.qp = readRDS(here('results','sjsdm-model-RDS', 'sjsdm-0.1.0.9000','s-jSDM_model_s1_m1_quasiP_no4_gis_20200908_0.1.0.RDS'))
+result.qp = readRDS(here('results','sjsdm-model-RDS', 'sjsdm-0.1.0.9000','s-jSDM_result_s1_m1_quasiP_no4_gis_20200908_0.1.0.RDS') )
+	
+summary(model.qp)
+	
+# . plot variation partition
+imp.pa =importance(model.pa)
+imp.qp =importance(model.qp)
+	
+#pdf(here('results','sjsdm-graph','sjsdm-0.1.0.9000','sjsdm_s1_m1_gis_compare', 'vari.par_sjSDM_s1_m1_gis_no4_0.1.0.pdf'), width=8, height=5)
+	
+par(mfrow=c(1,2))
+	
+plot(imp.pa, cex=.8) #from s-jSDM package
+title(paste('variation partition, 0/1, ',ncol(result$sigma), ' OTUs', sep=''))
+	
+plot(imp.qp, cex=.8) #from s-jSDM package
+title(paste('variation partition, quasiP, ',ncol(result$sigma), ' OTUs', sep=''))
+	
+dev.off()
+	
+# differentiate order & family
+imp.qp$names == imp.pa$names
+impD = inner_join(data.frame(OTU=imp.qp$names, imp.qp$res$total), data.frame(OTU=imp.pa$names, imp.pa$res$total), by=c('OTU','OTU'), suffix = c(".qp", ".pa"))
+str(impD)
+	
+impD$order = sapply(strsplit(sapply(str_split(impD$OTU, '__'), function(a) a[2]), '_'), function(a) a[2])
+table(impD$order)
+	
+impD$family = sapply(strsplit(sapply(str_split(impD$OTU, '__'), function(a) a[2]), '_'), function(a) a[3])
+sort(table(impD$family))
+	
+# 24 not defined
+# Diptera (flies), Coleoptera (beetles, weevils), Lepidoptera (butterflies, moths), Hymenoptera (wasp,  bees, ants), Hemiptera (bugs)
+# Muscidae (house flies), Geometridae (geometer moths), Cecidomyiidae (gall midges), Ichneumonidae (ichneumon wasps)
+	
+a = as.data.frame(impD %>% count(order))
+a = subset(a, n>9)
+impD = inner_join(impD, a, by=c('order'='order'))
+str(impD)
+	
+impD$order = mgsub(impD$order, c('Diptera', 'Coleoptera', 'Lepidoptera', 'Hemiptera', 'Hymenoptera'), c('Fly', 'Beetle & Weevil', 'Butterfly & Moth', 'Bug', 'Wasp & Bee'))
+impD$family = mgsub(impD$family, c('Muscidae', 'Geometridae', 'Cecidomyiidae', 'Ichneumonidae'), c('Fly', 'Moth', 'Gall midge', 'Ichneumon wasp'))
+str(impD)
+	
+a = as.data.frame(impD %>% count(family))
+a = subset(a, n>9)
+impD2 = inner_join(impD, a, by=c('family'='family'))
+impD2 = subset(impD2, family!='BOLD' & family != 'NA')
+str(impD2)
+	
+table(impD2$order)
+table(impD2$family)
+	
+#pdf(here('results','sjsdm-graph','sjsdm-0.1.0.9000', 'sjsdm_s1_m1_gis_compare', 'vari.family_sjSDM_s1_m1_gis_no4_0.1.0.pdf'), width=8, height=5)
+	
+titleText=paste('variation partition, ',nrow(data), ' OTUs', sep='')
+legendText = 'Family (occurrence>9)'
+source(here("R", "source", "sjsdm-analyse-functions.r"))
+	
+vp.plot(data=impD2, x1=2, x2=4, ind=9, textM=titleText, textL=legendText)
+vp.plot(data=impD2, x1=5, x2=7, ind=9, textM=titleText, textL=legendText)
+	
+dev.off()
+	
+#pdf(here('results','sjsdm-graph','sjsdm-0.1.0.9000', 'sjsdm_s1_m1_gis_compare', 'vari.order_sjSDM_s1_m1_gis_no4_0.1.0.pdf'), width=8, height=5)
+	
+titleText=paste('variation partition, ',nrow(data), ' OTUs', sep='')
+legendText = 'Order (occurrence>9)'
+	
+vp.plot(data=impD2, x1=2, x2=4, ind=8, textM=titleText, textL=legendText)
+vp.plot(data=impD2, x1=5, x2=7, ind=8, textM=titleText, textL=legendText)
+	
+dev.off()
+	
+names(impD2)
+	
+aaa = subset(impD2, family=='Ichneumon wasp')
+aaa
+	
+aaa[3,]
+#R1468_10__Insecta_Hymenoptera_Ichneumonidae_NA_NA_BOLD_ACE8616_size.343
+
+```
+
+```{r make-graph}
+#dataI.1.quasiP5, dataI.1.present5
+names(dataI.1.quasiP5)[1:55]
+	
+qp = select(dataI.1.quasiP5, 1:55, R1468_10__Insecta_Hymenoptera_Ichneumonidae_NA_NA_BOLD_ACE8616_size.343)
+names(qp)[56]='wasp_NA_NA'
+	
+pa = select(dataI.1.present5, 1:55, R1468_10__Insecta_Hymenoptera_Ichneumonidae_NA_NA_BOLD_ACE8616_size.343)
+names(pa)[56]='wasp_NA_NA'
+	
+g.1 = ggplot(qp, aes(UTM_E, UTM_N, size= wasp_NA_NA, colour=elevation.scale)) + geom_point() + scale_colour_gradient(low='purple', high='orange') + ggtitle('wasp_NA_NA, quasiP') + theme(plot.title= element_text(hjust=.5), text=element_text(family = "sans"), legend.position='bottom', legend.title=element_text(size=9)) #+labs(size='disturb')
+g.2 = ggplot(pa, aes(UTM_E, UTM_N, size= wasp_NA_NA, colour=elevation.scale)) + geom_point() + scale_colour_gradient(low='purple', high='orange') + ggtitle('wasp_NA_NA, 0/1') + theme(plot.title= element_text(hjust=.5), text=element_text(family = "sans"), legend.position='bottom', legend.title=element_text(size=9)) #+labs(size='disturb')
+	
+vp.Right <- viewport(height=unit(.99, "npc"), width=unit(0.5, "npc"), 
+                           just=c("left","top"), 
+                           y=0.99, x=0.5)
+	
+vp.Left <- viewport(height=unit(.99, "npc"), width=unit(0.5, "npc"), 
+                           just=c("left","top"), 
+                           y=0.99, x=0.0)
+	
+#pdf(here('results','sjsdm-graph','sjsdm-0.1.0.9000', 'sjsdm_s1_m1_gis_compare', 'coord_wasp_ele_s1_m1_no4.pdf'), width=12, height=5)
+	
+vps <- baseViewports()
+	
+print(g.2, vp=vp.Right)
+print(g.1, vp=vp.Left)
+	
+dev.off()
+	
+
+names(scale.env1)
+	
+g.3 = ggplot(qp, aes(UTM_E, UTM_N, size= wasp_NA_NA, colour=yrs.disturb.min.scale)) + geom_point() + scale_colour_gradient(low='purple', high='orange') + ggtitle('wasp_NA_NA, quasiP') + theme(plot.title= element_text(hjust=.5), text=element_text(family = "sans"), legend.position='bottom', legend.title=element_text(size=9)) #+labs(size='disturb')
+g.4 = ggplot(pa, aes(UTM_E, UTM_N, size= wasp_NA_NA, colour=yrs.disturb.min.scale)) + geom_point() + scale_colour_gradient(low='purple', high='orange') + ggtitle('wasp_NA_NA, 0/1') + theme(plot.title= element_text(hjust=.5), text=element_text(family = "sans"), legend.position='bottom', legend.title=element_text(size=9)) #+labs(size='disturb')
+	
+#pdf(here('results','sjsdm-graph','sjsdm-0.1.0.9000', 'sjsdm_s1_m1_gis_compare', 'coord_wasp_disturb_s1_m1_no4.pdf'), width=12, height=5)
+	
+print(g.4, vp=vp.Right)
+print(g.3, vp=vp.Left)
+	
+dev.off()
+	
+
+
+```
+
+
+
