@@ -344,7 +344,7 @@ plot_corrplot(abund = abund, model = model)
 ggsave(here("..", "..", "Kelpie_maps", 
             outputidxstatstabulatefolder,
             glue("ecoCopula_{trap}{period}_minimap2_{minimaprundate}_kelpie{kelpierundate}_{abund}.pdf")
-                ), 
+            ), 
        width = 11.7, 
        height = 8.3, 
        device = "pdf",
@@ -353,7 +353,7 @@ ggsave(here("..", "..", "Kelpie_maps",
 ggsave(here("..", "..", "Kelpie_maps", 
             outputidxstatstabulatefolder,
             glue("ecoCopulaXY_{trap}{period}_minimap2_{minimaprundate}_kelpie{kelpierundate}_{abund}.pdf")
-                ), 
+            ), 
        width = 11.7, 
        height = 8.3, 
        device = "pdf",
@@ -455,7 +455,23 @@ otu.mod6 <- manyglm(otu.ord ~ elevation_m + insideHJA + lg_YrsDisturb + offset(l
                     show.time = "all"
                     )
 plot(otu.mod6) # chk residuals
-anova(otu.mod6, nBoot = 200) # 21 mins
+anova(otu.mod6, nBoot = 200) 
+  # Time elapsed: 0 hr 22 min 7 sec
+  # Analysis of Deviance Table
+  # 
+  # Model: otu.ord ~ elevation_m + insideHJA + lg_YrsDisturb + offset(log(offset))
+  # 
+  # Multivariate test:
+  #               Res.Df Df.diff   Dev Pr(>Dev)   
+  # (Intercept)       87                          
+  # elevation_m       86       1 423.4    0.005 **
+  # insideHJA         85       1 591.9    0.060 . 
+  # lg_YrsDisturb     84       1 497.4    0.284   
+  # ---
+  # Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+  # Arguments:
+  #  Test statistics calculated assuming uncorrelated response (for faster computation) 
+  #  P-value calculated using 200 iterations via PIT-trap resampling.
 otu.mod6.ord <- cord(otu.mod6)
 
 # make plots
@@ -502,7 +518,6 @@ ggsave(filename = here("..", "..", "Kelpie_maps",
        device = "pdf",
        p1 | p2)
 ```
-
 
 
 manyglm models, mod4.1 and mod5.1. *No offset term*.  ab means read counts are kept, with log(offset) to control for lysis buffer and COI spike
@@ -569,6 +584,21 @@ ggsave(filename = here("..", "..", "Kelpie_maps",
        device = "pdf",
        p1 | p2)
 ```
+
+
+```{r}
+cordord <- "otu.mod6.ord"; model <- "otu.ord ~ elevation_m + insideHJA + lg_YrsDisturb"
+env <- otuenv %>% 
+  select(!contains("__"), -UTM_E, -UTM_N, -starts_with("nor")) %>% 
+  select(!contains(c("20180726", "20180818", "20180802"))) %>% 
+  select(!ends_with("_all"))
+  
+site_res <- site_res_fxn(cordord = get(cordord), env, XY.csv)
+sp_res <- sp_res_fxn(cordord =  get(cordord), abund = abund)
+
+plot_corrplot(abund = abund, model = model)
+```
+
 
 From the Gordana Popovic tutorial:  "We can do this using the `mvabund` package, with function `manyany` as well as `clm` from the `ordinal` package. Sadly, R version 4.0.0 has broken `manyany`, and it has not been fixed yet, so I have a substitute called `Manyany` in the `1.1_Manyany.R` file which we will need to sourced in the code below. "
 
