@@ -103,9 +103,23 @@ plot_corrplot <- function(abund, model, siteData) {
            method = "ellipse",
            type = "lower",
            title = glue("{abund}, {model}"),
-           mar=c(0,0,2,0),
-           tl.pos = "n"
+           mar=c(0,0,2,0)
   )
 #   dev.off()
 #   print(file); rm(file)
 }
+
+
+t_corrplot <- function(mod.cor, title){
+  
+  corrplot(t(mod.cor), 
+           is.corr = F,
+           method = "ellipse",
+           cl.pos = "n",
+           cl.lim = c(-1,1),
+           title = title,
+           oma = c(0,0,0,0),
+           #oma = c(2,2,5,1),
+           mar = c(1,1,2,1))
+}
+  

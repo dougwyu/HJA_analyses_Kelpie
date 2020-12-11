@@ -136,7 +136,7 @@ is.mvabund(otu.qp)
 str(otu.pa)
 
 # with no env covariates
-mod0 <- manyglm(otu.pa ~ 1, 
+mod0 <- manyglm(otu.pa ~ 1 + offset(log(offset)), 
                     family = "negative.binomial", # family = binomial("cloglog") 
                     data = env.csv) 
 
@@ -154,6 +154,8 @@ str(site_res, max.level=1)
 # Species scores
 sp_res <- data.frame(mod0.ord$loadings, species = colnames(otu.pa))
 str(sp_res)
+
+(mod0.cor <- cor(mod0.ord$scores, site_res[,cor.preds]))
 
 alpha <- 4*0.95
 
@@ -191,6 +193,16 @@ ggplot() +
     ylab("UTM_N")
 
 # factor 1 mainly inside HJA
+
+mod05 <- manyglm(otu.pa ~ elevation_m + offset(log(offset)), 
+                family = "negative.binomial", # family = "binomial"
+                data = env.csv) # , show.time = "all" # ??
+
+mod05.ord <- cord(mod05)
+site_res05 <- data.frame(mod05.ord$scores, env.csv, XY.csv)
+sp_res05 <- data.frame(mod05.ord$loadings, species = colnames(otu.pa))
+(mod05.cor <- cor(mod05.ord$scores, site_res05[,cor.preds]))
+
 
 # with 3 predictors, + offset
 mod1 <- manyglm(otu.pa ~ elevation_m + insideHJA + lg_YrsDisturb + offset(log(offset)), 
@@ -240,91 +252,100 @@ ggplot() +
 plot_factors(4, abund, "mod1", sp_res1, site_res1)
 
 # get correlations with selected predictors
-num.pred <- sapply(site_res1, is.numeric)
-cat(paste(colnames(site_res1[,num.pred]), collapse = '", "'))
+# num.pred <- sapply(site_res1, is.numeric)
+# cat(paste(colnames(site_res1[,num.pred]), collapse = '", "'))
 preds <- c("Factor1", "Factor2", "offset", "oldGrowthIndex", "elevation_m", "canopyHeight_m", "precipitation_mm", "mean.NDVI", "mean.EVI", "mean.green", "mean.wet", "l_p25", "l_rumple", "B1_mean", "B4_mean", "lg_DistStream", "lg_DistRoad", "lg_YrsDisturb", "lg_cover2m_max", "lg_cover2m_4m", "lg_cover4m_16m")
 
-mod1.cor <- cor(mod1.ord$scores, env.csv[,preds])
+cor.preds <- c("oldGrowthIndex", "elevation_m", "canopyHeight_m", "precipitation_mm", "mean.NDVI", "mean.EVI", "mean.green", "mean.wet", "l_p25", "l_rumple", "B1_mean", "B4_mean", "lg_DistStream", "lg_DistRoad", "lg_YrsDisturb", "lg_cover2m_max", "lg_cover2m_4m", "lg_cover4m_16m")
+
+
+cor(site_res1[,preds])
+(mod1.cor <- cor(mod1.ord$scores, site_res1[,cor.preds]))
 
 corrplot(cor(site_res1[,preds]), 
          method = "ellipse",
          type = "lower",
           mar=c(0,0,4,0))
 
-plot_corrplot(abund, mod1.ord, site_res1)
+corrplot(t(mod1.cor), is.corr = F,
+         method = "ellipse", cl.pos = "n")
+
+plot_corrplot(abund, "mod1", site_res1)
 
 
-
-
-
-
-
-
-
-
-otu.mod2b <- manyglm(otu.ord ~ elevation_m + insideHJA + lg_YrsDisturb + offset(log(offset)), 
+# add interaction of oldgrowth and elavatiaon
+mod2 <- manyglm(otu.pa ~ elevation_m * oldGrowthIndex + insideHJA + lg_YrsDisturb + offset(log(offset)), 
                     family = "negative.binomial", # family = "binomial"
                     data = env.csv)
+plot(mod2)
 
+anova(mod2, nboot = 50)
 
-otu.mod2c <- manyglm(otu.ord ~ elevation_m + insideHJA + lg_YrsDisturb + offset(log(offset)), 
-                     family = binomial("cloglog"), # family = "binomial"
-                     data = env.csv)
-
-
-otu.mod3 <- manyglm(otu.ord ~ elevation_m * oldGrowthIndex +  insideHJA + lg_YrsDisturb + offset(log(offset)), 
-                    family = "negative.binomial", # family = "binomial"
-                    data = env.csv)
-
+dAIC <- AIC(mod1) - AIC(mod2) # will be generally positive  across species if mod2 is better... 
+boxplot(dAIC); abline(h =0, col = "red")
 
 # ordination 
-otu.mod1.ord <- cord(otu.mod1)
-otu.mod2.ord <- cord(otu.mod2)
-otu.mod2b.ord <- cord(otu.mod2b)
-otu.mod2c.ord <- cord(otu.mod2c)
-otu.mod3.ord <- cord(otu.mod3)
+mod2.ord <- cord(mod2)
+site_res2 <- data.frame(mod2.ord$scores, env.csv, XY.csv)
+sp_res2 <- data.frame(mod2.ord$loadings, species = colnames(otu.pa))
+
 # make plots
-# mod0: no covariates
+plot_factors(4, abund, "mod2", sp_res2, site_res2)
+plot_xy_factor1(abund = abund, model = "mod2", siteData = site_res2)
 
-str(otu.mod1.ord, max.level =1)
+# correlations
+(mod2.cor <- cor(mod2.ord$scores, site_res2[,cor.preds]))
+
+corrplot(t(mod2.cor), is.corr = F,
+         method = "ellipse", cl.pos = "n")
+
+mod2.cor
+
+mod3 <- manyglm(otu.pa ~ elevation_m * oldGrowthIndex + insideHJA + lg_YrsDisturb + mean.NDVI + lg_DistRoad + 
+                  canopyHeight_m + offset(log(offset)), 
+                family = "negative.binomial", # family = "binomial"
+                data = env.csv)
+
+mod3.ord <- cord(mod3)
+site_res3 <- data.frame(mod3.ord$scores, env.csv, XY.csv)
+sp_res3 <- data.frame(mod3.ord$loadings, species = colnames(otu.pa))
+(mod3.cor <- cor(mod3.ord$scores, site_res3[,cor.preds]))
+
+form4 <- formula(otu.pa ~ elevation_m * oldGrowthIndex + insideHJA + canopyHeight_m * elevation_m + lg_YrsDisturb + mean.NDVI + lg_DistRoad + offset(log(offset)))
+mod4 <- manyglm(form4, 
+                family = "negative.binomial", # family = "binomial"
+                data = env.csv)
+
+mod4.ord <- cord(mod4)
+site_res4 <- data.frame(mod4.ord$scores, env.csv, XY.csv)
+sp_res4 <- data.frame(mod4.ord$loadings, species = colnames(otu.pa))
+(mod4.cor <- cor(mod4.ord$scores, site_res4[,cor.preds]))
+
+png("Hmsc_CD/local/corplot.png", width = 300, height = 200, units = "mm", res = 100)
+par(mfrow =c(1,5))
+t_corrplot(mod0.cor, "mod0")
+t_corrplot(mod1.cor, "mod1")
+t_corrplot(mod2.cor, "mod2")
+t_corrplot(mod3.cor, "mod3")
+t_corrplot(mod4.cor, "mod4")
+dev.off()
+
+dAIC <- list(mod0_mod1 = AIC(mod0)-AIC(mod1),
+             mod0_mod05 = AIC(mod0)-AIC(mod05),
+             mod1_mod2 = AIC(mod1)-AIC(mod2),
+             mod1_mod3 = AIC(mod1)-AIC(mod3),
+             mod1_mod4 = AIC(mod1)-AIC(mod4))
 
 
+png("Hmsc_CD/local/AIC_boxplot.png")
+boxplot(dAIC); abline(h = 0, col = "red", lty = 2, las = 2)
+dev.off()
 
-site_res2 <- data.frame(otu.mod2.ord$scores, env.csv, XY.csv)
-sp_res2 <- data.frame(otu.mod2.ord$loadings, species = colnames(otu.ord))
-
-site_res2b <- data.frame(otu.mod2b.ord$scores, env.csv, XY.csv)
-sp_res2b <- data.frame(otu.mod2b.ord$loadings, species = colnames(otu.ord))
-
-site_res2c <- data.frame(otu.mod2c.ord$scores, env.csv, XY.csv)
-sp_res2c <- data.frame(otu.mod2c.ord$loadings, species = colnames(otu.ord))
-
-
-site_res3 <- data.frame(otu.mod3.ord$scores, env.csv, XY.csv)
-sp_res3 <- data.frame(otu.mod3.ord$loadings, species = colnames(otu.ord))
-
-
-model <- "otu.ord ~ elevation_m"
-
-
-
-
-p0 <- plot_factors(alphanum = 4, 
-                   abund = abund, 
-                   model = model, spData = sp_res2, siteData = site_res2)
-
-p0
-p1 <- plot_xy_factor1(abund = abund, model = model, siteData = site_res3)
-p1
-
-# p2 <- plot_xy_factor2(abund = abund, model = model)
-
-p1 
-
-p2 # if "Viewport has zero dimension(s)" error, enlarge plot window
-# make plots and save
-# plot_corrplot(abund = abund, model = model)
-
-
-
-
+png("Hmsc_CD/local/cor_boxplot.png")
+boxplot(list(cor0 = abs(mod0.cor),
+             cor05 = abs(mod05.cor),
+             cor1 = abs(mod1.cor),
+             cor2 = abs(mod2.cor),
+             cor3 = abs(mod3.cor),
+             cor4 = abs(mod4.cor)))
+dev.off()
