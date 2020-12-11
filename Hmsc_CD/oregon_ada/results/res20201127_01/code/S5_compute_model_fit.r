@@ -19,7 +19,7 @@ library(Hmsc)
 # get models in models
 # fs <- list.files("models", "^models_thin.*", full.names = TRUE)
 #fs
-#i = 1
+#i = 1; i = 3
 
 for (i in seq_along(fs)) {
   
@@ -73,7 +73,7 @@ for (i in seq_along(fs)) {
   
   
   
-  filename_out <- file.path(dirname(filename), paste0("MF_", sub("^models_", "", basename(filename))))
+  filename_out <- file.path(dirname(filename), paste0("MF_", "CV", nfolds, "_", sub("^models_", "", basename(filename))))
   save(MF,MFCV,WAIC,modelnames, file = filename_out)
   
   print(sapply(MF[!is.na(MF)], function(x) sapply(x, mean)))

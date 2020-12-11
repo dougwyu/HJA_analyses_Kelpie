@@ -6,11 +6,12 @@
 ## Only local: 
 # setwd("J:/UEA/Oregon/Oproject/oregon_ada")
 # dir()
+getwd()
 
 ## On ADA
 ## getwd() will be "/gpfs/home/hsp20azu"  ## whereever you send the sub from is wd
 ## on ADA, HOME is "/gpfs/home/hsp20azu"
-# setwd("~/Oregon_ada")
+# setwd("~/Oregon_ada")  # set on pipeline... 
 
 # Data files, separated by trap and season
 files <- c("otuenv_M1S1_minimap2_20200929_kelpie20200927.csv",
@@ -46,12 +47,14 @@ X.all <- SXY.train[, 7:101]
 X.all$B1_mean <- apply(X.all[, cols[grepl("B1_", cols)]], 1, mean)
 X.all$B4_mean <- apply(X.all[, cols[grepl("B4_", cols)]], 1, mean)
 
-X.all$lg_DistRoad <- log10(X.all$distToRoad_m)
-X.all$lg_YrsDisturb <- log10(X.all$YrsSinceDist)
+X.all$lg_DistRoad <- log(X.all$distToRoad_m+0.001)
+X.all$lg_YrsDisturb <- log(X.all$YrsSinceDist+0.001)
 
-X.all$lg_cover2m_max <- log10(X.all$l_Cover_2m_max)
-X.all$lg_cover2m_4m <- log10(X.all$l_Cover_2m_4m)
-X.all$lg_cover4m_16m <- log10(X.all$l_Cover_4m_16m+0.01)
+X.all$lg_cover2m_max <- log(X.all$l_Cover_2m_max+0.001)
+X.all$lg_cover2m_4m <- log(X.all$l_Cover_2m_4m+0.001)
+X.all$lg_cover4m_16m <- log(X.all$l_Cover_4m_16m+0.001)
+
+colnames(X.all)
 
 preds <- c("clearcut","insideHJA","oldGrowthIndex","elevation_m","canopyHeight_m", "precipitation_mm","distToStream_m","mean.NDVI","mean.EVI","mean.green","mean.wet","l_p25","l_rumple","B1_mean","B4_mean","lg_DistRoad","lg_YrsDisturb","lg_cover2m_max","lg_cover2m_4m","lg_cover4m_16m")
 

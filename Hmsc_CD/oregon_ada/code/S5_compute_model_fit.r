@@ -74,7 +74,7 @@ for (i in seq_along(fs)) {
   
   
   filename_out <- file.path(dirname(filename), paste0("MF_", "CV", nfolds, "_", sub("^models_", "", basename(filename))))
-  save(MF,MFCV,WAIC,modelnames, file = filename_out)
+  save(MF,MFCV,WAIC,modelnames, partition, file = filename_out)
   
   print(sapply(MF[!is.na(MF)], function(x) sapply(x, mean)))
   print(sapply(MFCV[!is.na(MFCV)], function(x) sapply(x, mean)))

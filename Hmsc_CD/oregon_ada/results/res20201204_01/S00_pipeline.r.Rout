@@ -1,0 +1,302 @@
+
+R version 4.0.0 (2020-04-24) -- "Arbor Day"
+Copyright (C) 2020 The R Foundation for Statistical Computing
+Platform: x86_64-pc-linux-gnu (64-bit)
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+  Natural language support but running in an English locale
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+[Previously saved workspace restored]
+
+> ### Run pipeline ####
+> 
+> 
+> ## Only local: 
+> # setwd("J:/UEA/Oregon/Oproject/oregon_ada")
+> # dir()
+> 
+> ## On ADA
+> ## getwd() will be "/gpfs/home/hsp20azu"
+> # with folders Oregon, etc... 
+> setwd("~/oregon_ada")
+> dir()
+ [1] "code"                  "data"                  "hmsc_pipe_prev.sub"   
+ [4] "hmsc_pipeline_p64.sub" "hmsc_pipeline.sub"     "hmsc_pipeline2.sub"   
+ [7] "hmsc_redo2711.sub"     "hmsc_RRR_test.sub"     "pred_allB_hmsc.sub"   
+[10] "pred_uni_hmsc.sub"     "R-test-1294917.err"    "R-test-1294917.out"   
+[13] "R-test-1331497.err"    "R-test-1331497.out"    "R-test-1331648.err"   
+[16] "R-test-1331648.out"    "R-test-1332305.err"    "R-test-1332305.out"   
+[19] "results"               "S0_redo_modFit.r.Rout" "S00_pipeline.r.Rout"  
+> rm(list = ls())
+> 
+> 
+> ## 0. Create results folder to hold code and models #####
+> resFolder <- paste0("res", format(Sys.Date(), "%Y%m%d"))
+> resFolder <- paste(resFolder, sprintf("%02d", sum(grepl(resFolder, list.dirs("results", recursive= F)))+1), sep="_")
+> print(resFolder)
+[1] "res20201204_01"
+> dir.create(file.path("results", resFolder))
+> dir.create(file.path("results", resFolder, "code"))
+> dir.create(file.path("results", resFolder, "data"))
+> dir.create(file.path("results", resFolder, "models"))
+> 
+> modFolder <- file.path("results", resFolder, "models")
+> modFolder
+[1] "results/res20201204_01/models"
+> 
+> # copy scripts, etc
+> rScripts <- list.files("code", pattern = "S[1-5].*\\.[rR]$|S00_.*", recursive = TRUE, full.names = TRUE)
+> rScripts
+[1] "code/S00_pipeline.r"            "code/S1_read_data.r"           
+[3] "code/S2_define_models.r"        "code/S3_fit_models.r"          
+[5] "code/S4_evaluate_convergence.r" "code/S5_compute_model_fit.r"   
+> to <- file.path("results", resFolder, rScripts)
+> file.copy(rScripts, to)
+[1] TRUE TRUE TRUE TRUE TRUE TRUE
+> 
+> rm(to, rScripts)
+> 
+> ## 1. Read data #### 
+> source(file.path("results", resFolder,"code/S1_read_data.r"))
+[1] "S looks ok"
+[1] "X looks ok"
+> # Save in specific data folder
+> 
+> # ## Set working director to current results
+> # setwd(paste0("~/oregon_ada/results/", resFolder))
+> # # setwd(paste0("./results/", resFolder)) # local only
+> # getwd()
+> # dir()
+> 
+> # save data
+> save(SXY.train, S.train, X.train, Y.train, P, file = file.path("results", resFolder, "data", "allData.Rdata"))
+> 
+> ## 2. define models ####
+> source(file.path("results", resFolder,"code/S2_define_models.r"))
+Loading required package: coda
+> save(models, modelnames, file = file.path(modFolder, "unfitted_models.rdata"))
+> 
+> ## 3 Fit models #####
+> # uses models list from 2.
+> # samples_list = c(5,250,250,250,250,250)
+> # thin_list = c(1,1,10,100,1000,10000)
+> samples_list = c(5,100)
+> thin_list = c(1,5)
+> #samples_list = c(5)
+> #thin_list = c(1)
+> # iterations per chain
+> (samples_list * thin_list) + ceiling(0.5*thin_list*samples_list)
+[1]   8 750
+> nChains <- 4
+> source(file.path("results", resFolder,"code/S3_fit_models.r"))
+[1] "thin = 1; samples = 5"
+[1] "model = pa_sp_tp8_q4"
+Setting updater$Gamma2=FALSE due to specified phylogeny matrix
+[1] "model = pa_sp_tp8_q3"
+Setting updater$Gamma2=FALSE due to specified phylogeny matrix
+[1] "model = pa_sp_tp8_qr1"
+Setting updater$Gamma2=FALSE due to specified phylogeny matrix
+[1] "model = pa_sp_tp8_qr2"
+Setting updater$Gamma2=FALSE due to specified phylogeny matrix
+[1] "thin = 5; samples = 100"
+[1] "model = pa_sp_tp8_q4"
+Setting updater$Gamma2=FALSE due to specified phylogeny matrix
+[1] "model = pa_sp_tp8_q3"
+Setting updater$Gamma2=FALSE due to specified phylogeny matrix
+[1] "model = pa_sp_tp8_qr1"
+Setting updater$Gamma2=FALSE due to specified phylogeny matrix
+[1] "model = pa_sp_tp8_qr2"
+Setting updater$Gamma2=FALSE due to specified phylogeny matrix
+> # models saves in S3
+> rm(samples_list, thin_list, nChains)
+> 
+> ### 4 Convergence ####
+> # fs is the list of model filenames
+> fs <- list.files(modFolder, "models_thin.*", full.names = TRUE)
+> source(file.path("results", resFolder,"code/S4_evaluate_convergence.r"))
+> #save results
+> save(beta, file = file.path("results", resFolder, "beta_list.rdata"))
+> 
+> vioP <- require(vioplot)
+Loading required package: vioplot
+Loading required package: sm
+Package 'sm', version 2.2-5.6: type help(sm) for summary information
+Loading required package: zoo
+
+Attaching package: ‘zoo’
+
+The following objects are masked from ‘package:base’:
+
+    as.Date, as.Date.numeric
+
+Warning message:
+In fun(libname, pkgname) : couldn't connect to display "10.85.17.2:16.0"
+> pdf(file = file.path("results", resFolder, "MCMC_convergence%03d.pdf"))
+> par(mfrow=c(2,1), mar = c(10,3,1,1))
+> # remove NAs coming through from try errors first:
+> if(vioP) sapply(beta[!is.na(beta)], vioplot::vioplot, las = 2) else sapply(beta[!is.na(beta)], boxplot, las = 2)
+       [,1]      [,2]     
+upper  Numeric,4 Numeric,4
+lower  Numeric,4 Numeric,4
+median Numeric,4 Numeric,4
+q1     Numeric,4 Numeric,4
+q3     Numeric,4 Numeric,4
+> dev.off()
+pdf 
+  2 
+> 
+> ## 5 Compute model fit ####
+> nfolds = 5
+> fs <- list.files(modFolder, "^models_thin.*", full.names = TRUE)
+> source(file.path("results", resFolder, "code/S5_compute_model_fit.r"))
+[1] "results/res20201204_01/models/models_thin_1_samples_5_chains_4.Rdata"
+Cross-validation, fold 1 out of 5
+Setting updater$Gamma2=FALSE due to specified phylogeny matrix
+Cross-validation, fold 2 out of 5
+Setting updater$Gamma2=FALSE due to specified phylogeny matrix
+Cross-validation, fold 3 out of 5
+Setting updater$Gamma2=FALSE due to specified phylogeny matrix
+Cross-validation, fold 4 out of 5
+Setting updater$Gamma2=FALSE due to specified phylogeny matrix
+Cross-validation, fold 5 out of 5
+Setting updater$Gamma2=FALSE due to specified phylogeny matrix
+Cross-validation, fold 1 out of 5
+Setting updater$Gamma2=FALSE due to specified phylogeny matrix
+Cross-validation, fold 2 out of 5
+Setting updater$Gamma2=FALSE due to specified phylogeny matrix
+Cross-validation, fold 3 out of 5
+Setting updater$Gamma2=FALSE due to specified phylogeny matrix
+Cross-validation, fold 4 out of 5
+Setting updater$Gamma2=FALSE due to specified phylogeny matrix
+Cross-validation, fold 5 out of 5
+Setting updater$Gamma2=FALSE due to specified phylogeny matrix
+Cross-validation, fold 1 out of 5
+Setting updater$Gamma2=FALSE due to specified phylogeny matrix
+Cross-validation, fold 2 out of 5
+Setting updater$Gamma2=FALSE due to specified phylogeny matrix
+Cross-validation, fold 3 out of 5
+Setting updater$Gamma2=FALSE due to specified phylogeny matrix
+Cross-validation, fold 4 out of 5
+Setting updater$Gamma2=FALSE due to specified phylogeny matrix
+Cross-validation, fold 5 out of 5
+Setting updater$Gamma2=FALSE due to specified phylogeny matrix
+Cross-validation, fold 1 out of 5
+Setting updater$Gamma2=FALSE due to specified phylogeny matrix
+Cross-validation, fold 2 out of 5
+Setting updater$Gamma2=FALSE due to specified phylogeny matrix
+Cross-validation, fold 3 out of 5
+Setting updater$Gamma2=FALSE due to specified phylogeny matrix
+Cross-validation, fold 4 out of 5
+Setting updater$Gamma2=FALSE due to specified phylogeny matrix
+Cross-validation, fold 5 out of 5
+Setting updater$Gamma2=FALSE due to specified phylogeny matrix
+       pa_sp_tp8_q4_1_5 pa_sp_tp8_q3_1_5 pa_sp_tp8_qr1_1_5 pa_sp_tp8_qr2_1_5
+RMSE          0.4030131        0.3508432         0.3516157         0.3533606
+AUC           0.8060159        0.8213166         0.7913282         0.8059961
+TjurR2        0.2124058        0.1752755         0.1430273         0.1787528
+       pa_sp_tp8_q4_1_5 pa_sp_tp8_q3_1_5 pa_sp_tp8_qr1_1_5 pa_sp_tp8_qr2_1_5
+RMSE         0.47121546       0.40421126        0.39926355        0.41000667
+AUC          0.61865184       0.60364658        0.56386190        0.58600981
+TjurR2       0.08697903       0.05705697        0.04611488        0.05275364
+[1] "results/res20201204_01/models/models_thin_5_samples_100_chains_4.Rdata"
+Cross-validation, fold 1 out of 5
+Setting updater$Gamma2=FALSE due to specified phylogeny matrix
+Cross-validation, fold 2 out of 5
+Setting updater$Gamma2=FALSE due to specified phylogeny matrix
+Cross-validation, fold 3 out of 5
+Setting updater$Gamma2=FALSE due to specified phylogeny matrix
+Cross-validation, fold 4 out of 5
+Setting updater$Gamma2=FALSE due to specified phylogeny matrix
+Cross-validation, fold 5 out of 5
+Setting updater$Gamma2=FALSE due to specified phylogeny matrix
+Cross-validation, fold 1 out of 5
+Setting updater$Gamma2=FALSE due to specified phylogeny matrix
+Cross-validation, fold 2 out of 5
+Setting updater$Gamma2=FALSE due to specified phylogeny matrix
+Cross-validation, fold 3 out of 5
+Setting updater$Gamma2=FALSE due to specified phylogeny matrix
+Cross-validation, fold 4 out of 5
+Setting updater$Gamma2=FALSE due to specified phylogeny matrix
+Cross-validation, fold 5 out of 5
+Setting updater$Gamma2=FALSE due to specified phylogeny matrix
+Cross-validation, fold 1 out of 5
+Setting updater$Gamma2=FALSE due to specified phylogeny matrix
+Cross-validation, fold 2 out of 5
+Setting updater$Gamma2=FALSE due to specified phylogeny matrix
+Cross-validation, fold 3 out of 5
+Setting updater$Gamma2=FALSE due to specified phylogeny matrix
+Cross-validation, fold 4 out of 5
+Setting updater$Gamma2=FALSE due to specified phylogeny matrix
+Cross-validation, fold 5 out of 5
+Setting updater$Gamma2=FALSE due to specified phylogeny matrix
+Cross-validation, fold 1 out of 5
+Setting updater$Gamma2=FALSE due to specified phylogeny matrix
+Cross-validation, fold 2 out of 5
+Setting updater$Gamma2=FALSE due to specified phylogeny matrix
+Cross-validation, fold 3 out of 5
+Setting updater$Gamma2=FALSE due to specified phylogeny matrix
+Cross-validation, fold 4 out of 5
+Setting updater$Gamma2=FALSE due to specified phylogeny matrix
+Cross-validation, fold 5 out of 5
+Setting updater$Gamma2=FALSE due to specified phylogeny matrix
+       pa_sp_tp8_q4_5_100 pa_sp_tp8_q3_5_100 pa_sp_tp8_qr1_5_100
+RMSE            0.4022332          0.3428103           0.3389612
+AUC             0.7947163          0.8452040           0.8213515
+TjurR2          0.2015487          0.1851764           0.1699538
+       pa_sp_tp8_qr2_5_100
+RMSE             0.3416431
+AUC              0.8330364
+TjurR2           0.1978033
+       pa_sp_tp8_q4_5_100 pa_sp_tp8_q3_5_100 pa_sp_tp8_qr1_5_100
+RMSE            0.4521252         0.39211679          0.38719720
+AUC             0.6463268         0.64056535          0.59779219
+TjurR2          0.1016206         0.06575026          0.05648142
+       pa_sp_tp8_qr2_5_100
+RMSE            0.39298682
+AUC             0.62792444
+TjurR2          0.07860689
+> 
+> 
+> 
+> proc.time()
+    user   system  elapsed 
+ 126.989   65.165 6754.533 
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 Cross-validation, fold 3 out of 5
+Setting updater$Gamma2=FALSE due to specified phylogeny matrix
+Cross-validation, fold 4 out of 5
+Setting updater$Gamma2=FALSE due to specified phylogeny matrix
+Cross-validation, fold 5 out of 5
+Setting updater$Gamma2=FALSE due to specified phylogeny matrix
+       pa_nsp_tp8_5_100 pa_sp_tp8_5_100 pa_nsp_tp8_adj_evi_5_100
+RMSE          0.3618925       0.3435124                0.3613265
+AUC           0.7629888       0.8222086                0.7672777
+TjurR2        0.1058289       0.1635791                0.1098195
+       pa_sp_tp8_adj_evi_5_100
+RMSE                 0.3426431
+AUC                  0.8273200
+TjurR2               0.1678676
+       pa_nsp_tp8_5_100 pa_sp_tp8_5_100 pa_nsp_tp8_adj_evi_5_100
+RMSE         0.38902170      0.38203628               0.39181919
+AUC          0.57595220      0.62896889               0.56996087
+TjurR2       0.04013138      0.06601106               0.03906515
+       pa_sp_tp8_adj_evi_5_100
+RMSE                0.38489144
+AUC                 0.61982462
+TjurR2              0.06151439
+> 
+> 
+> 
+> proc.time()
+      user     system    elapsed 
+   650.285    539.314 209781.039 
