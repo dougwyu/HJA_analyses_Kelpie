@@ -141,7 +141,8 @@ vars.vif <- viffer(as.matrix(env.vars))
 
 vars.vif
 
-corrplot(cor(env.vars[,row.names(vars.vif)]),  method = "ellipse", type = "lower", cl.lim = c(-1,1))
-
+png("Hmsc_CD/local/newVars.png")
+corrplot(cor(env.vars[,row.names(vars.vif)]),  method = "ellipse", type = "lower", cl.lim = c(-1,1), title = "VIF < 5")
+dev.off()
 
 
