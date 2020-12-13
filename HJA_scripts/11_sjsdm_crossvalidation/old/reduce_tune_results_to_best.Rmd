@@ -1,0 +1,52 @@
+---
+title: "reduce_tune_results_to_best"
+author: "Douglas Yu"
+date: "05/09/2020"
+output: html_document
+---
+
+This shouldn't be needed most of the time.
+
+```{bash}
+ssh ada
+interactive
+cd Hja_sjsdm
+module add R
+R
+```
+
+
+```{r setup, include=FALSE}
+# set some general options
+Sys.setenv(RETICULATE_PYTHON="/gpfs/scratch/b042/sjSDM_env/bin/python")
+
+# packages
+library(sjSDM)
+library(here)
+library(tidyverse)
+library(fs)
+library(glue)
+
+# set variables
+rundate <- 20200904 # run date
+minocc <- 5 # minimum occupancy (incidence) per OTU
+envvar <- "lidar" # gis, ms, lidar, gismslidar
+
+abund <- "pa" # "qp" # pa is 0/1 data, qp is quasiprob data
+```
+
+```{r get best results}
+(resultsfolder <- glue("results_{rundate}_{minocc}minocc_{envvar}_{abund}_loocv"))
+
+tune_results <- readRDS(here(resultsfolder, glue("sjsdm_tune_results_HJA_{rundate}.RDS")))
+
+objects()
+```
+
+```{r save best results}
+best <- plot(tune_results, perf = "logLik")
+
+# save best results only from tune_results, because the tune_results file is ~620MB
+saveRDS(best, here(resultsfolder, glue("sjsdm_tune_results_HJA_{rundate}_bestonly.RDS")))
+```
+

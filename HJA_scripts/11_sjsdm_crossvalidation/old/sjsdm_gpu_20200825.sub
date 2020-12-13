@@ -1,0 +1,23 @@
+#!/bin/bash
+#SBATCH -p gpu # -p for 'partition name'
+     # gpu 24 hrs default, 7 d max, 2 GPUs max, 192GB per GPU
+#SBATCH --qos=gpu # QOS to be allowed to use GPU servers
+#SBATCH --gres=gpu:2 # Number of GPUs (per node)  # gpu:1 is the default.
+#SBATCH --mem 96G #
+#SBATCH --ntasks=2 # number of slots == number of cores
+#SBATCH -t 36:00:00 # 36 hours # time (DD-HH:MM:00)
+#SBATCH --job-name=sjsdm # job name
+#SBATCH -o sjsdm.out
+#SBATCH -e sjsdm.err
+#SBATCH --mail-user=dougwyu@mac.com #sends email to me
+#SBATCH --mail-type=ALL           #Mail events (NONE, BEGIN, END, FAIL, ALL)
+
+# ran on 20200825 on ada gpu
+# sbatch sjsdm_gpu_20200825.sub # to submit the job
+
+module purge
+# source /gpfs/home/b042/scratch/sjSDM_env/bin/activate # activate sjSDM environment to make pytorch available
+module add R
+
+# upload sjsdm_gpu_20200825.sub and sjsdm_gpu_20200825.R into working folder (~/sjSDM)
+Rscript --vanilla sjsdm_gpu_20200825.R

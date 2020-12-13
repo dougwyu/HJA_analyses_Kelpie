@@ -45,6 +45,7 @@ suppressPackageStartupMessages({
   library(furrr)
   library(scales)
   library(janitor)
+  library(tictoc)
 })
 
 conflict_prefer("mutate", "dplyr", quiet = TRUE)
@@ -106,13 +107,15 @@ XY.csv <- otuenv %>%
 # keep OTUs with >=5 incidences
 # original read number abundance
 minocc <- 5 # set to high number (e.g. 20) for testing
-otu.ab.csv <- otuenv %>% select(contains("__"))
+otu.ab.csv <- otuenv %>% select(lysis_ratio, contains("__")) %>% 
+  mutate(across(contains("__"), ~ .x / lysis_ratio)) %>% 
+  select(-lysis_ratio) %>% 
+  round()
 otu.ab.csv <- otu.ab.csv[ , specnumber(otu.ab.csv, MARGIN = 2) >= minocc] 
 
 # log(FSL) correction and scale to quasiprobability
 otu.qp.csv <- otu.ab.csv %>% 
-  mutate(across(contains("__"), 
-                ~ .x /(otuenv$COISpike_sum*otuenv$lysis_ratio))) %>% 
+  mutate(across(contains("__"), ~ .x /(otuenv$COISpike_sum))) %>% 
   mutate(across(contains("__"), ~ log(.x + 0.001))) %>% 
   mutate(across(contains("__"), ~ rescale(.x))) # {scales}
 max(otu.qp.csv) == 1 # should be TRUE
@@ -173,15 +176,28 @@ env.csv <- otuenv %>%
     mutate(lg_cover2m_max = log(l_Cover_2m_max + 0.001)) %>% 
     mutate(lg_cover2m_4m = log(l_Cover_2m_4m + 0.001)) %>%
     mutate(lg_cover4m_16m = log(l_Cover_4m_16m + 0.001)) %>%   
-    select(SiteName, trap, period, lysis_ratio, COISpike_sum, clearcut, insideHJA, oldGrowthIndex, elevation_m, canopyHeight_m, precipitation_mm, mean.NDVI, mean.EVI, mean.green, mean.wet, l_p25, l_rumple, B1_mean, B4_mean, lg_DistStream, lg_DistRoad, lg_YrsDisturb, lg_cover2m_max, lg_cover2m_4m, lg_cover4m_16m) %>% 
-    mutate(across(where(is.numeric) & !lysis_ratio & !COISpike_sum, scale)) %>% 
-  mutate(offset = (1/COISpike_sum * lysis_ratio)) %>% 
-  relocate(offset, .after = COISpike_sum)
+    select(SiteName, trap, period, lysis_ratio, COISpike_sum, clearcut, insideHJA, oldGrowthIndex, elevation_m, canopyHeight_m, precipitation_mm, mean.NDVI, mean.EVI, mean.green, mean.wet, l_p25, l_rumple, B1_mean, B4_mean, lg_DistStream, lg_DistRoad, lg_YrsDisturb, lg_cover2m_max, lg_cover2m_4m, lg_cover4m_16m) %>%
+  mutate(across(where(is.numeric) & !lysis_ratio & !COISpike_sum, scale)) 
+
+# env.csv <- otuenv %>% 
+#     select(!contains("__"), -UTM_E, -UTM_N, -starts_with("nor")) %>%
+#     mutate(B1_mean = rowMeans(across(starts_with("B1_")))) %>% 
+#     mutate(B4_mean = rowMeans(across(starts_with("B4_")))) %>%  
+#     mutate(lg_DistStream = log(distToStream_m + 0.001)) %>% 
+#     mutate(lg_DistRoad = log(distToRoad_m + 0.001)) %>% 
+#     mutate(lg_YrsDisturb = log(YrsSinceDist + 0.001)) %>% 
+#     mutate(lg_cover2m_max = log(l_Cover_2m_max + 0.001)) %>% 
+#     mutate(lg_cover2m_4m = log(l_Cover_2m_4m + 0.001)) %>%
+#     mutate(lg_cover4m_16m = log(l_Cover_4m_16m + 0.001)) %>%   
+#     select(SiteName, trap, period, lysis_ratio, COISpike_sum, clearcut, insideHJA, oldGrowthIndex, elevation_m, canopyHeight_m, precipitation_mm, mean.NDVI, mean.EVI, mean.green, mean.wet, l_p25, l_rumple, B1_mean, B4_mean, lg_DistStream, lg_DistRoad, lg_YrsDisturb, lg_cover2m_max, lg_cover2m_4m, lg_cover4m_16m) %>% 
+#     mutate(across(where(is.numeric) & !lysis_ratio & !COISpike_sum, scale)) %>% 
+#   mutate(offset = (1/COISpike_sum * lysis_ratio)) %>% 
+#   relocate(offset, .after = COISpike_sum)
 ```
 
-the smaller the lysis_ratio, the larger the original sample. 
-the larger the COISpike_sum, the larger the original sample
-to create an offset term, I thus use 1/COISpike_sum*lysis_ratio
+the smaller the lysis_ratio, the larger the original sample, and i just increase the number of reads by the lysis_ratio (e.g. if the lysis_ratio is 0.5, the numbers of reads in that row are increased by 2X)
+COISpikesum is proportional to the observation 'effort' during the metabarcoding pipeline
+I thus use offset(log(COISpike_sum))
 
 Functions to plot ecoCopula output (cord())
 ```{r process cord output}
@@ -320,7 +336,7 @@ otu.mod1.ord <- cord(otu.mod1)
 # make plots
 
 # mod0: no covariates
-# cordord <- "otu.mod0.ord"; model <- "otu.ord ~ 1" 
+cordord <- "otu.mod0.ord"; model <- "otu.ord ~ 1"
 
 # mod1: elevation_m 
 cordord <- "otu.mod1.ord"; model <- "otu.ord ~ elevation_m"
@@ -389,7 +405,7 @@ otu.mod3.ord <- cord(otu.mod3)
 cordord <- "otu.mod2.ord"; model <- "otu.ord ~ 1"
 # OR
 # mod3: elevation_m 
-cordord <- "otu.mod3.ord"; model <- "otu.ord ~ elevation_m" 
+cordord <- "otu.mod3.ord"; model <- "otu.ord ~ elevation_m"
 
 site_res <- site_res_fxn(cordord = get(cordord), env.csv, XY.csv)
 sp_res <- sp_res_fxn(cordord =  get(cordord), abund = abund)
@@ -433,7 +449,7 @@ glue("otu.{abund}.csv")
 otu.ord <- mvabund(get(glue("otu.{abund}.csv")))
 is.mvabund(otu.ord)
 
-otu.mod4 <- manyglm(otu.ord ~ 1 + offset(log(offset)), 
+otu.mod4 <- manyglm(otu.ord ~ 1 + offset(log(COISpike_sum)), 
                     family = "negative.binomial", 
                     data = env.csv
                     )
@@ -441,7 +457,7 @@ plot(otu.mod4) # chk residuals
 otu.mod4.ord <- cord(otu.mod4)
 
 # with elevation
-otu.mod5 <- manyglm(otu.ord ~ elevation_m + offset(log(offset)), 
+otu.mod5 <- manyglm(otu.ord ~ elevation_m + offset(log(COISpike_sum)), 
                     family = "negative.binomial", 
                     data = env.csv
                     )
@@ -449,30 +465,71 @@ plot(otu.mod5) # chk residuals
 otu.mod5.ord <- cord(otu.mod5)
 
 # with elevation + insideHJA + lg_YrsDisturb
-otu.mod6 <- manyglm(otu.ord ~ elevation_m + insideHJA + lg_YrsDisturb + offset(log(offset)), 
+otu.mod6 <- manyglm(otu.ord ~ elevation_m + insideHJA + lg_YrsDisturb + offset(log(COISpike_sum)), 
                     family = "negative.binomial", 
                     data = env.csv,
                     show.time = "all"
                     )
 plot(otu.mod6) # chk residuals
-anova(otu.mod6, nBoot = 200) 
-  # Time elapsed: 0 hr 22 min 7 sec
+otu.mod6.ord <- cord(otu.mod6)
+anova(otu.mod6, nBoot = 100) 
+  # Time elapsed: 1 hr 10 min 10 sec
   # Analysis of Deviance Table
   # 
-  # Model: otu.ord ~ elevation_m + insideHJA + lg_YrsDisturb + offset(log(offset))
+  # Model: otu.ord ~ elevation_m + insideHJA + lg_YrsDisturb + offset(log(COISpike_sum))
   # 
   # Multivariate test:
   #               Res.Df Df.diff   Dev Pr(>Dev)   
   # (Intercept)       87                          
-  # elevation_m       86       1 423.4    0.005 **
-  # insideHJA         85       1 591.9    0.060 . 
-  # lg_YrsDisturb     84       1 497.4    0.284   
+  # elevation_m       86       1 303.1    0.010 **
+  # insideHJA         85       1 430.3    0.069 . 
+  # lg_YrsDisturb     84       1 421.0    0.525   
   # ---
   # Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
   # Arguments:
   #  Test statistics calculated assuming uncorrelated response (for faster computation) 
-  #  P-value calculated using 200 iterations via PIT-trap resampling.
-otu.mod6.ord <- cord(otu.mod6)
+  #  P-value calculated using 100 iterations via PIT-trap resampling.
+
+# with insideHJA + elevation_m * lg_YrsDisturb
+otu.mod7 <- manyglm(otu.ord ~ insideHJA + elevation_m * lg_YrsDisturb + offset(log(COISpike_sum)), 
+                    family = "negative.binomial", 
+                    data = env.csv,
+                    show.time = "all"
+                    )
+plot(otu.mod7) # chk residuals
+otu.mod7.ord <- cord(otu.mod7)
+anova(otu.mod7, nBoot = 100)
+  # Time elapsed: 1 hr 41 min 30 sec
+  # Analysis of Deviance Table
+  # 
+  # Model: otu.ord ~ insideHJA + elevation_m * lg_YrsDisturb + offset(log(COISpike_sum))
+  # 
+  # Multivariate test:
+  #                           Res.Df Df.diff   Dev Pr(>Dev)   
+  # (Intercept)                   87                          
+  # insideHJA                     86       1 378.5    0.010 **
+  # elevation_m                   85       1 354.8    0.010 **
+  # lg_YrsDisturb                 84       1 421.0    0.505   
+  # elevation_m:lg_YrsDisturb     83       1 275.8    1.000   
+  # ---
+  # Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+  # Arguments:
+  #  Test statistics calculated assuming uncorrelated response (for faster computation) 
+  #  P-value calculated using 100 iterations via PIT-trap resampling.
+
+# with lg_YrsDisturb + elevation_m * insideHJA
+otu.mod8 <- manyglm(otu.ord ~ lg_YrsDisturb + elevation_m * insideHJA +
+                      offset(log(COISpike_sum)), 
+                    family = "negative.binomial", 
+                    data = env.csv,
+                    show.time = "all"
+                    )
+plot(otu.mod8) # chk residuals
+otu.mod8.ord <- cord(otu.mod8)
+
+tic()
+anova(otu.mod8, nBoot = 10)
+toc()
 
 # make plots
 # mod4: no covariates
@@ -483,6 +540,9 @@ cordord <- "otu.mod5.ord"; model <- "otu.ord ~ elevation_m"
 # OR
 # mod6: elevation_m 
 cordord <- "otu.mod6.ord"; model <- "otu.ord ~ elevation_m + insideHJA + lg_YrsDisturb"
+# OR
+# mod7: elevation_m 
+cordord <- "otu.mod7.ord"; model <- "otu.ord ~  insideHJA + elevation_m * lg_YrsDisturb"
 
 site_res <- site_res_fxn(cordord = get(cordord), env.csv, XY.csv)
 sp_res <- sp_res_fxn(cordord =  get(cordord), abund = abund)
@@ -587,7 +647,7 @@ ggsave(filename = here("..", "..", "Kelpie_maps",
 
 
 ```{r}
-cordord <- "otu.mod6.ord"; model <- "otu.ord ~ elevation_m + insideHJA + lg_YrsDisturb"
+cordord <- "otu.mod8.ord"; model <- "otu.ord ~ lg_YrsDisturb + elevation_m * insideHJA"
 env <- otuenv %>% 
   select(!contains("__"), -UTM_E, -UTM_N, -starts_with("nor")) %>% 
   select(!contains(c("20180726", "20180818", "20180802"))) %>% 

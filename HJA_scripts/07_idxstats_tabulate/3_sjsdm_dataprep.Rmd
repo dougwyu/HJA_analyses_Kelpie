@@ -124,9 +124,9 @@ log and scale env variables
 scale.env.csv <- otuenv %>% 
   select(!contains("__")) %>% # remove OTUs
   select(-SiteName, -trap, -period, -UTM_E, -UTM_N, -lysis_ratio, 
-         -COISpike_sum, -starts_with("nor"))  # %>% 
-  mutate(insideHJA = ifelse(insideHJA == "yes", 1, 0)) %>% 
-  mutate(clearcut = ifelse(clearcut == "yes", 1, 0))
+         -COISpike_sum, -starts_with("nor")) # %>% 
+  # mutate(insideHJA = ifelse(insideHJA == "yes", 1, 0)) %>% 
+  # mutate(clearcut = ifelse(clearcut == "yes", 1, 0))
 
 names(scale.env.csv)
 #  [1] "clearcut"           "insideHJA"          "oldGrowthIndex"    
@@ -159,7 +159,7 @@ names(scale.env.csv)
 # [82] "l_Cover_4m_16m"     "l_p25"              "l_p25_all"         
 # [85] "l_p95"              "l_p95_all"          "l_rumple"         
 
-corrplot(cor(scale.env.csv), method = "ellipse", type = "lower", tl.cex = 0.5)
+corrplot(cor(scale.env.csv[, -c(1:2)]), method = "ellipse", type = "lower", tl.cex = 0.5)
 
 # GIS + MS + LiDAR:  gismslidar
 # average, optionally log, select, and scale env covariates
@@ -192,20 +192,20 @@ These files are used as input to the sjsdm_cv() and sjsdm() code
 
 ```{r save data files}
 # set variables
-prepdate <- 20201205 # data prep date
+prepdate <- 20201213 # data prep date
 minocc <- 5 # minimum occupancy (incidence) per OTU
 envvar <- "gismslidar" # gismslidarmin, gismslidar, gis, ms, lidar, mslidar
 (datafolder <- glue("data_{prepdate}_{minocc}minocc_{envvar}"))
 
-dir_create(here("..", "..", "sjSDM", "R-git", "data", "kelpie_data", "for_adagpu", datafolder))
+dir_create(here("..", "..", "Kelpie_maps", outputidxstatstabulatefolder, "crossvalidation_data", datafolder))
 
-write_csv(scale.env.csv, here("..", "..", "sjSDM", "R-git", "data", "kelpie_data", "for_adagpu", datafolder,  "scale.env.csv"))
+write_csv(scale.env.csv, here("..", "..", "Kelpie_maps", outputidxstatstabulatefolder, "crossvalidation_data", datafolder, "scale.env.csv"))
 
-write_csv(XY.csv, here("..", "..", "sjSDM", "R-git", "data", "kelpie_data", "for_adagpu", datafolder, "XY.csv"))
+write_csv(XY.csv, here("..", "..", "Kelpie_maps", outputidxstatstabulatefolder, "crossvalidation_data", datafolder, "XY.csv"))
 
-write_csv(otu.qp.csv, here("..", "..", "sjSDM", "R-git", "data", "kelpie_data", "for_adagpu", datafolder,  "otu.qp.csv"))
+write_csv(otu.qp.csv, here("..", "..", "Kelpie_maps", outputidxstatstabulatefolder, "crossvalidation_data", datafolder,  "otu.qp.csv"))
 
-write_csv(otu.pa.csv, here("..", "..", "sjSDM", "R-git", "data", "kelpie_data", "for_adagpu", datafolder, "otu.pa.csv"))
+write_csv(otu.pa.csv, here("..", "..", "Kelpie_maps", outputidxstatstabulatefolder, "crossvalidation_data", datafolder, "otu.pa.csv"))
 ```
 
 Upload the datafiles to ~/Hja_sjsdm/

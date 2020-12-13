@@ -1,0 +1,334 @@
+---
+title: "Process additional sjsdm output"
+author: "Douglas Yu"
+date: "07/12/2020"
+output: html_document
+---
+
+Produce additional sjSDM outputs:
+Correlation heatmap
+Circular covariance/correlation plot sorted by abundance
+Circular covariance/correlation plot sorted by env covariates
+Env coefficients by species barchart
+
+run on the laptop
+
+```{r setup, eval=TRUE, include=TRUE}
+# script-specific libraries
+suppressPackageStartupMessages({
+    library(stringdist)
+    library(vegan)
+    library(gridBase)
+    library(grid)
+    library(gridExtra)
+    library(ggcorrplot)
+    library(reticulate)
+    library(sjSDM)
+    library(mgsub)
+    library(vcd)
+    library(RColorBrewer)
+    library(reshape2)
+})
+
+# general-use packages
+suppressPackageStartupMessages({
+  library(tidyverse) # loads a bunch of packages (see below)
+  library(here)
+  library(fs)
+  library(glue)
+  library(readxl)
+  library(cowplot)
+  library(lubridate)
+  library(patchwork)
+  library(broom)
+  library(ggeffects)
+  library(viridis)
+  library(arsenal) # for tableby()
+  library(waldo) # for compare()
+  library(sjmisc) # for rotate_df()
+  library(envDocument)
+  library(inspectdf)
+  library(conflicted)
+  library(knitr)
+  library(beepr)
+  library(pivottabler)
+  library(furrr)
+  library(scales)
+  library(janitor)
+})
+
+conflict_prefer("mutate", "dplyr", quiet = TRUE)
+conflict_prefer("select", "dplyr", quiet = TRUE)
+conflict_prefer("summarise", "dplyr", quiet = TRUE)
+conflict_prefer("filter", "dplyr", quiet = TRUE)
+conflict_prefer("first", "dplyr", quiet = TRUE)
+conflict_prefer("here", "here", quiet = TRUE)
+conflict_prefer("separate", "tidyr", quiet = TRUE)
+conflict_prefer("unite", "tidyr", quiet = TRUE)
+conflict_prefer("trim", "sjmisc", quiet=TRUE)
+conflict_prefer("rescale", "scales", quiet=TRUE)
+conflict_prefer("rescale", "discard", quiet=TRUE)
+conflict_prefer("intersect", "dplyr", quiet = TRUE)
+conflict_prefer("setdiff", "dplyr", quiet = TRUE) # w/out this, R crashes
+conflict_prefer("to_factor", "sjmisc", quiet = TRUE)
+conflict_prefer("trim", "glue", quiet = TRUE)
+conflict_prefer("discard", "purrr", quiet = TRUE)
+conflict_prefer("importance", "sjSDM", quiet = TRUE)
+# Real numbers, not scientific notation.
+options(scipen = 999)
+```
+
+```{r load functions}
+packageVersion('sjSDM')
+# [1] ‘0.1.2.9000’
+	
+source(here("source", "sjsdm_function.r"))
+source(here("source", "sjsdm-analyse-functions.r"))
+```
+
+samtoolsfilter <- "F2308" # F2308 filter only
+samtoolsqual <- "q48"
+minimaprundate <- 20200929
+kelpierundate <- 20200927
+primer <- "BF3BR2"
+trap <- "M1"
+period <- "S1"
+
+(outputidxstatstabulatefolder <- glue("outputs_minimap2_{minimaprundate}_{samtoolsfilter}_{samtoolsqual}_kelpie{kelpierundate}_{primer}_vsearch97"))
+
+
+```{r set names}
+# load data from 'crossvalidation' folder 
+samtoolsfilter <- "F2308" # F2308 filter only
+samtoolsqual <- "q48"
+minimaprundate <- 20200929
+kelpierundate <- 20200927
+primer <- "BF3BR2"
+
+date.cross.validation = 20201119
+minocc = 5
+envvar = "gismslidar"
+abund = "qp" # "qp" or "pa"
+malaise = "M1"
+session = "S1"
+
+# (sjsdmV = '0.1.2.9000') # package version
+(sjsdmV <- packageVersion('sjSDM')[1]) # package version
+
+(outputidxstatstabulatefolder <- glue("outputs_minimap2_{minimaprundate}_{samtoolsfilter}_{samtoolsqual}_kelpie{kelpierundate}_{primer}_vsearch97"))
+
+# path to outputs from 1_sjsdm_model_20201024.Rmd
+(pathtosjsdm <- here("..", "..", "Kelpie_maps", outputidxstatstabulatefolder, "crossvalidation_outputs"))
+
+(cvfolder <- glue("results_{date.cross.validation}_{minocc}minocc_{envvar}_{abund}_loocv"))
+
+(datafolder <- glue("data_{date.cross.validation}_{minocc}minocc_{envvar}"))
+
+(otudata <- glue("otu.{abund}.csv"))
+
+envdata <- "scale.env.csv"
+
+# old
+# # path to outputs from 1_sjsdm_model_20201024.Rmd
+# pathtosjsdm <- here("..", "..", "sjSDM", "R-git", "results", "crossvalidation")
+# 
+# (cvfolder <- glue("results_{date.cross.validation}_{minocc}minocc_{envvar}_{abund}_loocv"))
+# 
+# (datafolder <- glue("data_{date.cross.validation}_{minocc}minocc_{envvar}"))
+# 
+# (otudata <- glue("otu.{abund}.csv"))
+# 
+# envdata <- "scale.env.csv"
+```
+
+```{r load model outputs and datasets}
+result <- readRDS(file.path(pathtosjsdm, cvfolder,
+                    glue('sjsdm_result_HJA_{date.cross.validation}.RDS')))
+names(result)
+
+model <- readRDS(file.path(pathtosjsdm, cvfolder,
+                    glue('sjsdm_model_HJA_{date.cross.validation}.RDS')))
+names(model)
+model["cl"]
+model["settings"]
+
+best <- readRDS(file.path(pathtosjsdm, cvfolder,
+    glue('sjsdm_tune_results_HJA_{date.cross.validation}_bestonly.RDS')))
+
+summary.p <- readRDS(file.path(pathtosjsdm, cvfolder,
+    glue("sjsdm_summary.p_HJA_{date.cross.validation}.RDS")))
+
+imp <- readRDS(file.path(pathtosjsdm, cvfolder,
+    glue('sjsdm_imp_HJA_{date.cross.validation}.RDS')))
+
+otu <- read_csv(file.path(pathtosjsdm, cvfolder, datafolder, otudata))
+
+env <- read_csv(file.path(pathtosjsdm, cvfolder, datafolder, envdata))
+```
+
+```{r graph importance ternary plot and barchart}
+impdf <- tibble(OTU = imp$names, as_tibble(imp$res$total)) %>% 
+    separate(OTU, 
+             into = c("OTU", "empty", "class", "order", "family",
+                      "genus", "epithet", "BOLD", "BOLDID",
+                      "size"), remove = FALSE, sep = "_") %>% 
+    select(-empty, -BOLD) %>% 
+    relocate(env, spatial, biotic) 
+
+pdf(here(pathtosjsdm, cvfolder, glue('importance_ternary_sjSDM_{malaise}_{session}_{abund}_min{minocc}_{envvar}_{date.cross.validation}.pdf')), width=8, height=5)
+
+titleText=paste('Variation partition, ', nrow(data), ' OTUs', sep='')
+# ind = 5 is Class:  Insecta, Arachnida
+# ind = 6 is Order
+vp.plot(data = impdf, x1 = 1, x2 = 3, ind = 6,  
+        textM=titleText, textL="Order")
+	
+dev.off()
+
+# barchart ranges of env, biotic, spatial
+a = data.frame(range=names(summary(cut(impdf$biotic, breaks = seq(0,1,length.out = 12)))), env=summary(cut(impdf$env, breaks = seq(0,1,length.out = 12))), spatial=summary(cut(impdf$spatial, breaks = seq(0,1,length.out = 12))), biotic=summary(cut(impdf$biotic, breaks = seq(0,1,length.out = 12))), row.names=NULL)
+
+a = melt(a, id="range", measure.vars=names(a)[2:4])
+	
+p1 <- ggplot(a, aes(range, value, fill = variable)) + 
+    geom_bar(stat="identity", position = "dodge") +
+    scale_fill_brewer(palette = "Set1") #+ ggtitle(legendText)
+
+ggsave(here(pathtosjsdm, cvfolder,
+        glue("importance_barchart_{date.cross.validation}_{abund}.pdf")), 
+       width = 11.7, 
+       height = 8.3, 
+       device = "pdf",
+       p1)
+```
+
+```{r graph correlation heatmap}
+dim(result$sigma)# cov <- result$sigma 
+# [1] 268 268
+
+co.env.spp <- cov2cor(result$sigma)
+rownames(co.env.spp) <- impdf$BOLDID
+colnames(co.env.spp) <- impdf$BOLDID
+# rownames(co.env.spp) <- 1:dim(result$sigma)[1]   # spp.names
+# colnames(co.env.spp) <- 1:dim(result$sigma)[1]   # spp.names
+	
+range(co.env.spp)
+	
+cut.t = cut(co.env.spp, breaks = seq(-1,1, length.out = 12))
+summary(cut.t)
+rm(cut.t)
+
+# plot species correlation heatmap
+pdf(here(pathtosjsdm, cvfolder, glue("correlation_heatmap_{date.cross.validation}.pdf")), 
+    width = 12, height = 12)
+	
+ggcorrplot(co.env.spp, hc.order = T, outline.color = "white", 
+    insig = "blank", sig.level = 0.05, lab_size = 1, 
+    show.legend = T, tl.cex = 4, 
+    title=glue("sjSDM version: {sjsdmV}, crossval {date.cross.validation}, coef-alpha: {best[['alpha_coef']]}, lambda: {best[['lambda_coef']]}")
+    )
+
+dev.off()
+```
+
+```{r circular covariance plot by sorted species abundances}
+otu.tbl <-  otu
+number <- 10
+	
+sigma = re_scale(result$sigma)[order(apply(otu.tbl, 2, sum)),
+                               order(apply(otu.tbl, 2, sum))]
+
+pdf(here(pathtosjsdm, cvfolder, glue("circular_correlation_plot_sorted_by_species_abundance_{date.cross.validation}.pdf")), width = 8, height = 8)
+
+version.text <- glue("sjSDM version: {sjsdmV}, crossval {date.cross.validation}, coef-alpha: {best[['alpha_coef']]}, lambda: {best[['lambda_coef']]}")
+
+(otu.text <- glue("sum of OTU {abund}"))
+	
+cov.circle(version.text = version.text, otu.text = otu.text, 
+           sigma = sigma, otu.tbl = otu.tbl, result = result)
+	
+dev.off()
+```
+
+```{r circular covariance plot sorted by env covariates}
+beta = as.matrix(data.frame(result$beta$env, result$beta$spatial)[,2:29])
+
+effects = apply(beta, 1, function(o) sum(abs(o)))
+
+str(effects)
+	
+n = ncol(result$sigma)# number of otus
+
+max_effects = apply(beta ,1, function(e) which.max(abs(e)))
+	
+effect_comb = data.frame(cbind(max_effects, 
+                               sapply(1:n, function(i) beta[i, max_effects[i]] )))
+
+str(effect_comb)
+
+# variables index & value which has biggest coefficient
+
+version.text <- glue("sjSDM version: {sjsdmV}, crossval {date.cross.validation}, coef-alpha: {best[['alpha_coef']]}, lambda: {best[['lambda_coef']]}")
+
+(otu.text <- glue("sum of OTU {abund}"))
+
+# need to check if order of env covariates is correct
+evnames <- names(env)
+evnames
+
+pdf(here(pathtosjsdm, cvfolder, glue("circular_correlation_plot_sorted_by_env_covariates_{date.cross.validation}.pdf")), width = 8, height = 8)
+
+cov.circle.env(version.text = version.text, evnames = evnames,
+               otu.text = otu.text, result = result, 
+               effect_comb = effect_comb, otu.tbl = otu.tbl)
+	
+dev.off()
+	
+```
+
+```{r env coefficients barchart}
+# set variables
+minsize <- 10
+maxsize <- 200000L # default 200000 to include all large OTUs
+taxon <- "all" # "all" is the default
+
+# function(summary.p, result, minsize, maxsize=200000, taxon="all")
+p1 <- coef.figure(summary.p, result, minsize, maxsize, taxon)
+# p1
+
+ggsave(here(pathtosjsdm, cvfolder,
+    glue("coef_figure_min{minsize}_max{maxsize}_{taxon}-taxa_{date.cross.validation}.pdf")), 
+       width = 15, 
+       height = 24, 
+       device = "pdf",
+       p1
+    )
+
+```
+
+```{r histograms of env coefficients and otu sizes}
+effect <- data.frame(summary.p$coefmat)
+effect$rownames <- rownames(effect)
+effect <- separate(
+    data = effect,
+    col = rownames,
+    into = c("species", "coef"),
+    sep = " "
+    ) %>% 
+    filter(coef != "(Intercept)")
+
+effect <- effect %>%
+    tidyr::separate(species, into = c("OTU", "taxon"), sep = "__", remove = TRUE) %>%
+    tidyr::separate(taxon, into = c("taxon", "size"), sep = "_size.", remove = TRUE) %>%
+    # mutate(taxon = str_replace(taxon, "_sp", "_genus_sp")) %>%
+    tidyr::separate(taxon, into = c("class", "order", "family", "genus", "species", "BOLD", "BOLDID")) %>%
+    unite(OTU, c("OTU", "class", "order", "family", "genus", "species"), sep = "_", ) %>%
+    select(-BOLD, -BOLDID) %>%
+    mutate(size = as.numeric(size)) %>%
+    rename(species = OTU)
+
+effecthist <- effect %>% distinct(species, .keep_all = TRUE)
+hist(effecthist$Estimate)
+hist(effecthist$size, breaks = 5000, xlim = c(0, 10000))
+```
+
