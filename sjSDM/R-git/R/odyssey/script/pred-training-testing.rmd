@@ -1,0 +1,281 @@
+# created: Nov 23, 2020
+# last modified: Dec 14, 2020
+
+```{r setup}
+# setwd('/media/yuanheng/SD-64g2/Downloads/backup2/HJA_analyses_Kelpie/sjSDM/R-git')
+	
+lapply(c("ggplot2",'abind', 'tidyverse','gridBase', 'grid','gridExtra', 'ggcorrplot','here', 'conflicted','reticulate','sjSDM','mgsub','vcd','RColorBrewer', 'reshape2','glue','pROC'), library, character.only=T)
+# 'scatterplot3d', 'labdsv',
+	
+conflict_prefer("filter", "dplyr")
+conflict_prefer("select", "dplyr")
+conflict_prefer("importance", "sjSDM")
+	
+here()
+packageVersion('sjSDM')
+#[1] ‘0.1.2.9000’
+	
+source(here('R','source', 'corvif-source.r'))
+	
+```
+
+
+```{r set-names}
+date.cross.validation = 20201119
+envvar = 'gismslidar'
+minocc = 5
+abund = 'pa' # qp
+session = 's1'; malaise = 'm1'
+	
+cvfolder = glue("results_{date.cross.validation}_{minocc}minocc_{envvar}_{abund}_loocv")
+datafolder = glue("data_{date.cross.validation}_{minocc}minocc_{envvar}")
+otudata = glue('otu.{abund}.csv')
+	
+sjsdmV = '0.1.2.9000' # package version
+	
+# names for graph
+#sjsdmVfolder = glue('sjsdm-{sjsdmV}')
+#describefolder1 = glue('sjsdm_{session}_{malaise}_{abund}_min{minocc}')
+#describefolder2 = glue('model_{envvar}_{date.cross.validation}')
+	
+```
+
+
+```{r load-data-model}
+# load data
+otu = read.csv(here( 'results','crossvalidation', cvfolder, datafolder, otudata), header=T, sep=',', stringsAsFactors = F, na.strings='NA')
+str(otu[,40:46])
+	
+scale.env = read.csv(here('results', 'crossvalidation', cvfolder, datafolder, 'scale.env.csv'), header=T, sep=',', stringsAsFactors = F, na.strings='NA')
+str(scale.env)
+	
+XY = read.csv(here('results', 'crossvalidation', cvfolder, datafolder, 'XY.csv'), header=T, sep=',', stringsAsFactors = F, na.strings='NA')
+str(XY)
+	
+# load model 
+model.tuned = readRDS(here('results','sjsdm-model-RDS', glue('sjsdm-{sjsdmV}'), glue('s-jSDM_model_s1_m1_{abund}_min{minocc}_{envvar}_{date.cross.validation}.RDS')) )
+names(model.tuned)
+	
+```
+
+
+```{r explore data}
+# ele, disturb~wet, ndvi~min.T, preci~EVI 
+# ... check correlation
+z=data.frame(select(scale.env, 'elevation_m', 'NDVI_20180717', 'minT_annual', 'YrsSinceDist', 'W_20180717', 'precipitation_mm', 'EVI_20180717'))
+	
+corvif(z)
+pairs(z,lower.panel=panel.smooth2,upper.panel=panel.cor,diag.panel=panel.hist)
+	
+# reduced variables
+z=data.frame(select(scale.env, 'minT_annual', 'YrsSinceDist', 'W_20180717', 'precipitation_mm', 'EVI_20180717'))
+	
+corvif(z)
+pairs(z,lower.panel=panel.smooth2,upper.panel=panel.cor,diag.panel=panel.hist)
+	
+cor(z)
+	
+# CD's set
+# no "oldGrowthIndex" nor "clearcut"
+z=data.frame(select(scale.env, "insideHJA",  "elevation_m","canopyHeight_m","distToStream_m", 'minT_annual', 'YrsSinceDist', 'W_20180717','G_20180717', 'precipitation_mm','NDVI_20180717', 'EVI_20180717', "l_p25", "l_rumple",'B1_20180717', 'B4_20180717', 'l_Cover_2m_4m', 'l_Cover_2m_max', 'distToRoad_m', 'l_Cover_4m_16m' ))
+	
+corvif(z)
+# B4_20180717, NDVI_20180717, 'elevation_m', 'B1_20180717', 
+	
+pairs(z,lower.panel=panel.smooth2,upper.panel=panel.cor,diag.panel=panel.hist)
+	
+z=data.frame(select(scale.env, "insideHJA","canopyHeight_m","distToStream_m", 'minT_annual', 'YrsSinceDist', 'W_20180717','G_20180717', 'precipitation_mm', 'EVI_20180717', "l_p25", "l_rumple", 'l_Cover_2m_4m', 'l_Cover_2m_max', 'distToRoad_m', 'l_Cover_4m_16m'))
+corvif(z)   # Variance inflation factors
+	
+pairs(z,lower.panel=panel.smooth2,upper.panel=panel.cor,diag.panel=panel.hist)
+	
+
+par(mfrow=c(1,2))
+	
+hist(scale.env$YrsSinceDist)
+hist(scale.env$W_20180717)
+	
+```
+
+
+```{r select subsets}
+# 80% of data as training
+result = readRDS(here('results','sjsdm-model-RDS', glue('sjsdm-{sjsdmV}'), glue('s-jSDM_result_s1_m1_qp_min{minocc}_selected_{date.cross.folder}_noS.RDS')) )
+# just for getting the training set, not a well-converged model
+a = result$select.col
+	
+# random selection
+#set.seed=100
+#num.sample = dim(otu)[1]
+#select.percent = .8
+	
+#a = sample(1:num.sample, round(88*select.percent))
+#  [1] 76, 30, 18 ,14 ,45, 26, 10, 82, 73 52 17  2 12 42 34 87 28 43  3 47 24, 66, 81, 51 57 59 74 37 50 78 13 56 85 79 67  8 69 80 88  6 16 19, 65 54, 36  5 49 29  1 86 31 72 40 68 22 20 25 64 39 33 60  9 62 ,44 ,32 35 41  7 48 83
+	
+otu.train = otu[a,]
+dim(otu.train)
+otu.test = otu[-a,]
+	
+scale.env.train = scale.env[a,]
+scale.env.test = scale.env[-a,]
+	
+par(mfrow=c(1,2))
+hist(scale.env.train$elevation_m)
+hist(scale.env$elevation_m)
+	
+XY.train = XY[a,]
+XY.test = XY[-a,]
+str(XY.train)
+	
+# pdf(here('results','sjsdm-graph',glue('sjsdm-{sjsdmV}'),'prediction_trial','descriptive','coordinate_training_sample.pdf'), height=5,width=6)
+	
+ggplot(XY, aes(UTM_E, UTM_N)) + geom_point() + geom_point(data=XY.train, aes(colour='red')) + scale_colour_manual(labels = c('training'), values = c("red"))
+	
+dev.off()
+	
+```
+
+```{r model-tuned-training}
+# load tune result (only best, adagpu)
+best = readRDS(here('results', 'crossvalidation', cvfolder, glue('sjsdm_tune_results_HJA_{date.cross.validation}_bestonly.RDS')))
+best
+	
+# make sure input of sjsdm are numeric matrix
+s.otu.train = as.matrix(otu.train)
+attr(s.otu.train, 'dimnames') = NULL
+str(s.otu.train)
+	
+# run sjSDM
+model.tuned.train = sjSDM(Y = s.otu.train,
+			  env = linear(data=scale.env.train, 
+			  lambda=best[['lambda_coef']], alpha= best[['alpha_coef']]),
+			  biotic = bioticStruct(lambda=best[['lambda_cov']], alpha=best[['alpha_cov']], on_diag=F, inverse = FALSE),
+			  spatial = linear(data=XY.train, ~0+UTM_E:UTM_N, lambda =best[['lambda_spatial']] , alpha = best[['alpha_spatial']]),
+			  learning_rate = 0.003, # 0.003 recommended for high species number 
+			  step_size = NULL, iter = 150L, family=stats::binomial('probit'), sampling = 5000L # 1000L
+			 )
+	
+# saveRDS(model.tuned.train, here('results','sjsdm-model-RDS', glue('sjsdm-{sjsdmV}'), glue('s-jSDM_tuned.model_s1_m1_{abund}_min{minocc}_{envvar}_{date.cross.validation}_1000.RDS')) )
+	
+model.tuned.train = readRDS(here('results','sjsdm-model-RDS', glue('sjsdm-{sjsdmV}'), glue('s-jSDM_tuned.model_s1_m1_{abund}_min{minocc}_{envvar}_{date.cross.validation}.RDS')) )
+	
+plot(model.tuned.train$history)
+	
+```
+
+
+```{r save files}
+# saveRDS(list(XY.train = XY.train, XY.test=XY.test, scale.env1.test=scale.env1.test, scale.env1.train=scale.env1.train, otu.test=otu.test, otu.train=otu.train), here('R','data', glue('data_sjSDM_trail_predict_{abund}_min{minocc}_{envvar}_{date.cross.folder}.RDS')))
+	
+b = readRDS(here('R','data', glue('data_sjSDM_trail_predict_{abund}_min{minocc}_{envvar}_{date.cross.folder}.RDS')))
+names(b)
+	
+```
+
+```{r prediction}
+# .... explanatory AUC, pa/qp
+pred.explain = apply(abind::abind(lapply(1:100, function(i) predict(model.tuned)) , along = -1L), 2:3, mean)
+	
+str(pred.explain)
+	
+# calculate AUC
+attr(pred.explain, 'dimnames') = NULL
+str(pred.explain)
+	
+head(otu)
+otu.pa = (otu>0)*1 # convert qp to pa data in order to calculate AUC !!!
+	
+roc.explain = lapply(1:dim(otu)[2], function(i) roc(otu.pa[,i], pred.explain[,i]))
+	
+head(roc.explain)
+	
+auc.explain = mean(as.numeric(sapply(lapply(roc.explain, function(i) str_split(auc(i), ':')), function(x) x[[1]][1] )))
+	
+# .... predictive AUC
+pred.test = apply(abind::abind(lapply(1:100, function(i) predict(model.tuned.train, newdata=scale.env.test, SP=XY.test)) , along = -1L), 2:3, mean)
+	
+str(pred.test)
+	
+# calculate AUC
+attr(pred.test, 'dimnames') = NULL
+str(pred.test)
+	
+# .. delete otus that only 0/1
+dim(otu.test)
+	
+otu.test1 = rbind(otu.test, count=(base::colSums(otu.test)>0 & base::colSums(otu.test)<dim(otu.test)[1])*1 )
+which(otu.test1[dim(otu.test1)[1],] == 0)
+	
+pred.test1 = pred.test[ ,which(otu.test1[dim(otu.test1)[1],] == 1)]
+str(pred.test1)
+	
+otu.test1 = otu.test1[1:dim(otu.test)[1], which(otu.test1[dim(otu.test1)[1],] == 1)]
+dim(otu.test1)
+	
+otu.test1.pa = (otu.test1>0)*1
+	
+# calculate AUC
+roc.test = lapply(1:dim(otu.test1)[2], function(i) roc(otu.test1.pa[,i], pred.test1[,i]))
+	
+head(roc.test)
+	
+auc.test = mean(as.numeric(sapply(lapply(roc.test, function(i) str_split(auc(i), ':')), function(x) x[[1]][1] )))
+	
+```
+
+
+```{r plot-pred-test}
+# ... graph 4 most spp
+# with test data ('test')
+pred.data = pred.test
+otu.data = otu.test
+XY.data = XY.test
+set = 'test' 
+numdata = '80perc' # 100perc
+auc.value = auc.test
+roc.value = roc.test
+	
+# with all data ('explain')
+pred.data = pred.explain
+otu.data = otu
+XY.data = XY
+set = 'explain'
+numdata = '100perc'
+auc.value = auc.explain
+roc.value = roc.explain
+	
+a = data.frame(sum=colSums(otu), otu=names(otu))
+a = a[order(a$sum, decreasing=T),]
+otu.plot = select(otu.data, as.character(a$otu[1:5]))
+	
+which(names(otu.data) %in% a$otu[1:5])
+otu.pred.plot = pred.data[ , which(names(otu.data) %in% a$otu[1])]
+otu.pred.plot = data.frame(lapply(1:5, function(i) pred.data[ , which(names(otu.data) %in% a$otu[i])]))
+names(otu.pred.plot) = letters[1:5]
+	
+all.plot = cbind(XY.data, otu.plot, otu.pred.plot)
+str(all.plot)
+	
+names(all.plot)[3:7] = c('obs.a', 'obs.b','obs.c','obs.d','obs.e')
+	
+i=1
+g.1=ggplot(all.plot, aes(UTM_E, UTM_N, size=obs.a, colour=a)) + geom_point() + scale_colour_gradient2(low='black', mid='red',high='blue',midpoint=.5) + scale_size(range = c(2, 6)) + ggtitle(paste(a$otu[i], ', AUC: ', round(auc(roc.value[[which(names(otu) %in% a$otu[i])]]), 4))) + theme(plot.title= element_text(size=8))
+	
+i=2
+g.2=ggplot(all.plot, aes(UTM_E, UTM_N, size=obs.b, colour=b)) + geom_point() + scale_colour_gradient2(low='black', mid='red',high='blue',midpoint=.5) + scale_size(range = c(2, 6)) + ggtitle(paste(a$otu[i], ', AUC: ', round(auc(roc.value[[which(names(otu) %in% a$otu[i])]]), 4)))+ theme(plot.title= element_text(size=8))
+	
+i=3
+g.3 = ggplot(all.plot, aes(UTM_E, UTM_N, size=obs.c, colour=c)) + geom_point() + scale_colour_gradient2(low='black', mid='red',high='blue',midpoint=.5) + scale_size(range = c(2, 6)) + ggtitle(paste(a$otu[i], ', AUC: ', round(auc(roc.value[[which(names(otu) %in% a$otu[i])]]), 4)))+ theme(plot.title= element_text(size=8))
+	
+i=4
+g.4 = ggplot(all.plot, aes(UTM_E, UTM_N, size=obs.d, colour=d)) + geom_point() + scale_colour_gradient2(low='black', mid='red',high='blue',midpoint=.5) + scale_size(range = c(2, 6)) + ggtitle(paste(a$otu[i], ', AUC: ', round(auc(roc.value[[which(names(otu) %in% a$otu[i])]]), 4)))+ theme(plot.title= element_text(size=8))
+	
+# pdf(here('results','sjsdm-graph',glue('sjsdm-{sjsdmV}'),'prediction_trial','prediction',glue('{set}_{numdata}_{datafolder}_{abund}_coordinate.pdf')), height=17,width=17)
+	
+text = textGrob(paste('Average AUC over ', dim(otu.data)[2],' spp in ',dim(otu.data)[1],' samples : ', round(auc.value,4),'; 4 most prevalent spp shown', sep=''))
+	
+grid.arrange(text, g.1,g.2,g.3,g.4, nrow=3, layout_matrix= rbind(c(1), c(2,3), c(4,5)), heights=c(.4,5,5))
+	
+dev.off()
+	
+```
