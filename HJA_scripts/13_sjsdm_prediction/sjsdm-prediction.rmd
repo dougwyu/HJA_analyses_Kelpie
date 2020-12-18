@@ -15,8 +15,9 @@ conflict_prefer("importance", "sjSDM")
 here()
 packageVersion('sjSDM')
 #[1] ‘0.1.2.9000’
-	
-source(here('R','source', 'corvif-source.r'))
+
+source(here('source', 'corvif-source.r'))	
+# source(here('R','source', 'corvif-source.r'))
 	
 #source(here("R", "source", "sjsdm_function.r"))
 #source(here("R", "source", "sjsdm-analyse-functions.r"))
