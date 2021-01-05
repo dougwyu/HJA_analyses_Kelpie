@@ -2,8 +2,9 @@
 # tidy code on prediction
 
 
+
 ```{r setup}
-# setwd('/media/yuanheng/SD-64g2/Downloads/backup2/HJA_analyses_Kelpie/sjSDM/R-git')
+# setwd('/media/yuanheng/SD-64g2/Downloads/backup2/HJA_analyses_Kelpie/HJA_scripts/13_sjsdm_prediction')
 	
 lapply(c("ggplot2",'abind', 'tidyverse','gridBase', 'grid','gridExtra', 'ggcorrplot','here', 'conflicted','reticulate','sjSDM','mgsub','vcd','RColorBrewer', 'reshape2','glue','pROC'), library, character.only=T)
 # 'scatterplot3d', 'labdsv',
@@ -15,21 +16,34 @@ conflict_prefer("importance", "sjSDM")
 here()
 packageVersion('sjSDM')
 #[1] ‘0.1.2.9000’
-
-source(here('source', 'corvif-source.r'))	
-# source(here('R','source', 'corvif-source.r'))
 	
-#source(here("R", "source", "sjsdm_function.r"))
-#source(here("R", "source", "sjsdm-analyse-functions.r"))
+source(here('source', 'corvif-source.r'))
+	
+#source(here("source", "sjsdm_function.r"))
+#source(here("source", "sjsdm-analyse-functions.r"))
 	
 ```
 
+
 ```{r set-names}
+# ....... folder structure .......
+# bioinfo structure
+samtoolsfilter = "F2308" # F2308 filter only
+samtoolsqual = "q48"
+minimaprundate = 20200929
+kelpierundate = 20200927
+primer = "BF3BR2"
+	
 date.cross.validation = 20201119
 envvar = 'gismslidar'
 minocc = 5
 abund = 'pa' # qp
-session = 's1'; malaise = 'm1'
+trap <- "M1"; period = "S1"
+#session = 's1'; malaise = 'm1'
+	
+outputidxstatstabulatefolder = glue("outputs_minimap2_{minimaprundate}_{samtoolsfilter}_{samtoolsqual}_kelpie{kelpierundate}_{primer}_vsearch97")
+outputpath = glue('../../Kelpie_maps/{outputidxstatstabulatefolder}')
+tempsjsdmpath = '../../sjSDM/R-git' # !! change in the final version
 	
 cvfolder = glue("results_{date.cross.validation}_{minocc}minocc_{envvar}_{abund}_loocv")
 datafolder = glue("data_{date.cross.validation}_{minocc}minocc_{envvar}")
@@ -47,16 +61,16 @@ describefolder2 = 'DNN_env'
 
 ```{r load-data}
 # load data
-otu = read.csv(here( 'results','crossvalidation', cvfolder, datafolder, otudata), header=T, sep=',', stringsAsFactors = F, na.strings='NA')
+otu = read.csv(here(outputpath,'cv_outputs', cvfolder, datafolder, otudata), header=T, sep=',', stringsAsFactors = F, na.strings='NA')
 str(otu[,40:46])
 	
-scale.env = read.csv(here('results', 'crossvalidation', cvfolder, datafolder, 'scale.env.csv'), header=T, sep=',', stringsAsFactors = F, na.strings='NA')
+scale.env = read.csv(here(outputpath,'cv_outputs', cvfolder, datafolder, 'scale.env.csv'), header=T, sep=',', stringsAsFactors = F, na.strings='NA')
 str(scale.env)
 	
 scale.env$insideHJA = as.factor(scale.env$insideHJA)
 levels(scale.env$insideHJA) = c('0','1')
 	
-XY = read.csv(here('results', 'crossvalidation', cvfolder, datafolder, 'XY.csv'), header=T, sep=',', stringsAsFactors = F, na.strings='NA')
+XY = read.csv(here(outputpath,'cv_outputs', cvfolder, datafolder, 'XY.csv'), header=T, sep=',', stringsAsFactors = F, na.strings='NA')
 str(XY)
 	
 
@@ -79,7 +93,7 @@ pairs(z,lower.panel=panel.smooth2,upper.panel=panel.cor,diag.panel=panel.hist)
 
 ```{r select subsets}
 # 80% of data as training
-result = read.table(here('results','sjsdm-model-RDS', glue('sjsdm-{sjsdmV}'),'prediction_trial_straining_sample_index.csv'), header=T)
+result = read.table(here('source', 'prediction_trial_straining_sample_index.csv'), header=T)
 a = result$select.col
 # [1] 76 30 18 14 45 26 10 82 73 52 17  2 12 42 34 87 28 43  3 47 24 66 81 51 57
 # [26] 59 74 37 50 78 13 56 85 79 67  8 69 80 88  6 16 19 65 54 36  5 49 29  1 86
@@ -106,7 +120,7 @@ par(mfrow=c(1,2))
 hist(scale.env.train$elevation_m)
 hist(scale.env$elevation_m)
 	
-# pdf(here('results','sjsdm-graph',glue('sjsdm-{sjsdmV}'),'prediction_trial','descriptive','coordinate_training_sample.pdf'), height=5,width=6)
+# pdf(here(outputpath,'prediction_outputs','sjsdm-graph', sjsdmVfolder,'descriptive','coordinate_training_sample.pdf'), height=5,width=6)
 	
 ggplot(XY, aes(UTM_E, UTM_N)) + geom_point() + geom_point(data=XY.train, aes(colour='red')) + scale_colour_manual(labels = c('training'), values = c("red"))
 	
@@ -118,13 +132,13 @@ dev.off()
 ```{r load-models}
 # model without DNN
 # run on cpu, corrected insideHJA (factor), still using tune result from glue('sjsdm_tune_results_HJA_{date.cross.validation}_bestonly.RDS')
-model.tuned = readRDS(here('results','sjsdm-model-RDS', glue('sjsdm-{sjsdmV}'), glue('s-jSDM_model_s1_m1_{abund}_min{minocc}_{envvar}_{date.cross.validation}.RDS')) )
+model.tuned = readRDS(here(tempsjsdmpath,'results','sjsdm-model-RDS', sjsdmVfolder, glue('s-jSDM_model_s1_m1_{abund}_min{minocc}_{envvar}_{date.cross.validation}.RDS')) )
 	
 names(model.tuned)
 str(model.tuned$spatial)
 	
 # 80% data
-model.train = readRDS(here('results','sjsdm-model-RDS', glue('sjsdm-{sjsdmV}'), glue('s-jSDM_tuned.model_s1_m1_{abund}_min{minocc}_{envvar}_{date.cross.validation}.RDS')) )
+model.train = readRDS(here(tempsjsdmpath,'results','sjsdm-model-RDS', sjsdmVfolder, glue('s-jSDM_tuned.model_s1_m1_{abund}_min{minocc}_{envvar}_{date.cross.validation}.RDS')) )
 	
 names(model.train)
 	
@@ -167,9 +181,9 @@ model.train = sjSDM(Y = s.otu.train,
 	
 names(model.train)
 	
-# saveRDS(model.train, here('results','sjsdm-model-RDS', glue('sjsdm-{sjsdmV}'), glue('s-jSDM_tuned.model_s1_m1_{abund}_min{minocc}_{envvar}_{date.cross.validation}_{formula.env}.RDS')) )
+# saveRDS(model.train, here(tempsjsdmpath,'results','sjsdm-model-RDS', sjsdmVfolder, glue('s-jSDM_tuned.model_s1_m1_{abund}_min{minocc}_{envvar}_{date.cross.validation}_{formula.env}.RDS')) )
 	
-model.train = readRDS(here('results','sjsdm-model-RDS', glue('sjsdm-{sjsdmV}'), glue('s-jSDM_tuned.model_s1_m1_{abund}_min{minocc}_{envvar}_{date.cross.validation}_{formula.env}.RDS')) )
+model.train = readRDS(here(tempsjsdmpath,'results','sjsdm-model-RDS', sjsdmVfolder, glue('s-jSDM_tuned.model_s1_m1_{abund}_min{minocc}_{envvar}_{date.cross.validation}_{formula.env}.RDS')) )
 	
 plot(model.train$history)
 	
@@ -209,16 +223,14 @@ model.train = sjSDM(Y = s.otu.train,
 	
 names(model.train)
 	
-# saveRDS(model.train, here('results','sjsdm-model-RDS', glue('sjsdm-{sjsdmV}'), glue('s-jSDM_tuned.model_s1_m1_{abund}_min{minocc}_{envvar}_{date.cross.validation}_{formula.env}.RDS')) )
+# saveRDS(model.train, here(tempsjsdmpath,'results','sjsdm-model-RDS', sjsdmVfolder, glue('s-jSDM_tuned.model_s1_m1_{abund}_min{minocc}_{envvar}_{date.cross.validation}_{formula.env}.RDS')) )
 	
-model.train = readRDS(here('results','sjsdm-model-RDS', glue('sjsdm-{sjsdmV}'), glue('s-jSDM_tuned.model_s1_m1_{abund}_min{minocc}_{envvar}_{date.cross.validation}_{formula.env}.RDS')) )
+model.train = readRDS(here(tempsjsdmpath,'results','sjsdm-model-RDS', sjsdmVfolder, glue('s-jSDM_tuned.model_s1_m1_{abund}_min{minocc}_{envvar}_{date.cross.validation}_{formula.env}.RDS')) )
 	
 plot(model.train$history)
 	
 
 ```
-
-saveRDS(model.train, here('results','sjsdm-model-RDS', glue('sjsdm-{sjsdmV}'), glue('s-jSDM_tuned.model_s1_m1_{abund}_min{minocc}_{envvar}_{date.cross.validation}_{formula.env}.RDS')) )
 
 
 ```{r prediction}
@@ -278,7 +290,7 @@ formula.env; abund
 # elevation_m-insideHJA, qp: 0.7225238
 # elevation_m-B1_20180717, qp: 0.7305075
 	
-# saveRDS(list(pred.Y=pred.dd, otu=otudd, roc.allS=roc.dd, auc.mean=auc.mean), here('results','sjsdm-model-RDS', glue('sjsdm-{sjsdmV}'), 'prediction', glue('roc_result_{set}_{session}_{malaise}_{abund}_min{minocc}_{formula}_{date.cross.validation}.RDS')))
+# saveRDS(list(pred.Y=pred.dd, otu=otudd, roc.allS=roc.dd, auc.mean=auc.mean), here(outputpath,'prediction_outputs','sjsdm-model-RDS', sjsdmVfolder, 'prediction', glue('roc_result_{set}_s1_m1_{abund}_min{minocc}_{formula}_{date.cross.validation}.RDS')))
 	
 ```
 
@@ -326,7 +338,7 @@ g.3 = ggplot(all.plot, aes(UTM_E, UTM_N, size=obs.c, colour=c)) + geom_point() +
 i=4
 g.4 = ggplot(all.plot, aes(UTM_E, UTM_N, size=obs.d, colour=d)) + geom_point() + scale_colour_gradient2(low='black', mid='red',high='blue',midpoint=.5) + scale_size(range = c(2, 6)) + ggtitle(paste(a$otu[i], ', AUC: ', round(auc(roc.value[[which(names(otu) %in% a$otu[i])]]), 4)))+ theme(plot.title= element_text(size=8))
 	
-# pdf(here('results','sjsdm-graph',glue('sjsdm-{sjsdmV}'),'prediction_trial','prediction',glue('{set}_{numdata}_{datafolder}_{abund}_coordinate.pdf')), height=17,width=17)
+# pdf(here(outputpath,'prediction_outputs','sjsdm-graph', sjsdmVfolder, 'prediction',glue('{set}_{numdata}_{datafolder}_{abund}_coordinate.pdf')), height=17,width=17)
 	
 text = textGrob(paste('Average AUC over ', dim(otu.data)[2],' spp in ',dim(otu.data)[1],' samples : ', round(auc.value,4),'; 4 most prevalent spp shown', sep=''))
 	
@@ -347,11 +359,11 @@ formula = formula.env
 # set = 'explain'
 # formula = envvar
 	
-explain = readRDS(here('results','sjsdm-model-RDS', glue('sjsdm-{sjsdmV}'), 'prediction', 'roc_result_explain_s1_m1_pa_min5_gismslidar_20201119.RDS')) 
+explain = readRDS(here(outputpath,'prediction_outputs','sjsdm-model-RDS', sjsdmVfolder, 'prediction', 'roc_result_explain_s1_m1_pa_min5_gismslidar_20201119.RDS')) 
 names(explain)
 # needed for selecting data
 	
-roc.dd = readRDS(here('results','sjsdm-model-RDS', glue('sjsdm-{sjsdmV}'), 'prediction', glue('roc_result_{set}_{session}_{malaise}_{abund}_min{minocc}_{formula}_{date.cross.validation}.RDS'))) 
+roc.dd = readRDS(here(outputpath,'prediction_outputs','sjsdm-model-RDS', sjsdmVfolder, 'prediction', glue('roc_result_{set}_{period}_{trap}_{abund}_min{minocc}_{formula}_{date.cross.validation}.RDS'))) 
 names(roc.dd)
 	
 # ... make long table 
@@ -401,7 +413,7 @@ lm.explain = lme(obs~pred, random= ~1 | otu.name, method='REML', data = dd, cont
 	
 summary(lm.explain)
 	
-# pdf(here('results','sjsdm-graph',glue('sjsdm-{sjsdmV}'),'prediction_trial','prediction',glue('{set}_{datafolder}_{abund}_{formula}_lme.pdf')), height=12,width=17)
+# pdf(here(outputpath,'prediction_outputs','sjsdm-graph', sjsdmVfolder, 'prediction', glue('{set}_{datafolder}_{abund}_{formula}_lme.pdf')), height=12,width=17)
 # _spDNN
 	
 par(mfrow=c(2,3),cex=1.05)
