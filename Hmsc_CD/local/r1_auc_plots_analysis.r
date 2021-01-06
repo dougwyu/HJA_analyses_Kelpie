@@ -1,4 +1,5 @@
 
+sP
 
 ### AUC  plots and analysis
 
@@ -14,13 +15,14 @@ wd
 setwd(wd)
 
 # get AUC data function
-source(list.files(pattern = "^fn_.*\\.r", recursive = TRUE))
+(fn <- list.files(pattern = "^fn_.*\\.r", recursive = TRUE))
+source(fn[1])
 
 # get results folders
 resF <- list.files("Hmsc_CD/oregon_ada/results", pattern = "res\\d*_\\d{2}$", include.dirs = TRUE, full.names = T)
 resF
 
-rf <- resF[7]
+rf <- resF[length(resF)]
 rf
 
 auc.df <- getAUC(rf, rMod = FALSE)
