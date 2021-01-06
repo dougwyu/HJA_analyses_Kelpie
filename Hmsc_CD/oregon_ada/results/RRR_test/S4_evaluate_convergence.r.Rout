@@ -1,0 +1,140 @@
+
+R version 4.0.0 (2020-04-24) -- "Arbor Day"
+Copyright (C) 2020 The R Foundation for Statistical Computing
+Platform: x86_64-pc-linux-gnu (64-bit)
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+  Natural language support but running in an English locale
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+[Previously saved workspace restored]
+
+> 
+> ## Christian D
+> ## 12/11/2020
+> 
+> 
+> ## On ADA
+> ## getwd() will be "/gpfs/home/hsp20azu"
+> # with folders Oregon, etc... 
+> setwd("~/oregon_ada/results/RRR_test")
+> # dir()
+> rm(list = ls())
+> 
+> library(Hmsc)
+Loading required package: coda
+> #library(colorspace)
+> vioP <- require(vioplot) # make sure it's installed on server
+Loading required package: vioplot
+Loading required package: sm
+PuTTY X11 proxy: unable to connect to forwarded X server: Network error: Connection refused
+Package 'sm', version 2.2-5.6: type help(sm) for summary information
+Loading required package: zoo
+
+Attaching package: ‘zoo’
+
+The following objects are masked from ‘package:base’:
+
+    as.Date, as.Date.numeric
+
+Warning message:
+In fun(libname, pkgname) : couldn't connect to display "10.85.17.2:16.0"
+>  
+> 
+> # filenames of fitted models
+> dir("models")
+[1] "MF_thin_1_samples_5_chains_2.Rdata"       
+[2] "MF_thin_5_samples_50_chains_2.Rdata"      
+[3] "models_thin_1_samples_5_chains_2.Rdata"   
+[4] "models_thin_10_samples_100_chains_2.Rdata"
+[5] "models_thin_5_samples_50_chains_2.Rdata"  
+[6] "unfitted_models.rdata"                    
+> fs <- list.files("models", "models_thin.*", full.names = TRUE)
+> # fs
+> 
+> beta <- list()
+> 
+> # i = 1;
+> 
+> for (i in seq_along(fs)) {
++   
++   filename = fs[i]
++     
++   load(filename)
++   
++   # str(models, max.level = 1)
++   #str(models[[1]]$X)
++   #str(models[[1]]$Y)
++   # make a list of vectors - then it doesn't matter if they are different lengths, if using differnt predictors
++   
++   ma <- lapply(models, function(m){
++     
++     if(inherits(m, "try-error")) return(NA) else{
++       mpost = convertToCodaObject(m, spNamesNumbers = c(TRUE,FALSE), covNamesNumbers = c(TRUE,FALSE))
++       psrf.beta = gelman.diag(mpost$Beta,multivariate=FALSE)$psrf
++       #str(psrf.beta); rownames(psrf.beta)
++       
++       # tmp = summary(psrf.beta)
++       psrf.beta[,1]
++     }
++     
++   })
++ 
++   names(ma) <- paste0(modelnames, sub(".*_thin_([[:digit:]]*)_samples_([[:digit:]]*)_.*", "_\\1_\\2", filename))
++   
++   # str(ma, max.level= 1)
++   beta[[i]] <- ma
++   
++   
++ 
++ }
+> 
+> # Scale reduction factor - beta parameter, mean +/- sd
+> lapply(beta, function(x) sapply(x, function(y) sprintf("%.3f \U00B1 %.3f",mean(y), sd(y))))
+[[1]]
+  pa_sp_simple_1_5 pa_nsp_RRR_nc1_1_5  pa_sp_RRR_nc1_1_5 pa_nsp_RRR_nc2_1_5 
+   "2.540 ± 2.296"    "4.089 ± 4.716"    "3.086 ± 3.114"    "8.376 ± 8.115" 
+ pa_sp_RRR_nc2_1_5 
+   "5.738 ± 6.796" 
+
+[[2]]
+  pa_sp_simple_10_100 pa_nsp_RRR_nc1_10_100  pa_sp_RRR_nc1_10_100 
+      "1.018 ± 0.024"       "1.016 ± 0.021"       "1.299 ± 0.796" 
+pa_nsp_RRR_nc2_10_100  pa_sp_RRR_nc2_10_100 
+      "1.137 ± 0.263"       "1.133 ± 0.373" 
+
+[[3]]
+  pa_sp_simple_5_50 pa_nsp_RRR_nc1_5_50  pa_sp_RRR_nc1_5_50 pa_nsp_RRR_nc2_5_50 
+    "1.024 ± 0.037"     "1.058 ± 0.092"     "1.145 ± 0.264"     "1.970 ± 2.754" 
+ pa_sp_RRR_nc2_5_50 
+    "1.377 ± 0.812" 
+
+> 
+> pdf(file = file.path("results", "MCMC_convergence%03d.pdf"))
+> par(mfrow=c(2,1), mar = c(10,3,1,1))
+> # remove NAs coming through from try errors first:
+> if(vioP) sapply(beta[!is.na(beta)], vioplot::vioplot, las = 2) else sapply(beta[!is.na(beta)], boxplot, las = 2)
+       [,1]      [,2]      [,3]     
+upper  Numeric,5 Numeric,5 Numeric,5
+lower  Numeric,5 Numeric,5 Numeric,5
+median Numeric,5 Numeric,5 Numeric,5
+q1     Numeric,5 Numeric,5 Numeric,5
+q3     Numeric,5 Numeric,5 Numeric,5
+> dev.off()
+null device 
+          1 
+> 
+> 
+> proc.time()
+   user  system elapsed 
+  3.665   0.427   8.084 

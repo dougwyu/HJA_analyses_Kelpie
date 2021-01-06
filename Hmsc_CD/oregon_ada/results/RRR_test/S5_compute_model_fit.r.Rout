@@ -1,0 +1,303 @@
+
+R version 4.0.0 (2020-04-24) -- "Arbor Day"
+Copyright (C) 2020 The R Foundation for Statistical Computing
+Platform: x86_64-pc-linux-gnu (64-bit)
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+  Natural language support but running in an English locale
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+[Previously saved workspace restored]
+
+> ### Evaluate Fit #####
+> 
+> 
+> ## Only local: 
+> ## On ADA
+> ## getwd() will be "/gpfs/home/hsp20azu"
+> # with folders Oregon, etc... 
+> setwd("~/oregon_ada/results/RRR_test")
+> # dir()
+> rm(list = ls())
+> 
+> 
+> library(Hmsc)
+Loading required package: coda
+> 
+> # get models in models
+> fs <- list.files("models", "^models_thin.*", full.names = TRUE)
+> #fs
+> 
+> # i = 1
+> # model <- 2
+> 
+> for (i in seq_along(fs)) {
++   
++   filename = fs[i]
++   print(filename)
++   nChains <- as.numeric(sub(".*_chains_([[:digit:]]{1}).*", "\\1", filename))
++   #nChains = 2
++   
++   load(filename)
++   
++   MF = list()
++   MFCV = list()
++   WAIC = list()
++   
++   for(model in seq_along(models)){
++     
++     m <- models[[model]]
++     
++     if(inherits(m, "try-error")) {
++       
++       MF[[model]] <- NA
++       MFCV[[model]] <- NA
++       WAIC[[model]] <- NA
++       
++     } else {
++       
++       # explanatory - training evaluation metrics
++       preds = computePredictedValues(m)
++       MF[[model]] <- evaluateModelFit(hM=m, predY=preds)
++       
++       # cross validation - predictive  evaluation metrics
++       partition <- createPartition(m, nfolds = 2)
++       
++       preds = try(computePredictedValues(m,partition=partition, nParallel = 1))
++       if(inherits(preds, "try-error")) MFCV[[model]] <- NA else {
++         MFCV[[model]] <- evaluateModelFit(hM=m, predY=preds)
++       }
++       
++       # WAIC..   Error in X %*% Beta : non-conformable arguments -- is there a problem in the X matrix.. just use
++       # variables in the RRR??? 
++       waic <- try(computeWAIC(m))
++       if(inherits(waic, "try-error")) WAIC[[model]] <- NA else {
++         WAIC[[model]] <- waic
++       }
++     }
++     
++   }
++   
++   m.names <- paste0(modelnames, sub(".*_thin_([[:digit:]]*)_samples_([[:digit:]]*)_.*", "_\\1_\\2", filename))
++   names(WAIC) <- names(MFCV) <- names(MF) <- m.names
++   
++   
++   
++   filename_out <- file.path(dirname(filename), paste0("MF_", sub("^models_", "", basename(filename))))
++   save(MF,MFCV,WAIC,modelnames, file = filename_out)
++   
++   print(sapply(MF[!is.na(MF)], function(x) sapply(x, function(y) sprintf("%.3f \U00B1 %.3f",mean(y), sd(y)))))
++   print(sapply(MFCV[!is.na(MFCV)], function(x) sapply(x, function(y) sprintf("%.3f \U00B1 %.3f",mean(y), sd(y)))))
++   
++ }
+[1] "models/models_thin_1_samples_5_chains_2.Rdata"
+Cross-validation, fold 1 out of 2
+Setting updater$Gamma2=FALSE due to specified phylogeny matrix
+Computing chain 1
+Computing chain 2
+Cross-validation, fold 2 out of 2
+Setting updater$Gamma2=FALSE due to specified phylogeny matrix
+Computing chain 1
+Computing chain 2
+Cross-validation, fold 1 out of 2
+Setting updater$Gamma2=FALSE due to specified phylogeny matrix
+Setting updater$GammaEta=FALSE due to absence of random effects included to the model
+Computing chain 1
+Computing chain 2
+Cross-validation, fold 2 out of 2
+Setting updater$Gamma2=FALSE due to specified phylogeny matrix
+Setting updater$GammaEta=FALSE due to absence of random effects included to the model
+Computing chain 1
+Computing chain 2
+Error in X %*% Beta : non-conformable arguments
+Cross-validation, fold 1 out of 2
+Setting updater$Gamma2=FALSE due to specified phylogeny matrix
+Computing chain 1
+Computing chain 2
+Cross-validation, fold 2 out of 2
+Setting updater$Gamma2=FALSE due to specified phylogeny matrix
+Computing chain 1
+Computing chain 2
+Error in X %*% Beta : non-conformable arguments
+Cross-validation, fold 1 out of 2
+Setting updater$Gamma2=FALSE due to specified phylogeny matrix
+Setting updater$GammaEta=FALSE due to absence of random effects included to the model
+Computing chain 1
+Computing chain 2
+Cross-validation, fold 2 out of 2
+Setting updater$Gamma2=FALSE due to specified phylogeny matrix
+Setting updater$GammaEta=FALSE due to absence of random effects included to the model
+Computing chain 1
+Computing chain 2
+Error in X %*% Beta : non-conformable arguments
+Cross-validation, fold 1 out of 2
+Setting updater$Gamma2=FALSE due to specified phylogeny matrix
+Computing chain 1
+Computing chain 2
+Cross-validation, fold 2 out of 2
+Setting updater$Gamma2=FALSE due to specified phylogeny matrix
+Computing chain 1
+Computing chain 2
+Error in X %*% Beta : non-conformable arguments
+       pa_sp_simple_1_5 pa_nsp_RRR_nc1_1_5 pa_sp_RRR_nc1_1_5 pa_nsp_RRR_nc2_1_5
+RMSE   "0.373 ± 0.057"  "0.520 ± 0.060"    "0.529 ± 0.101"   "0.666 ± 0.176"   
+AUC    "0.787 ± 0.096"  "0.538 ± 0.085"    "0.552 ± 0.118"   "0.526 ± 0.036"   
+TjurR2 "0.169 ± 0.102"  "0.018 ± 0.031"    "0.037 ± 0.055"   "0.034 ± 0.025"   
+       pa_sp_RRR_nc2_1_5
+RMSE   "0.497 ± 0.130"  
+AUC    "0.540 ± 0.105"  
+TjurR2 "0.018 ± 0.032"  
+       pa_sp_simple_1_5 pa_nsp_RRR_nc1_1_5 pa_sp_RRR_nc1_1_5 pa_nsp_RRR_nc2_1_5
+RMSE   "0.430 ± 0.077"  "0.608 ± 0.085"    "0.522 ± 0.070"   "0.509 ± 0.145"   
+AUC    "0.592 ± 0.166"  "0.505 ± 0.075"    "0.504 ± 0.116"   "0.492 ± 0.067"   
+TjurR2 "0.060 ± 0.106"  "0.006 ± 0.058"    "0.001 ± 0.046"   "-0.003 ± 0.043"  
+       pa_sp_RRR_nc2_1_5
+RMSE   "0.481 ± 0.054"  
+AUC    "0.543 ± 0.100"  
+TjurR2 "0.027 ± 0.053"  
+[1] "models/models_thin_10_samples_100_chains_2.Rdata"
+Cross-validation, fold 1 out of 2
+Setting updater$Gamma2=FALSE due to specified phylogeny matrix
+Computing chain 1
+Computing chain 2
+Cross-validation, fold 2 out of 2
+Setting updater$Gamma2=FALSE due to specified phylogeny matrix
+Computing chain 1
+Computing chain 2
+Cross-validation, fold 1 out of 2
+Setting updater$Gamma2=FALSE due to specified phylogeny matrix
+Setting updater$GammaEta=FALSE due to absence of random effects included to the model
+Computing chain 1
+Computing chain 2
+Cross-validation, fold 2 out of 2
+Setting updater$Gamma2=FALSE due to specified phylogeny matrix
+Setting updater$GammaEta=FALSE due to absence of random effects included to the model
+Computing chain 1
+Computing chain 2
+Error in X %*% Beta : non-conformable arguments
+Cross-validation, fold 1 out of 2
+Setting updater$Gamma2=FALSE due to specified phylogeny matrix
+Computing chain 1
+Computing chain 2
+Cross-validation, fold 2 out of 2
+Setting updater$Gamma2=FALSE due to specified phylogeny matrix
+Computing chain 1
+Computing chain 2
+Error in X %*% Beta : non-conformable arguments
+Cross-validation, fold 1 out of 2
+Setting updater$Gamma2=FALSE due to specified phylogeny matrix
+Setting updater$GammaEta=FALSE due to absence of random effects included to the model
+Computing chain 1
+Computing chain 2
+Cross-validation, fold 2 out of 2
+Setting updater$Gamma2=FALSE due to specified phylogeny matrix
+Setting updater$GammaEta=FALSE due to absence of random effects included to the model
+Computing chain 1
+Computing chain 2
+Error in X %*% Beta : non-conformable arguments
+Cross-validation, fold 1 out of 2
+Setting updater$Gamma2=FALSE due to specified phylogeny matrix
+Computing chain 1
+Computing chain 2
+Cross-validation, fold 2 out of 2
+Setting updater$Gamma2=FALSE due to specified phylogeny matrix
+Computing chain 1
+Computing chain 2
+Error in X %*% Beta : non-conformable arguments
+       pa_sp_simple_10_100 pa_nsp_RRR_nc1_10_100 pa_sp_RRR_nc1_10_100
+RMSE   "0.371 ± 0.057"     "0.506 ± 0.051"       "0.500 ± 0.025"     
+AUC    "0.806 ± 0.080"     "0.633 ± 0.126"       "0.608 ± 0.165"     
+TjurR2 "0.161 ± 0.087"     "0.011 ± 0.009"       "0.011 ± 0.011"     
+       pa_nsp_RRR_nc2_10_100 pa_sp_RRR_nc2_10_100
+RMSE   "0.498 ± 0.103"       "0.487 ± 0.096"     
+AUC    "0.582 ± 0.141"       "0.613 ± 0.128"     
+TjurR2 "0.013 ± 0.013"       "0.010 ± 0.008"     
+       pa_sp_simple_10_100 pa_nsp_RRR_nc1_10_100 pa_sp_RRR_nc1_10_100
+RMSE   "0.433 ± 0.088"     "0.489 ± 0.078"       "0.513 ± 0.112"     
+AUC    "0.581 ± 0.189"     "0.487 ± 0.102"       "0.545 ± 0.103"     
+TjurR2 "0.039 ± 0.118"     "0.002 ± 0.020"       "0.012 ± 0.037"     
+       pa_nsp_RRR_nc2_10_100 pa_sp_RRR_nc2_10_100
+RMSE   "0.478 ± 0.075"       "0.491 ± 0.082"     
+AUC    "0.492 ± 0.125"       "0.497 ± 0.096"     
+TjurR2 "0.002 ± 0.014"       "-0.005 ± 0.031"    
+[1] "models/models_thin_5_samples_50_chains_2.Rdata"
+Cross-validation, fold 1 out of 2
+Setting updater$Gamma2=FALSE due to specified phylogeny matrix
+Computing chain 1
+Computing chain 2
+Cross-validation, fold 2 out of 2
+Setting updater$Gamma2=FALSE due to specified phylogeny matrix
+Computing chain 1
+Computing chain 2
+Cross-validation, fold 1 out of 2
+Setting updater$Gamma2=FALSE due to specified phylogeny matrix
+Setting updater$GammaEta=FALSE due to absence of random effects included to the model
+Computing chain 1
+Computing chain 2
+Cross-validation, fold 2 out of 2
+Setting updater$Gamma2=FALSE due to specified phylogeny matrix
+Setting updater$GammaEta=FALSE due to absence of random effects included to the model
+Computing chain 1
+Computing chain 2
+Error in X %*% Beta : non-conformable arguments
+Cross-validation, fold 1 out of 2
+Setting updater$Gamma2=FALSE due to specified phylogeny matrix
+Computing chain 1
+Computing chain 2
+Cross-validation, fold 2 out of 2
+Setting updater$Gamma2=FALSE due to specified phylogeny matrix
+Computing chain 1
+Computing chain 2
+Error in X %*% Beta : non-conformable arguments
+Cross-validation, fold 1 out of 2
+Setting updater$Gamma2=FALSE due to specified phylogeny matrix
+Setting updater$GammaEta=FALSE due to absence of random effects included to the model
+Computing chain 1
+Computing chain 2
+Cross-validation, fold 2 out of 2
+Setting updater$Gamma2=FALSE due to specified phylogeny matrix
+Setting updater$GammaEta=FALSE due to absence of random effects included to the model
+Computing chain 1
+Computing chain 2
+Error in X %*% Beta : non-conformable arguments
+Cross-validation, fold 1 out of 2
+Setting updater$Gamma2=FALSE due to specified phylogeny matrix
+Computing chain 1
+Computing chain 2
+Cross-validation, fold 2 out of 2
+Setting updater$Gamma2=FALSE due to specified phylogeny matrix
+Computing chain 1
+Computing chain 2
+Error in X %*% Beta : non-conformable arguments
+       pa_sp_simple_5_50 pa_nsp_RRR_nc1_5_50 pa_sp_RRR_nc1_5_50
+RMSE   "0.370 ± 0.054"   "0.504 ± 0.042"     "0.491 ± 0.025"   
+AUC    "0.811 ± 0.086"   "0.578 ± 0.087"     "0.612 ± 0.101"   
+TjurR2 "0.166 ± 0.086"   "0.013 ± 0.011"     "0.022 ± 0.017"   
+       pa_nsp_RRR_nc2_5_50 pa_sp_RRR_nc2_5_50
+RMSE   "0.520 ± 0.136"     "0.499 ± 0.113"   
+AUC    "0.546 ± 0.149"     "0.587 ± 0.132"   
+TjurR2 "0.005 ± 0.009"     "0.010 ± 0.009"   
+       pa_sp_simple_5_50 pa_nsp_RRR_nc1_5_50 pa_sp_RRR_nc1_5_50
+RMSE   "0.431 ± 0.072"   "0.496 ± 0.075"     "0.510 ± 0.094"   
+AUC    "0.583 ± 0.179"   "0.573 ± 0.094"     "0.531 ± 0.084"   
+TjurR2 "0.055 ± 0.108"   "0.029 ± 0.075"     "0.008 ± 0.041"   
+       pa_nsp_RRR_nc2_5_50 pa_sp_RRR_nc2_5_50
+RMSE   "0.476 ± 0.090"     "0.484 ± 0.058"   
+AUC    "0.527 ± 0.120"     "0.510 ± 0.123"   
+TjurR2 "-0.002 ± 0.035"    "0.000 ± 0.023"   
+> 
+> ## WAIC not working for RRR
+> 
+> proc.time()
+    user   system  elapsed 
+1525.453    1.401 1527.004 
