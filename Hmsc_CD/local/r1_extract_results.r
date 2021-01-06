@@ -3,6 +3,7 @@
 
 library(Hmsc)
 wd <- here::here()
+wd
 setwd(file.path(wd, "Hmsc_CD"))
 
 ## load results
@@ -92,7 +93,7 @@ for(rf in resF){
     mev <- data.frame(prev = colSums(m$Y)/nrow(m$Y))
   })
   
-  ind <- is.na(MF)
+  ind <- is.na(MF) # check for and remove NA in MF list (from try errors)
   
   ME_stats <- mapply(function(x,y,z,k) {
     
@@ -110,6 +111,11 @@ for(rf in resF){
           prev = z)}, MF[!ind], MFCV[!ind], prevList[!ind], names(prevList[!ind]), SIMPLIFY = FALSE)
 
   meRes[[which(rf == resF)]] <- do.call(rbind,ME_stats)
+  
+  
+  ## collect all AUC data per species. 
+  
+  
   
   rm(MF, MFCV, MFres, MFCVres, mfs, WAIC, thin, samples, ms, mf,modelnames)
   
