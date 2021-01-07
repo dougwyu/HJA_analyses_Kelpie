@@ -31,18 +31,57 @@ table(qGrps, useNA = "always")
 hist(rowSums(otu.pa.csv))
 
 ## histogram of each quantile
-png("Hmsc_CD/local/plots/spRich_histograms.png", width = "200", height = "200", units= "mm")
+png("Hmsc_CD/local/plots/spRich_histograms.png", width = 200, height = 200, units= "mm", res = 200)
 par(mfrow = c(2,2))
 for(i in qs) hist(rowSums(otu.pa.csv[, qGrps == i]), main = paste("quantile",i), xlab = "Sp richness")
 dev.off()
 
 # scatter plot of lowest prevalence species against all other quantiles
-png("Hmsc_CD/local/plots/spRich_correlations.png", width = "200", height = "200", units= "mm")
+png("Hmsc_CD/local/plots/spRich_correlations.png", width = 200, height = 200, units= "mm", res = 200)
 par(mfrow = c(2,2))
 for(i in qs) plot(rowSums(otu.pa.csv[, qGrps == i]),rowSums(otu.pa.csv[, qGrps == qs[1]]), 
-                  ylab = "sp rich quantile 1", xlab = paste("sp rich quantile",i))
+                  ylab = "sp rich quantile 1", xlab = paste("sp rich quantile",i), pch = 16)
 dev.off()
 
 # correlation test
 for(i in qs) print(cor.test(rowSums(otu.pa.csv[, qGrps == i]),rowSums(otu.pa.csv[, qGrps == qs[1]]), method = "spearman"))
 
+
+# Spearman's rank correlation rho
+# 
+# data:  rowSums(otu.pa.csv[, qGrps == i]) and rowSums(otu.pa.csv[, qGrps == qs[1]])
+# S = 0, p-value < 2.2e-16
+# alternative hypothesis: true rho is not equal to 0
+# sample estimates:
+# rho 
+#   1 
+# 
+# 
+# 	Spearman's rank correlation rho
+# 
+# data:  rowSums(otu.pa.csv[, qGrps == i]) and rowSums(otu.pa.csv[, qGrps == qs[1]])
+# S = 88287, p-value = 0.03713
+# alternative hypothesis: true rho is not equal to 0
+# sample estimates:
+#   rho 
+# 0.2225762 
+# 
+# 
+# Spearman's rank correlation rho
+# 
+# data:  rowSums(otu.pa.csv[, qGrps == i]) and rowSums(otu.pa.csv[, qGrps == qs[1]])
+# S = 103923, p-value = 0.4316
+# alternative hypothesis: true rho is not equal to 0
+# sample estimates:
+#        rho 
+# 0.08489717 
+# 
+# 
+# 	Spearman's rank correlation rho
+# 
+# data:  rowSums(otu.pa.csv[, qGrps == i]) and rowSums(otu.pa.csv[, qGrps == qs[1]])
+# S = 94911, p-value = 0.1262
+# alternative hypothesis: true rho is not equal to 0
+# sample estimates:
+#   rho 
+# 0.1642518

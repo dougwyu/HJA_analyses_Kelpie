@@ -120,6 +120,6 @@ t_corrplot <- function(mod.cor, title){
            title = title,
            oma = c(0,0,0,0),
            #oma = c(2,2,5,1),
-           mar = c(1,1,2,1))
+           mar = c(0,0,1,0))
 }
   
