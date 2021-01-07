@@ -1,11 +1,10 @@
-#### Read data on Ada  #####
+#### Read data on local  #####
 
 ## Only local: 
-# setwd("J:/UEA/gitHRepos/HJA_analyses_Kelpie/Hmsc_CD/oregon_ada")
-# dir()
-getwd()
+## sourced to get data 
 
-# wd set on pipeline on Ada
+# wd should be 
+# [1] "J:/UEA/gitHRepos/HJA_analyses_Kelpie"
 
 library(dplyr)
 # library(here) # not on ADA
@@ -32,7 +31,7 @@ otuenv <- otuenv %>%
   dplyr::filter(trap == trap[[1]] & period == period[[1]]) 
 
 # bring in DEM stats
-load("data/demStats.rdata") # temporary location for moment... 
+load("Hmsc_CD/oregon_ada/data/demStats.rdata") # temporary location for moment... 
 
 # keep OTUs with >=5 incidences
 # original read number abundance
@@ -170,9 +169,9 @@ head(S.train)
 
 spp <- data.frame(species = colnames(Y.train.pa)) %>%
   tidyr::separate(col = species, into = c("OTU", "empty", "class", "order", "family",
-                               "genus", "epithet", "BOLD", "BOLDID",
-                               "size"),
-                     remove = FALSE, sep = "_") %>%
+                                          "genus", "epithet", "BOLD", "BOLDID",
+                                          "size"),
+                  remove = FALSE, sep = "_") %>%
   select(-empty)
 
 head(spp)
@@ -202,6 +201,10 @@ ape::is.rooted(P)
 all(P$tip.label %in% colnames(Y.train.pa))
 all(P$tip.label %in% colnames(Y.train.qp))
 
-rm(list = ls()[!ls() %in% c("Y.train.pa","Y.train.qp","X.train","S.train","P","resFolder", "modFolder")])
+rm(c, datFile, gitHub, i, kelpierundate, minimaprundate, minocc, outputidxstatstabulatefolder, period, primer, samtoolsfilter, samtoolsqual, tax.cols, trap)
+
+rm(dem_stats, spp)
+rm(otu.ab.csv, otuenv)
+
 # save(Y.train.pa, Y.train.qp, X.train, S.train, P, file = "data/allData_vif.rdata")
 

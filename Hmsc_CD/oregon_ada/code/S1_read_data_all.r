@@ -1,7 +1,7 @@
 #### Read data on Ada  #####
 
 ## Only local: 
-# setwd("J:/UEA/gitRepos/HJA_analyses_Kelpie/Hmsc_CD/oregon_ada")
+# setwd("J:/UEA/gitHRepos/HJA_analyses_Kelpie/Hmsc_CD/oregon_ada")
 # dir()
 getwd()
 
@@ -137,6 +137,8 @@ XY.csv <- otuenv %>%
 
 # rm(list = ls()[!ls() %in% c("Y.train.pa","Y.train.qp","X.train","S.train","P","resFolder", "modFolder")])
 # save(Y.train.pa, Y.train.qp, X.train, S.train, P, file = "data/allData.rdata")
+
+str(env.vars)
 
 save(otu.ab.csv, otu.pa.csv, otu.qp.csv, otuenv, env.vars, XY.csv, file = "data/allData_pre_selection.rdata")
 

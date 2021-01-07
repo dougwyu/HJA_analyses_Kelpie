@@ -34,6 +34,7 @@ file.copy(rScripts, to)
 rm(to, rScripts)
 
 ## 1. Read data #### 
+# source(file.path("results", resFolder,"code/S1_read_data.r"))
 source(file.path("results", resFolder,"code/S1_read_data_vif.r"))
 # Save in specific data folder
 
@@ -54,10 +55,10 @@ save(models, modelnames, file = file.path(modFolder, "unfitted_models.rdata"))
 # uses models list from 2.
 # samples_list = c(5,250,250,250,250,250)
 # thin_list = c(1,1,10,100,1000,10000)
-samples_list = c(5,50)
+samples_list = c(5,100)
 thin_list = c(1,5)
-# samples_list = c(5)
-# thin_list = c(1)
+#samples_list = c(5)
+#thin_list = c(1)
 # iterations per chain
 (samples_list * thin_list) + ceiling(0.5*thin_list*samples_list)
 nChains <- 4
@@ -80,8 +81,6 @@ if(vioP) sapply(beta[!is.na(beta)], vioplot::vioplot, las = 2) else sapply(beta[
 dev.off()
 
 ## 5 Compute model fit ####
-nfolds = 5
+nfolds = 2
 fs <- list.files(modFolder, "^models_thin.*", full.names = TRUE)
 source(file.path("results", resFolder, "code/S5_compute_model_fit.r"))
-
-

@@ -54,10 +54,10 @@ save(models, modelnames, file = file.path(modFolder, "unfitted_models.rdata"))
 # uses models list from 2.
 # samples_list = c(5,250,250,250,250,250)
 # thin_list = c(1,1,10,100,1000,10000)
-samples_list = c(5,50)
-thin_list = c(1,5)
-# samples_list = c(5)
-# thin_list = c(1)
+# samples_list = c(5,50)
+# thin_list = c(1,5)
+samples_list = c(5)
+thin_list = c(1)
 # iterations per chain
 (samples_list * thin_list) + ceiling(0.5*thin_list*samples_list)
 nChains <- 4
