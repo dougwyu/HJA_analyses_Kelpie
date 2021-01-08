@@ -18,6 +18,8 @@
 
 
 getAUC <- function(rf, rMod = TRUE){
+  
+  nfolds <- NA # will be replaced with real value, if available
 
   library(Hmsc)
   library(dplyr)
@@ -118,6 +120,7 @@ getAUC <- function(rf, rMod = TRUE){
   mod.df$thin <- as.numeric(thin)
   mod.df$samples <- as.numeric(samples)
   
+  mod.df$nFolds <- nfolds
   
   ## Collect all AUC data with species prevalence
   prevList <- lapply(models[tryE], function(m) {

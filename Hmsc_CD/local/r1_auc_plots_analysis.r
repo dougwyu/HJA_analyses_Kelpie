@@ -15,8 +15,8 @@ wd
 setwd(wd)
 
 # get AUC data function
-(fn <- list.files(pattern = "^fn_.*\\.r", recursive = TRUE))
-source(fn[1])
+list.files(pattern = "^fn_.*\\.r", recursive = TRUE)
+source("Hmsc_CD/local/fn_getAUC.r")
 
 # get results folders
 resF <- list.files("Hmsc_CD/oregon_ada/results", pattern = "res\\d*_\\d{2}$", include.dirs = TRUE, full.names = T)

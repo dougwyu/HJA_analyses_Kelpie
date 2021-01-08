@@ -1,0 +1,89 @@
+---
+title: "Hmsc Results"
+author: "CD"
+date: "10/12/2020"
+output: html_document
+---
+
+<style type="text/css">
+.main-container {
+ max-width: 1800px;
+ margin-left: auto;
+ margin-right: auto;
+}
+</style>
+
+
+
+```{r setup, include=FALSE}
+wd <- here::here()
+# wd <- "J:/UEA/gitRepos/HJA_analyses_Kelpie"
+knitr::opts_chunk$set(echo =FALSE)
+knitr::opts_knit$set(root.dir = wd)
+
+```
+
+## HMSC Summary of results so far
+
+```{r libraries, include = FALSE}
+library(Hmsc)
+library(kableExtra)
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+```
+
+
+```{r getResults, include =FALSE}
+# setwd(file.path(wd, "Hmsc_CD"))
+## load results
+# get results folders 
+
+source("Hmsc_CD/local/fn_getAUC.r")
+
+## load results
+# get results folders 
+resF <- list.files("Hmsc_CD/oregon_ada/results", pattern = "res\\d*_\\d{2}$", include.dirs = TRUE, full.names = T)
+# resF <- c(resF, list.files("Hmsc_CD/oregon_ada/results", pattern = "RRR_test2", include.dirs = TRUE, full.names = T))
+
+resF
+
+# subset results
+rF <- resF[!resF %in% c("Hmsc_CD/oregon_ada/results/res20210107_01",
+                          "Hmsc_CD/oregon_ada/results/res20201217_01",
+                        "Hmsc_CD/oregon_ada/results/res20201127_01",
+                        "Hmsc_CD/oregon_ada/results/res20201204_01", # qp 
+                        "Hmsc_CD/oregon_ada/results/res20201209_01", # qp
+                        "Hmsc_CD/oregon_ada/results/res20201216_02" # error
+                        )]
+
+## Loop through results folders, extract model definition, convergence results and evaluation
+modRes <- lapply(rF, getAUC, rMod = TRUE)
+
+all.df <- do.call(rbind, modRes)
+
+# head(all.df)
+rm(modRes, resF, rF)
+
+all.df <- all.df[order(all.df$AUC_pred, decreasing = TRUE),]
+
+
+```
+
+
+```{r printTable}
+# format by groups
+grps <- all.df %>%
+  arrange(ncRRR!=0, desc(AUC_pred))
+grps <- setNames(table(grps$ncRRR != 0), c("non RRR", "RRR"))
+
+all.df %>%
+  arrange(ncRRR!=0, desc(AUC_pred)) %>%
+  knitr::kable(row.names = FALSE) %>%
+  kableExtra::group_rows(index = grps) %>%
+  kable_styling()
+
+# rmarkdown::paged_table(all.df, options = list(rownames.print = FALSE))
+# DT::datatable(all.df, rownames = FALSE)
+
+```
