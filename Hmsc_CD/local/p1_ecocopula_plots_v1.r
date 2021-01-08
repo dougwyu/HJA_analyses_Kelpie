@@ -110,6 +110,7 @@ mv1 <- mapview(factor.sf, zcol = sprintf("mod%01d", seq_along(modList)),
 #                legend = T)
 # mv2
 
+## hide the layers by default.. modify leaflet object... 
 mv1@map <- mv1@map %>% leaflet::hideGroup(group = sprintf("mod%01d", seq_along(modList))[-1])
 
 mv1
