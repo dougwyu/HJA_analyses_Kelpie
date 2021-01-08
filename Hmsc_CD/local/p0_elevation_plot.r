@@ -8,11 +8,14 @@ dir()
 
 library(sf)
 library(raster)
+
+## resolving mapview issues:
 remotes::install_github("r-spatial/mapview")
 webshot::install_phantomjs() # 'https://github.com/wch/webshot/releases/download/v0.3.1/phantomjs-2.1.1-windows.zip'
 # phantomjs has been installed to C:\Users\55116479\AppData\Roaming\PhantomJS
 library(mapview)
 citation("mapview")
+
 
 # EPSG:32610 # WGS 84 / UTM zone 10N
 utm10N <- 32610

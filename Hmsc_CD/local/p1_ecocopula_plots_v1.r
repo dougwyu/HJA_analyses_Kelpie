@@ -70,7 +70,7 @@ for(i in seq_along(modList)){
   pB <- plot_grid(p3, p4) # p4
   
   title <- ggdraw() + 
-    draw_label(modName, fontface = 'bold', size = 18, x = 0.3, y = 0.5, hjust = 0)
+    draw_label(modName, fontface = 'bold', size = 15, x = 0.0, y = 0.5, hjust = 0)
     
   m1 <- plot_grid(pA, pB, title, nrow = 3, rel_heights = c(4,5,1))
   # m1 <- plot_grid(pA, pB, nrow = 2, rel_heights = c(4,5))

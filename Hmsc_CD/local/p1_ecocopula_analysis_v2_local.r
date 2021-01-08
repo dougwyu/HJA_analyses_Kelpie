@@ -28,12 +28,13 @@ fm <- list(as.formula(otu.pa ~ dem500 + tri.pt),
            as.formula(otu.pa ~ dem500 + tri.pt + insideHJA + lg_YrsDisturb),
            as.formula(otu.pa ~ dem500 * oldGrowthIndex + tri.pt + insideHJA + lg_YrsDisturb),
            as.formula(otu.pa ~ dem500 * insideHJA + tri.pt + oldGrowthIndex + lg_YrsDisturb),
-           as.formula(otu.pa ~ dem500 + tri.pt + insideHJA + oldGrowthIndex + lg_YrsDisturb + mean.NDVI + lg_DistRoad + canopyHeight_m),
-           as.formula(otu.pa ~ dem500 * insideHJA + dem500 * oldGrowthIndex + tri.pt + lg_YrsDisturb + mean.NDVI + lg_DistRoad),
-           as.formula(otu.pa ~ dem500 * insideHJA + dem500 * oldGrowthIndex + tri.pt * oldGrowthIndex + lg_YrsDisturb + mean.NDVI + lg_DistRoad)
-)
+           as.formula(otu.pa ~ dem500+tri.pt+insideHJA+oldGrowthIndex+lg_YrsDisturb+mean.NDVI+lg_DistRoad+canopyHeight_m),
+           as.formula(otu.pa ~ dem500*insideHJA+dem500*oldGrowthIndex+tri.pt+lg_YrsDisturb+mean.NDVI+lg_DistRoad))
 
 fm
+
+## further interactions
+as.formula(otu.pa ~ dem500 * insideHJA + dem500 * oldGrowthIndex + tri.pt * oldGrowthIndex + lg_YrsDisturb + mean.NDVI + lg_DistRoad)
 
 # make a pa matrix as mvabund object
 # otu.pa <- mvabund(otu.pa.csv)
