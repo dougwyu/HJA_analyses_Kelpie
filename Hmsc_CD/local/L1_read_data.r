@@ -30,8 +30,9 @@ period <- "S1"
 otuenv <- otuenv %>% 
   dplyr::filter(trap == trap[[1]] & period == period[[1]]) 
 
-# bring in DEM stats
+# bring in DEM stats - 
 load("Hmsc_CD/oregon_ada/data/demStats.rdata") # temporary location for moment... 
+head(dem_stats) # dem500: averaged elevation over 500 m; tri.pt: topographic roughness index at each sample location
 
 # keep OTUs with >=5 incidences
 # original read number abundance
@@ -125,7 +126,7 @@ env.vars <- otuenv %>%
          insideHJA = factor(insideHJA)) %>%  
   dplyr::select(-uniqueID)
 
-str(env.vars)
+# str(env.vars)
 
 # reduce variables with Variance INflation Factor, 
 # source("https://raw.githubusercontent.com/Cdevenish/R-Material/master/Functions/Eco/viffer.r")
@@ -172,7 +173,7 @@ spp <- data.frame(species = colnames(Y.train.pa)) %>%
                                           "genus", "epithet", "BOLD", "BOLDID",
                                           "size"),
                   remove = FALSE, sep = "_") %>%
-  select(-empty)
+  dplyr::select(-empty)
 
 head(spp)
 

@@ -7,6 +7,7 @@ library(ggrepel)
 library(RColorBrewer)
 library(tidygraph)
 library(ggraph)
+library(glue)
 
 site_res_fxn <- function(cordord, env, xy) {
   data.frame(cordord$scores, env, xy)

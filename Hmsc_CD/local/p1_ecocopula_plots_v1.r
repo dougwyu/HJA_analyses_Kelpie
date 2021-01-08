@@ -10,7 +10,7 @@ load("Hmsc_CD/local/ecocopula_modList_pilot.rdata") # fm, cor.preds, modList
 str(modList, max.level =2)
 
 ##### Plots
-source("Hmsc_CD/local/ecoCopula_plot_fn.r")## modified plot functions...
+source("Hmsc_CD/local/fn_ecoCopula_plot.r")## modified plot functions...
 
 mod <- modList[[1]]$mod
 sp_res <- modList[[1]]$sp
@@ -67,7 +67,7 @@ for(i in seq_along(modList)){
   
   # put rows together
   pA <- plot_grid(p2, p1, rel_widths = c(4,5), align = "h", axis = "t")
-  pB <- plot_grid(p3, p4)
+  pB <- plot_grid(p3, p4) # p4
   
   title <- ggdraw() + 
     draw_label(modName, fontface = 'bold', size = 18, x = 0.3, y = 0.5, hjust = 0)
@@ -79,11 +79,47 @@ for(i in seq_along(modList)){
 }
 
 
+## plot factors on map
+
+# get coordiantes
+source("Hmsc_CD/local/L1_read_data.r")
+# otu.pa.csv is Y.train.pa; otu.qp.csv is Y.train.qp
+rm(Y.train.qp, Y.train.pa, X.train, env.vars, otu.pa.csv, otu.qp.csv,P)
+
+# gather all factor scores
+str(modList[[1]]$ord$scores)
+scoresList <- lapply(modList, function(x) x$ord$scores[,"Factor1"])
+
+scores <- do.call(cbind, scoresList)
+colnames(scores) <- sprintf("mod%01d", seq_along(modList))
+
+# add to coordiantes
+factor.sf <- S.train %>%
+  cbind(scores) %>%
+  sf::st_as_sf(coords = c("UTM_E", "UTM_N"), crs = 32610)
+
+factor.sf
+
+mv1 <- mapview(factor.sf, zcol = sprintf("mod%01d", seq_along(modList)),
+              map.types = c("Esri.WorldImagery", "OpenStreetMap.HOT"),
+              legend = T, hide = TRUE)
+
+# hide not working with burst.. 
+# mv2 <- mapview(factor.sf[, sprintf("mod%01d", seq_along(modList))], burst = TRUE, hide = TRUE,
+#                map.types = c("Esri.WorldImagery", "OpenStreetMap.HOT"),
+#                legend = T)
+# mv2
+
+mv1@map <- mv1@map %>% leaflet::hideGroup(group = sprintf("mod%01d", seq_along(modList))[-1])
+
+mv1
+
+mapshot(mv1, url = "Hmsc_CD/local/plots/factor_map.html", selfcontainted = TRUE) # moved manually from below
+# mapshot(mv1, url = "factor_map.html", selfcontainted = TRUE)
 
 
 
-# ggsave("Hmsc_CD/local/factor1_8predictors.png")
-# ggsave("Hmsc_CD/local/factor2_8predictors.png")
+
 
 
 # # get correlations with selected predictors

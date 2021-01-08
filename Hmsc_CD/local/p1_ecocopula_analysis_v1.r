@@ -21,7 +21,7 @@ load("Hmsc_CD/oregon_ada/data/allData_pre_selection.rdata")
 env.csv <- env.vars %>%
   select(clearcut, insideHJA, oldGrowthIndex, elevation_m, dem500, tri.pt, canopyHeight_m, precipitation_mm, mean.NDVI, mean.EVI, mean.green, mean.wet, l_p25, l_rumple, B1_median, B4_median, lg_DistStream, lg_DistRoad, lg_YrsDisturb, lg_cover2m_max, lg_cover2m_4m, lg_cover4m_16m)
 
-source("Hmsc_CD/local/ecoCopula_plot_fn.r")
+source("Hmsc_CD/local/fn_ecoCopula_plot.r")
 
 ## do the models
 # mvabund models, mod0 and mod1
