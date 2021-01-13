@@ -35,6 +35,8 @@ fm
 
 ## further interactions
 as.formula(otu.pa ~ dem500 * insideHJA + dem500 * oldGrowthIndex + tri.pt * oldGrowthIndex + lg_YrsDisturb + mean.NDVI + lg_DistRoad)
+# + minT_annual
+
 
 # make a pa matrix as mvabund object
 # otu.pa <- mvabund(otu.pa.csv)

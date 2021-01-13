@@ -42,6 +42,8 @@ terr
 names(terr) <- c("dem", "tri")
 plot(terr)
 
+plot(terr$tri)
+
 # extract point elevation data
 dem.pts <- raster::extract(terr, xy.nad)
 colnames(dem.pts) <- c("dem.pt", "tri.pt")
