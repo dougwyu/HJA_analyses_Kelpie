@@ -1,5 +1,6 @@
 ### Elevation data #####
 
+getwd()
 wd <- here::here()
 wd
 setwd(wd)
@@ -21,6 +22,9 @@ citation("mapview")
 utm10N <- 32610
 # EPSG:4269 # NAD 83
 nad83 <- 4269
+# EPSG:26910  NAD83 / UTM zone 10N
+nadutm10 <- 26910
+
 
 # import site data
 # (follows quantiles of prevalence - as in models of 20201209 - see S2_define_models.r)
@@ -30,7 +34,7 @@ source("Hmsc_CD/local/L1_read_data.r")
 rm(Y.train.pa, Y.train.qp, P)
 
 head(S.train)
-xy.sf <- st_as_sf(S.train, coords = c("UTM_E", "UTM_N"), crs = utm10N)
+xy.sf <- st_as_sf(S.train, coords = c("UTM_E", "UTM_N"), crs = nadutm10)
 
 # transform to NAD (for now, quicker than projecting raster)
 xy.nad <- st_transform(xy.sf, crs = nad83)

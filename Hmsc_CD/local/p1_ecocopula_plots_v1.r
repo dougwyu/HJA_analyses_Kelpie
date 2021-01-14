@@ -6,27 +6,43 @@ library(cowplot)
 
 ## load ecocopula results
 load("Hmsc_CD/local/ecocopula_modList_pilot.rdata") # fm, cor.preds, modList
+load("Hmsc_CD/local/ecocopula_modList_topo.rdata") # fm, cor.preds, modList
 
 str(modList, max.level =2)
 
 ##### Plots
 source("Hmsc_CD/local/fn_ecoCopula_plot.r")## modified plot functions...
 
-mod <- modList[[1]]$mod
-sp_res <- modList[[1]]$sp
-site_res <- modList[[1]]$site
+mod <- modList[[2]]$mod
+sp_res <- modList[[2]]$sp
+site_res <- modList[[2]]$site
+
+mod.ord <- modList[[2]]$ord
 
 alpha <- 4*0.95
 
 # chk residuals
 plot(mod) 
 
+ggplot() + 
+  geom_segment(aes(x = 0, y = 0, 
+                   xend = Factor1 * alpha * 0.95, 
+                   yend = Factor2 * alpha * 0.95), 
+               data = sp_res, 
+               size = .1) +
+  geom_point(aes(x = Factor1, y = Factor2,
+                 color = be10,
+                 size = ht), 
+                 data = site_res)+
+  scale_color_gradientn(colours = brewer.pal(n = 10, name = "RdYlBu"))
+
 #plot factors
-plot_factors(alpha, "pa", "mod1", sp_res, site_res)
+plot_factors(alpha, "pa", "mod1", sp_res, site_res, cont_pred1 = "be10", cont_pred2 = "ht")
+
 
 # Plot over coords with factors as colour fill
-plot_xy_factor1("pa", "mod1", site_res)
-plot_xy_factor2("pa", "mod1", site_res)
+plot_xy_factor1("pa", "mod1", site_res, cont_pred2 = ht)
+plot_xy_factor2("pa", "mod1", site_res, cont_pred2 = ht)
 
 ## correlation plot
 cor.preds <- colnames(env.vars)[sapply(env.vars, is.numeric)]
@@ -54,7 +70,7 @@ for(i in seq_along(modList)){
   modName <- paste0("predictors: ", as.character(fm[[i]])[3])
   
   #plot factors
-  p1 <- plot_factors(alpha, "pa", "", sp_res, site_res)
+  p1 <- plot_factors(alpha, "pa", "", sp_res, site_res, cont_pred1 = "be10", cont_pred2 = "ht")
   
   
   ## correlation plot
@@ -62,8 +78,8 @@ for(i in seq_along(modList)){
   p2 <- ~t_corrplot(mod.cor, "")
   
   # Plot over coords with factors as colour fill
-  p3 <- plot_xy_factor1("pa", "", site_res)
-  p4 <- plot_xy_factor2("pa", "", site_res)
+  p3 <- plot_xy_factor1("pa", "", site_res, cont_pred2 = ht)
+  p4 <- plot_xy_factor2("pa", "", site_res, cont_pred2 = ht)
   
   # put rows together
   pA <- plot_grid(p2, p1, rel_widths = c(4,5), align = "h", axis = "t")
@@ -75,7 +91,7 @@ for(i in seq_along(modList)){
   m1 <- plot_grid(pA, pB, title, nrow = 3, rel_heights = c(4,5,1))
   # m1 <- plot_grid(pA, pB, nrow = 2, rel_heights = c(4,5))
   # m1
-  ggsave(paste0("Hmsc_CD/local/plots/mod", i, ".png"), m1, width = 300, height = 250, units = "mm")
+  ggsave(paste0("Hmsc_CD/local/plots/mod_topo", i, ".png"), m1, width = 300, height = 250, units = "mm")
 }
 
 

@@ -8,7 +8,7 @@
 
 library(dplyr)
 # library(here) # not on ADA
-library(glue)
+# library(glue) # replaced with paste for ADA
 
 samtoolsfilter <- "F2308" # F2308 filter only
 samtoolsqual <- "q48"
@@ -18,9 +18,9 @@ primer <- "BF3BR2"
 
 gitHub <- "https://raw.githubusercontent.com/dougwyu/HJA_analyses_Kelpie/master/Kelpie_maps"
 
-outputidxstatstabulatefolder <- glue::glue("outputs_minimap2_{minimaprundate}_{samtoolsfilter}_{samtoolsqual}_kelpie{kelpierundate}_{primer}_vsearch97")
+outputidxstatstabulatefolder <- paste0("outputs_minimap2_",minimaprundate,"_",samtoolsfilter,"_",samtoolsqual,"_kelpie",kelpierundate,"_",primer,"_vsearch97")
 
-datFile <- glue("sample_by_species_table_{samtoolsfilter}_minimap2_{minimaprundate}_kelpie{kelpierundate}_uncorr.csv")
+datFile <- paste0("sample_by_species_table_", samtoolsfilter, "_minimap2_", minimaprundate, "_kelpie", kelpierundate, "_uncorr.csv")
 
 otuenv <- read.csv(file.path(gitHub, outputidxstatstabulatefolder, datFile))
 
