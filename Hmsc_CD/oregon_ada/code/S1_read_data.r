@@ -31,8 +31,25 @@ period <- "S1"
 otuenv <- otuenv %>% 
   dplyr::filter(trap == trap[[1]] & period == period[[1]]) 
 
+# clean up
+rm(datFile, gitHub, kelpierundate, minimaprundate, outputidxstatstabulatefolder, period, primer, samtoolsfilter, samtoolsqual, trap)
+
 # bring in DEM stats
-load("data/demStats.rdata") # temporary location for moment... 
+# load("data/demStats.rdata") # temporary location for moment...  REPLACED By topo.df
+
+# load new topo vars
+load("data/topo_data.rdata")
+# head(topo.df)
+
+
+# remove NA
+sum(is.na(topo.df))
+ind <- which(is.na(topo.df$twi))
+topo.df <- topo.df[-ind,]
+
+# same with others
+otuenv <- otuenv[-ind,]
+rm(ind)
 
 # keep OTUs with >=5 incidences
 # original read number abundance
@@ -58,6 +75,7 @@ min(colSums(otu.pa.csv)) == minocc # should be TRUE
 Y.train.pa <- otu.pa.csv
 Y.train.qp <- otu.qp.csv
 
+rm(minocc)
 
 # env covariates
 # otuenv %>% 
@@ -120,7 +138,7 @@ env.vars <- otuenv %>%
          lg_cover2m_4m = log(l_Cover_2m_4m + 0.001),
          lg_cover4m_16m = log(l_Cover_4m_16m + 0.001)) %>%
   dplyr::select(uniqueID, clearcut,insideHJA,oldGrowthIndex, elevation_m, canopyHeight_m, precipitation_mm, minT_annual, maxT_annual, mean.NDVI, mean.EVI, mean.green, mean.wet, mean.bright, l_p25, l_rumple, B1_median, B2_median,B3_median,B4_median,B5_median,B6_median,B7_median,B10_median,B11_median,lg_DistStream, lg_DistRoad, lg_YrsDisturb, lg_cover2m_max, lg_cover2m_4m, lg_cover4m_16m) %>% 
-  dplyr::left_join(y = dem_stats[,c("uniqueID", "dem500", "tri.pt")], by = "uniqueID") %>%
+  dplyr::left_join(y = topo.df, by = "uniqueID") %>%
   mutate(across(where(is.numeric), scale), # scale here
          clearcut = factor(clearcut),
          insideHJA = factor(insideHJA)) %>%  
@@ -204,9 +222,7 @@ all(P$tip.label %in% colnames(Y.train.qp))
 
 # save(Y.train.pa, Y.train.qp, X.train, S.train, P, file = "data/allData_vif.rdata")
 
-rm(c, datFile, gitHub, i, kelpierundate, minimaprundate, minocc, outputidxstatstabulatefolder, period, primer, samtoolsfilter, samtoolsqual, tax.cols, trap)
-
-rm(dem_stats, spp)
+rm(c, i, tax.cols, spp)
 rm(otu.ab.csv, otuenv)
 
 

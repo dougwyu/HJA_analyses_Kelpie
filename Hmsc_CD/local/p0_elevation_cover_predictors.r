@@ -14,7 +14,7 @@ utm10N <- 32610
 # EPSG:26910  NAD83 / UTM zone 10N
 nadutm10 <- 26910
 # EPSG:4269 # NAD 83
-nad83 <- 4269
+# nad83 <- 4269
 
 gis <- "J:/UEA/Oregon/gis"
 ## 
@@ -34,7 +34,7 @@ xy.utm <- st_transform(xy.sf, crs = utm10N)
 rm(xy.sf)
 
 # write
-st_write(xy.utm, file.path(gis, "s_utm/m1s1_utm10.shp"), delete_layer = T)
+# st_write(xy.utm, file.path(gis, "s_utm/m1s1_utm10.shp"), delete_layer = T)
 
 # distance between points
 dist <- st_distance(xy.utm)
@@ -151,6 +151,8 @@ writeRaster(terr, bylayer = T, filename = file.path(gis, "r_utm/terr10.tif"), da
 writeRaster(covStack, bylayer = T, filename = file.path(gis, "r_utm/l.tif"), datatype = "FLT4S", suffix = "names")
 save(terr, covStack, file = file.path(gis, "r_utm/elev_cov.rdata"))
 
+# load(file.path(gis, "r_utm/elev_cov.rdata"))
+
 # terr30 <- terrain(be30, opt = c("slope", "aspect", "TRI"), units= "degrees")
 # terr30
 # 
@@ -210,11 +212,14 @@ names(cutStack) <- c("cut_r", "cut_msk", "cut_r1k")
 save(cutStack, file = file.path(gis, "r_utm/cut_stack.rdata"))
 writeRaster(cutStack, bylayer = T, filename = file.path(gis, "r_utm/disturb.tif"), suffix = "names", overwrite = TRUE)
 
+# load(file.path(gis, "r_utm/cut_stack.rdata"))
+
 ## Extract values and add to data frame
-cut.r1k.pt <- extract(cut.r1k, xy.utm)
+cut.r1k.pt <- extract(cutStack$cut_r1k, xy.utm)
 
 ## average elevation
 dem500 <- raster::extract(terr$be10, xy.utm, buffer = 500, fun=mean, na.rm = T)
+# point elevation
 dem.pt <- raster::extract(terr$be10, xy.utm)
 
 ## topographic index
@@ -227,7 +232,7 @@ terr.pt <- raster::extract(terr, xy.utm)
 cov.pt <- raster::extract(covStack, xy.utm)
 
 ## make data frame
-topo.df <- data.frame(xy.utm$uniqueID, terr.pt, cov.pt, mTopo, cut.r1k.pt)
+topo.df <- data.frame(uniqueID = xy.utm$uniqueID, terr.pt, cov.pt, be500 = dem500, mTopo, cut.r1k.pt)
 head(topo.df)
 str(topo.df)
 summary(topo.df)
