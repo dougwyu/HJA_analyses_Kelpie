@@ -6,7 +6,7 @@
 ```{r setup}
 # setwd('/media/yuanheng/SD-64g2/Downloads/backup2/HJA_analyses_Kelpie/HJA_scripts/13_sjsdm_prediction')
 	
-lapply(c("ggplot2",'abind', 'tidyverse','gridBase', 'grid','gridExtra', 'ggcorrplot','here', 'conflicted','reticulate','sjSDM','mgsub','vcd','RColorBrewer', 'reshape2','glue','pROC'), library, character.only=T)
+lapply(c("ggplot2",'abind', 'tidyverse','gridBase', 'grid','gridExtra', 'ggcorrplot','here', 'conflicted','reticulate','sjSDM','mgsub','vcd','RColorBrewer', 'reshape2','glue','pROC','nlme','lme4','car'), library, character.only=T)
 # 'scatterplot3d', 'labdsv',
 	
 conflict_prefer("filter", "dplyr")
@@ -37,8 +37,8 @@ primer = "BF3BR2"
 date.cross.validation = 20201119
 envvar = 'gismslidar'
 minocc = 5
-abund = 'pa' # qp
-trap <- "M1"; period = "S1"
+abund = 'pa' # pa , qp
+trap <- "m1"; period = "s1"
 #session = 's1'; malaise = 'm1'
 	
 outputidxstatstabulatefolder = glue("outputs_minimap2_{minimaprundate}_{samtoolsfilter}_{samtoolsqual}_kelpie{kelpierundate}_{primer}_vsearch97")
@@ -53,8 +53,6 @@ sjsdmV = '0.1.2.9000' # package version
 	
 # names for graph
 sjsdmVfolder = glue('sjsdm-{sjsdmV}')
-describefolder1 = 'prediction_trial'
-describefolder2 = 'DNN_env'
 	
 ```
 
@@ -92,18 +90,18 @@ pairs(z,lower.panel=panel.smooth2,upper.panel=panel.cor,diag.panel=panel.hist)
 
 
 ```{r select subsets}
-# 80% of data as training
-result = read.table(here('source', 'prediction_trial_straining_sample_index.csv'), header=T)
-a = result$select.col
-# [1] 76 30 18 14 45 26 10 82 73 52 17  2 12 42 34 87 28 43  3 47 24 66 81 51 57
-# [26] 59 74 37 50 78 13 56 85 79 67  8 69 80 88  6 16 19 65 54 36  5 49 29  1 86
-# [51] 31 72 40 68 22 20 25 64 39 33 60  9 62 44 32 35 41  7 48 83
-	
+# ... 80% of data as training ...
 # random selection
 #set.seed=100
 #num.sample = dim(otu)[1]
 #select.percent = .8
 #a = sample(1:num.sample, round(88*select.percent))
+	
+result = read.table(here('source', 'prediction_trial_straining_sample_index.csv'), header=T)
+a = result$select.col
+# [1] 76 30 18 14 45 26 10 82 73 52 17  2 12 42 34 87 28 43  3 47 24 66 81 51 57
+# [26] 59 74 37 50 78 13 56 85 79 67  8 69 80 88  6 16 19 65 54 36  5 49 29  1 86
+# [51] 31 72 40 68 22 20 25 64 39 33 60  9 62 44 32 35 41  7 48 83
 	
 otu.train = otu[a,]
 dim(otu.train)
@@ -132,23 +130,25 @@ dev.off()
 ```{r load-models}
 # model without DNN
 # run on cpu, corrected insideHJA (factor), still using tune result from glue('sjsdm_tune_results_HJA_{date.cross.validation}_bestonly.RDS')
-model.tuned = readRDS(here(tempsjsdmpath,'results','sjsdm-model-RDS', sjsdmVfolder, glue('s-jSDM_model_s1_m1_{abund}_min{minocc}_{envvar}_{date.cross.validation}.RDS')) )
+model.tuned = readRDS(here(tempsjsdmpath,'results','sjsdm-model-RDS', sjsdmVfolder, glue('s-jSDM_model_{period}_{trap}_{abund}_min{minocc}_{envvar}_{date.cross.validation}.RDS')) )
 	
 names(model.tuned)
 str(model.tuned$spatial)
 	
 # 80% data
-model.train = readRDS(here(tempsjsdmpath,'results','sjsdm-model-RDS', sjsdmVfolder, glue('s-jSDM_tuned.model_s1_m1_{abund}_min{minocc}_{envvar}_{date.cross.validation}.RDS')) )
+model.train = readRDS(here(tempsjsdmpath,'results','sjsdm-model-RDS', sjsdmVfolder, glue('s-jSDM_tuned.model_{period}_{trap}_{abund}_min{minocc}_{envvar}_{date.cross.validation}.RDS')) )
 	
 names(model.train)
 	
-plot(model.tuned$history)   # train
+plot(model.train$history)   # train
 	
 
 ```
 
 
-```{r model-DNN.SP-interaction}
+```{r model-DNN.SP}
+# interactions not needed for NN!!! (from Max)
+
 # make sure input of sjsdm are numeric matrix
 s.otu.train = as.matrix(otu.train)
 attr(s.otu.train, 'dimnames') = NULL
@@ -157,9 +157,8 @@ str(s.otu.train)
 names(scale.env)
 	
 # set variables
-formula.env = 'elevation_m-B1_20180717-spDNN'
-# 'elevation_m-insideHJA', 'elevation_m-B1_20180717'
-# 'elevation_m-minT_annual', 'elevation_m-precipitation_mm'
+formula.env = 'spDNN'
+# interactions not needed for NN!!! (from Max)
 lambda.env = .1
 alpha.env = .5
 lambda.sp = .1
@@ -171,7 +170,7 @@ drop = .3
 # spatial: Max recommends X*Y really
 	
 model.train = sjSDM(Y = s.otu.train,
-			  env = linear(data=scale.env.train, formula = ~.+elevation_m:B1_20180717,
+			  env = linear(data=scale.env.train, formula = ~.,
 			  lambda = lambda.env, alpha = alpha.env),
  			  biotic = bioticStruct(lambda=lambda.env, alpha=alpha.env, on_diag=F, inverse = FALSE),
 			  spatial = DNN(data=XY.train, ~0+UTM_E*UTM_N, hidden=hidden.sp, lambda = lambda.sp , alpha = alpha.sp, activation=acti.sp, dropout=drop),
@@ -181,9 +180,9 @@ model.train = sjSDM(Y = s.otu.train,
 	
 names(model.train)
 	
-# saveRDS(model.train, here(tempsjsdmpath,'results','sjsdm-model-RDS', sjsdmVfolder, glue('s-jSDM_tuned.model_s1_m1_{abund}_min{minocc}_{envvar}_{date.cross.validation}_{formula.env}.RDS')) )
+# saveRDS(model.train, here(tempsjsdmpath,'results','sjsdm-model-RDS', sjsdmVfolder, glue('s-jSDM_tuned.model_{period}_{trap}_{abund}_min{minocc}_{envvar}_{date.cross.validation}_{formula.env}.RDS')) )
 	
-model.train = readRDS(here(tempsjsdmpath,'results','sjsdm-model-RDS', sjsdmVfolder, glue('s-jSDM_tuned.model_s1_m1_{abund}_min{minocc}_{envvar}_{date.cross.validation}_{formula.env}.RDS')) )
+model.train = readRDS(here(tempsjsdmpath,'results','sjsdm-model-RDS', sjsdmVfolder, glue('s-jSDM_tuned.model_{period}_{trap}_{abund}_min{minocc}_{envvar}_{date.cross.validation}_{formula.env}.RDS')) )
 	
 plot(model.train$history)
 	
@@ -193,7 +192,9 @@ imp =importance(model.train)
 ```
 
 
-```{r model-DNN.env-interaction}
+```{r model-DNN.env}
+# interactions not needed for NN!!! (from Max)
+
 # make sure input of sjsdm are numeric matrix
 s.otu.train = as.matrix(otu.train)
 attr(s.otu.train, 'dimnames') = NULL
@@ -202,7 +203,8 @@ str(s.otu.train)
 names(scale.env)
 	
 # set variables
-formula.env = 'elevation_m-B1_20180717-envDNN'
+formula.env = 'envDNN-spAll'
+# 'envDNN-spAll' , 'envDNN' (UTM_E*UTM_N works better than interaction only)
 # 'elevation_m-insideHJA', 'elevation_m-B1_20180717'
 lambda.env = .1
 alpha.env = .9
@@ -213,19 +215,20 @@ acti.sp = 'relu'
 drop = .3
 	
 model.train = sjSDM(Y = s.otu.train,
-			  env = DNN(data=scale.env.train, formula = ~.+elevation_m:B1_20180717,
+			  env = DNN(data=scale.env.train, formula = ~.,
 			  hidden=hidden.sp, lambda = lambda.env, alpha = alpha.env, activation=acti.sp,dropout=drop),
  			  biotic = bioticStruct(lambda=lambda.sp, alpha=alpha.sp, on_diag=F, inverse = FALSE),
-			  spatial = linear(data=XY.train, ~0+UTM_E:UTM_N, lambda=lambda.sp, alpha=alpha.sp),
+			  spatial = linear(data=XY.train, ~0+UTM_E*UTM_N, lambda=lambda.sp, alpha=alpha.sp),
+			  # ~0+UTM_E:UTM_N    ~0+UTM_E*UTM_N
 			  learning_rate = 0.003, # 0.003 recommended for high species number 
 			  step_size = NULL, iter = 150L, family=stats::binomial('probit'), sampling = 1000L # 5000L
 			 )
 	
 names(model.train)
 	
-# saveRDS(model.train, here(tempsjsdmpath,'results','sjsdm-model-RDS', sjsdmVfolder, glue('s-jSDM_tuned.model_s1_m1_{abund}_min{minocc}_{envvar}_{date.cross.validation}_{formula.env}.RDS')) )
+# saveRDS(model.train, here(tempsjsdmpath,'results','sjsdm-model-RDS', sjsdmVfolder, glue('s-jSDM_tuned.model_{period}_{trap}_{abund}_min{minocc}_{envvar}_{date.cross.validation}_{formula.env}.RDS')) )
 	
-model.train = readRDS(here(tempsjsdmpath,'results','sjsdm-model-RDS', sjsdmVfolder, glue('s-jSDM_tuned.model_s1_m1_{abund}_min{minocc}_{envvar}_{date.cross.validation}_{formula.env}.RDS')) )
+model.train = readRDS(here(tempsjsdmpath,'results','sjsdm-model-RDS', sjsdmVfolder, glue('s-jSDM_tuned.model_{period}_{trap}_{abund}_min{minocc}_{envvar}_{date.cross.validation}_{formula.env}.RDS')) )
 	
 plot(model.train$history)
 	
@@ -234,21 +237,20 @@ plot(model.train$history)
 
 
 ```{r prediction}
-# predictive AUC
 model1 = model.train
+formula = formula.env  # formula.env , 'noDNN'
+	
+# predictive AUC
 newdd = scale.env.test
 newsp = XY.test
 otudd = otu.test
 set = 'test'
-formula = formula.env
 	
 # explanatory AUC
-# model1 = model.tuned
-# newdd = NULL
-# newsp = NULL
-# otudd = otu
-# set = 'explain'
-# formula = envvar
+ newdd = NULL
+ newsp = NULL
+ otudd = otu.train
+ set = 'explain'
 	
 pred.dd = apply(abind::abind(lapply(1:100, function(i) predict(model1, newdata=newdd, SP=newsp)) , along = -1L), 2:3, mean)
 	
@@ -278,19 +280,28 @@ roc.dd = lapply(1:dim(otudd)[2], function(i) roc(otudd.pa[,i], pred.dd[,i]))
 head(roc.dd)
 	
 auc.mean = mean(as.numeric(sapply(lapply(roc.dd, function(i) str_split(auc(i), ':')), function(x) x[[1]][1] )))
-formula.env; abund
+formula; abund
+	
+# ... envDNN
+# envDNN-spAll, qp: 0.7303093
+# envDNN, qp: 0.7209443
+# envDNN-spAll, pa: 0.7258504
+# envDNN, pa: 0.7140553
 	
 # elevation_m-B1_20180717-envDNN, pa: 0.7295206
 # elevation_m-insideHJA-envDNN, pa: 0.7117155
 # elevation_m-insideHJA-envDNN, qp: 0.7206113
 # elevation_m-B1_20180717-envDNN, qp: 0.7285853
 	
+# ... spDNN
+# spDNN, pa: 0.7272945
+# spDNN, qp: 0.7162054
 # elevation_m-B1_20180717, pa: 0.7204959
 # elevation_m-insideHJA, pa: 0.7254968
 # elevation_m-insideHJA, qp: 0.7225238
 # elevation_m-B1_20180717, qp: 0.7305075
 	
-# saveRDS(list(pred.Y=pred.dd, otu=otudd, roc.allS=roc.dd, auc.mean=auc.mean), here(outputpath,'prediction_outputs','sjsdm-model-RDS', sjsdmVfolder, 'prediction', glue('roc_result_{set}_s1_m1_{abund}_min{minocc}_{formula}_{date.cross.validation}.RDS')))
+# saveRDS(list(pred.Y=pred.dd, otu=otudd, roc.allS=roc.dd, auc.mean=auc.mean), here(outputpath,'prediction_outputs','sjsdm-model-RDS', sjsdmVfolder, 'prediction', glue('{envvar}'), glue('roc_result_{set}_{period}_{trap}_{abund}_min{minocc}_{formula}_{date.cross.validation}.RDS')))
 	
 ```
 
@@ -352,35 +363,51 @@ dev.off()
 ```{r roc_result-for-regression}
 # .. set names
 # predictive
-set = 'test'
-formula = formula.env
+set = 'test' # 'explain', test
+formula = "envDNN-spAll" # "envDNN-spAll", 'spDNN', 'noDNN'
 	
-# explanatory
-# set = 'explain'
-# formula = envvar
-	
-explain = readRDS(here(outputpath,'prediction_outputs','sjsdm-model-RDS', sjsdmVfolder, 'prediction', 'roc_result_explain_s1_m1_pa_min5_gismslidar_20201119.RDS')) 
+explain = readRDS(here(outputpath,'prediction_outputs','sjsdm-model-RDS', sjsdmVfolder, 'prediction', glue('{envvar}'), glue('roc_result_explain_{period}_{trap}_pa_min5_gismslidar_20201119.RDS'))) 
 names(explain)
 # needed for selecting data
 	
-roc.dd = readRDS(here(outputpath,'prediction_outputs','sjsdm-model-RDS', sjsdmVfolder, 'prediction', glue('roc_result_{set}_{period}_{trap}_{abund}_min{minocc}_{formula}_{date.cross.validation}.RDS'))) 
+roc.dd = readRDS(here(outputpath,'prediction_outputs','sjsdm-model-RDS', sjsdmVfolder, 'prediction', glue('{envvar}'), glue('roc_result_{set}_{period}_{trap}_{abund}_min{minocc}_{formula}_{date.cross.validation}.RDS'))) 
 names(roc.dd)
+	
+# .... prevalent spp
+a = data.frame(sum=colSums(explain$otu), otu=attr(colSums(explain$otu),'names'))
+a = a[order(a$sum, decreasing=T),]
+a$sum.seq = 1:dim(a)[1]
+str(a)
+# 268, 3
+	
+# ... taxonomy 
+a$order = sapply(strsplit(sapply(str_split(a$otu, '__'), function(aa) aa[2]), '_'), function(aa) aa[2])
+a = left_join(a, (a %>% count(order)), by=c('order','order'))
+unique(a$n)
+str(a)
+	
+a$class = sapply(strsplit(sapply(str_split(a$otu, '__'), function(aa) aa[2]), '_'), function(aa) aa[1])
+a$family = sapply(strsplit(sapply(str_split(a$otu, '__'), function(aa) aa[2]), '_'), function(aa) aa[3])
 	
 # ... make long table 
 b = as.numeric(sapply(lapply(roc.dd$roc.allS, function(i) str_split(auc(i), ':')), function(x) x[[1]][1] ))
 	
+# aaa = roc.dd$otu %>% pivot_longer(everything(), names_to='otu.name', values_to = 'obs')
+# table(aaa$otu.name[1:243] == names(roc.dd$otu))
+# table(aaa$otu.name[1:243] == names(otudd))
+	
 roc.dd1 = as.data.frame(bind_cols(roc.dd$otu %>% pivot_longer(everything(), names_to='otu.name', values_to = 'obs'), pred=as.vector(t(roc.dd$pred.Y)), auc=rep(b, dim(roc.dd$otu)[1])))
+roc.dd1 = left_join(roc.dd1, a, by = c('otu.name'='otu'), copy=T)
 str(roc.dd1)
-# 88*268 = 23584
+# 18*243 = 4374
+# 70*268 = 18760
+	
+table(roc.dd1$sum.seq[1:243])
 	
 roc.dd1$otu.name = as.factor(roc.dd1$otu.name)
 	
 # check on dataset
 roc.dd$otu[1,1:6]; roc.dd$pred.Y[1,1:6]; roc.dd1[1:6,2:3]
-	
-# .... prevalent spp
-a = data.frame(sum=colSums(explain$otu), otu=names(explain$otu))
-a = a[order(a$sum, decreasing=T),]
 	
 roc.dd50 = roc.dd1[which(roc.dd1$otu.name %in% as.character(a$otu[1:50])),]
 sort(unique(roc.dd50$otu.name)) == sort(a$otu[1:50])
@@ -390,8 +417,126 @@ as.character(sort(unique(roc.dd50$otu.name))) == as.character(sort(a$otu[1:50]))
 ```
 
 
+```{r correlate-auc}
+# .... (define) ....
+auc.all = data.frame(otu=names(roc.dd.pa$otu), auc.pa=rep(.1,length=length(names(roc.dd.pa$otu))), auc.qp=rep(.1,length=length(names(roc.dd.pa$otu))))
+str(auc.all)
+# dim[1] == 268!!!
+	
+# ... loop ...
+setS = c( 'explain','test')  # 'test' , 'explain'
+formulaS = c('envDNN-spAll', 'spDNN' , 'noDNN')# 'envDNN-spAll' , 'spDNN' , 'noDNN'
+	
+for (i in 1:2) {
+	for (j in 1:3) {
+		
+		set = setS[i]
+		formula = formulaS[j]
+		
+		roc.dd.qp = readRDS(here(outputpath,'prediction_outputs','sjsdm-model-RDS', sjsdmVfolder, 'prediction', glue('{envvar}'), glue('roc_result_{set}_{period}_{trap}_qp_min{minocc}_{formula}_{date.cross.validation}.RDS'))) 
+		names(roc.dd.qp)
+		
+		roc.dd.pa = readRDS(here(outputpath,'prediction_outputs','sjsdm-model-RDS', sjsdmVfolder, 'prediction', glue('{envvar}'), glue('roc_result_{set}_{period}_{trap}_pa_min{minocc}_{formula}_{date.cross.validation}.RDS'))) 
+		names(roc.dd.pa)
+		
+		if (formula=='envDNN-spAll') {formula = 'envDNN'}
+		
+# ... make long table 
+b.qp = data.frame( auc.qp = as.numeric(sapply(lapply(roc.dd.qp$roc.allS, function(i) str_split(auc(i), ':')), function(x) x[[1]][1] )), otu.qp = names(roc.dd.qp$otu) )
+str(b.qp)
+	
+b.pa = data.frame( auc.pa = as.numeric(sapply(lapply(roc.dd.pa$roc.allS, function(i) str_split(auc(i), ':')), function(x) x[[1]][1] )), otu.pa = names(roc.dd.pa$otu) )
+str(b.pa)
+	
+auc.qppa = inner_join(b.qp, b.pa, by=c('otu.qp'='otu.pa'))
+str(auc.qppa)
+	
+auc.all = left_join(auc.all, auc.qppa, by=c('otu'='otu.qp'), suffix=c('', glue('.{set}.{formula}')), copy=T)
+str(auc.all)
+	
+	}
+}
+	
+# ... loop ...
+# .. after all variables are added
+auc.all = dplyr::select(auc.all, -'auc.pa',-'auc.qp')
+	
+# ... extract taxonomy info
+auc.all = left_join(auc.all, select(a, 'otu','order','class','family','sum','n'), by=c('otu','otu'))
+abc = data.frame(seq.order=letters[1:length(unique(a$n))], order=sort(unique(a$n),decreasing=T))
+auc.all$Oorder = sapply(1:dim(auc.all)[1], function(x) paste(abc$seq.order[abc$order==auc.all$n[x]],'.',auc.all$order[x],'.',auc.all$n[x], sep=''))
+str(auc.all)
+	
+# ....... regression plot .......
+dd.ggplot = vector(mode = "list", length = 6)
+str(dd.ggplot)
+	
+plot.list=list(ggplot(),ggplot(),ggplot(),ggplot(),ggplot(),ggplot())
+	
+for (i in 1:3) {
+	for (j in 1:2) {
+		set = setS[j]  # 'test' , 'explain'
+		formula = formulaS[i]  # 'envDNN-spAll' , 'spDNN' , 'noDNN'
+		if (formula=='envDNN-spAll') {formula = 'envDNN'}
+		
+		auc.1 = select(auc.all, ((j-1)*6+2*i), (1+(j-1)*6+2*i), 'sum', 'order', 'class', 'family', 'Oorder') %>% rename(auc.qp=1, auc.pa=2, incident=3)
+		auc.1 = na.omit(auc.1)
+		str(auc.1)
+		dd.ggplot[[j+(i-1)*2]] = auc.1
+		
+		plot.list[[j+(i-1)*2]] = ggplot(dd.ggplot[[j+(i-1)*2]], aes(auc.pa, auc.qp)) + geom_point(aes(colour=factor(Oorder), size=incident))+ scale_size(range = c(1, 7)) + scale_colour_manual(values=colorRampPalette(c('dodgerblue3','firebrick2','yellow'))(12)) + geom_smooth(method='lm', se=F, colour='gray') + geom_abline(slope=1,intercept=0, linetype = "dashed", colour='gray', size=1.5) + theme(panel.background=element_rect(fill='snow')) + ggtitle(glue('{set}, {formula}'))
+		
+#		plot(auc.qp~auc.pa, data=auc.1, pch=20, main=glue('{set}, {formula}'))
+#		abline(a=0,b=1,lty=2, col='red')
+#		abline(m1)
+#		text(max(auc.1$auc.pa)*.95,min(auc.1$auc.qp)*1.01, glue('r^2 = ', round(summary(m1)$adj.r.squared, 3)))
+		
+	}
+}
+	
+# pdf(here(outputpath,'prediction_outputs', 'sjsdm-graph', sjsdmVfolder, 'prediction', glue('{envvar}'), glue('auc-correlation_{period}_{trap}_min{minocc}_{date.cross.validation}.pdf')), width=18, height=22)
+	
+grid.arrange(plot.list[[1]],plot.list[[2]],plot.list[[3]],plot.list[[4]],plot.list[[5]],plot.list[[6]], nrow=3)   #, layout_matrix= rbind(c(1), c(2,3), c(4,5)), heights=c(.4,5,5)
+	
+dev.off()
+	
+```
+
+
+```{r violin-auc}
+dd = roc.dd1
+names(dd)
+	
+# pdf(here(outputpath,'prediction_outputs', 'sjsdm-graph', sjsdmVfolder, 'prediction', glue('{envvar}'), glue('violin_order_{set}_{period}_{trap}_{abund}_min{minocc}_{formula}_{date.cross.validation}.pdf')), width=10, height=5)
+	
+cc = a %>% count(order)
+cc = cc[order(cc$n, decreasing=T),]
+	
+dd1 = dd[sapply(1:length(unique(dd$otu.name)), function(x) {which(dd$otu.name==unique(dd$otu.name)[x])[1]} ),]
+str(dd1)
+	
+ggplot(dd1, aes(x=order, y=auc)) + geom_violin(trim=FALSE) + geom_hline(yintercept=.75, col='gray') + geom_jitter(width = 0.2, aes(colour = order)) + geom_boxplot(width=0.1) + scale_x_discrete(limit=cc$order) + annotate(geom="text", y=-.43, x=1:length(cc$n), label=as.character(cc$n), col='red') + theme_minimal() + theme(legend.position = "none") 
+#    , aes(colour = class)
+	
+dev.off()
+	
+# .. choose prevalent group
+sort(unique(dd$sum), decreasing=T)
+sort(unique(dd$sum.seq), decreasing=F)
+	
+dd = subset(dd, sum.seq<=sort(unique(dd$sum.seq))[25])
+str(dd)
+	
+g1.1 = ggplot(dd, aes(x=as.factor(sum.seq), y=c(pred, obs))) + geom_violin(trim=FALSE)  + geom_boxplot(width=0.1) + geom_boxplot(width=0.1) + theme_minimal() + scale_x_discrete(limit=as.character(sort(unique(dd$sum.seq))), labels=a$sum[sort(unique(dd$sum.seq))] )
+#xlim( as.character(dd$sum))
+	
+dd$auc[dd$sum.seq==7]
+	
+```
+
+
 ```{r AUC-regression}
-set = 'test.all'
+set = 'explain' # 'test'
 dd = roc.dd1
 	
 #set = 'test.50spp'
@@ -400,33 +545,121 @@ dd = roc.dd1
 str(dd)
 	
 par(mfrow=c(2,2))
-hist(log1p(dd$obs))
-hist(log(dd$pred))
+hist(dd$sum)
+hist(dd$sum)
+hist(dd$auc)
 	
 hist(dd$obs)
-hist(dd$pred)
+hist(log1p(dd$obs[dd$obs!=0]))
 	
-plot(dd$pred, dd$obs)
+plot(dd$sum, dd$obs)
 	
-lm.explain = lme(obs~pred, random= ~1 | otu.name, method='REML', data = dd, control = lmeControl(opt='optim', msMaxIter = 200, msMaxEval = 500, msVerbose = T))
-# + pred
+#/family /order  class/order/family
+lme1 = lme(auc~obs + sum, random= ~1 | class/order/family, method='ML', data = dd, control = lmeControl(opt='optim', msMaxIter = 200, msMaxEval = 500, msVerbose = T))
 	
-summary(lm.explain)
+summary(lme1)
 	
-# pdf(here(outputpath,'prediction_outputs','sjsdm-graph', sjsdmVfolder, 'prediction', glue('{set}_{datafolder}_{abund}_{formula}_lme.pdf')), height=12,width=17)
+# pdf(here(outputpath,'prediction_outputs','sjsdm-graph', sjsdmVfolder, 'prediction', glue('lme-auc_{set}_{datafolder}_{abund}_{formula}.pdf')), height=12,width=17)
 # _spDNN
 	
 par(mfrow=c(2,3),cex=1.05)
 	
 hist(dd$obs, cex.lab=1.2)
-hist(dd$pred, cex.lab=1.2)
+hist(dd$sum, cex.lab=1.2)
 hist(dd$auc, cex.lab=1.2)
 	
-plot(dd$pred, dd$obs, main='lme', cex.lab=1.2)
-lines(seq(min(dd$pred),max(dd$pred), length=100), summary(lm.explain)$tTable[[1]]+ summary(lm.explain)$tTable[[2]]*seq(min(dd$pred),max(dd$pred), length=100))
+obs.seq = seq(min(dd$obs),max(dd$obs), length=100)
+sum.seq = seq(min(dd$sum),max(dd$sum), length=100)
+fit = summary(lme1)$tTable[[1]] + summary(lme1)$tTable[[2]]*obs.seq + summary(lme1)$tTable[[3]]*sum.seq
 	
-plot(dd$pred, dd$auc, cex.lab=1.2)
-plot(dd$obs, dd$auc, cex.lab=1.2)
+#plot(dd$sum, dd$auc, main='lme', cex.lab=1.2, pch=20)
+#lines(sum.seq, fit)
+	
+dd1 = dd[seq(1, dim(dd)[1],by=2),]
+	
+plot(dd1$obs, dd1$auc, main='lme', cex.lab=1.2, pch=20)
+lines(obs.seq, fit)
+	
+par.resid.obs = resid(lme1)[seq(1, dim(dd)[1],by=2)] + summary(lme1)$tTable[[2]]*dd1$obs
+	
+plot(dd1$obs, par.resid.obs, main='lme', cex.lab=1.2, ylab='AUC(partial.resid.obs)', pch=20)
+lines(obs.seq, summary(lme1)$tTable[[2]]*obs.seq)
+	
+par.resid.sum = resid(lme1)[seq(1, dim(dd)[1],by=2)] + summary(lme1)$tTable[[3]]*dd1$sum 
+	
+plot(dd1$sum, par.resid.sum, cex.lab=1.2, ylab='AUC(partial.resid.sum)', main='auc~obs + sum, ~1 | class/order/family', pch=20)
+lines(sum.seq, summary(lme1)$tTable[[3]]*sum.seq)
+	
+dev.off()
+	
+# obs~pred
+dd = subset(dd, obs!=0)
+str(dd)
+	
+lme2 = lme(obs~pred + sum, random= ~1 | class/order/family, method='ML', data = dd, control = lmeControl(opt='optim', msMaxIter = 200, msMaxEval = 500, msVerbose = T))
+	
+summary(lme2)
+	
+# pdf(here(outputpath,'prediction_outputs','sjsdm-graph', sjsdmVfolder, 'prediction', glue('lme-obs_{set}_{datafolder}_{abund}_{formula}.pdf')), height=12,width=17)
+	
+par(mfrow=c(2,3),cex=1.05)
+	
+hist(dd$pred, cex.lab=1.2)
+hist(dd$sum, cex.lab=1.2)
+hist(dd$obs, cex.lab=1.2)
+	
+pred.seq = seq(min(dd$pred),max(dd$pred), length=100)
+sum.seq = seq(min(dd$sum),max(dd$sum), length=100)
+fit = summary(lme2)$tTable[[1]] + summary(lme2)$tTable[[2]]*pred.seq + summary(lme2)$tTable[[3]]*sum.seq 
+	
+plot(dd$pred, dd$obs, main='lme', cex.lab=1.2, pch=20)
+lines(pred.seq, fit)
+	
+par.resid.pred = resid(lme2) + summary(lme2)$tTable[[2]]*dd$pred
+	
+plot(dd$pred, par.resid.pred, main='lme', cex.lab=1.2, ylab='AUC(partial.resid.pred)', pch=20)
+lines(pred.seq, summary(lme2)$tTable[[2]]*pred.seq)
+	
+par.resid.sum = resid(lme2) + summary(lme2)$tTable[[3]]*dd$sum
+	
+plot(dd$sum, par.resid.sum, cex.lab=1.2, ylab='AUC(partial.resid.sum)', main='obs~pred + sum, ~1 | class/order/family', pch=20)
+lines(sum.seq, summary(lme2)$tTable[[3]]*sum.seq)
+	
+dev.off()
+	
+# ..... obs(0/1)~pred .....
+#predict.lme.x1 <- logit.lme[1] + predicted.df.x1$x1*logit.lme[2] + predicted.df.x1$x2*logit.lme[3]
+#	predict.lme.x1 <- exp(predict.lme.x1)/(1+exp(predict.lme.x1))
+#predicted.df.x2 <- data.frame(x2 = seq(min(df$x2), max(df$x2), length.out = 1000), x1 = mean(df$x1))
+#predicted.df.x2 <- as.data.frame(do.call(rbind, replicate(3, predicted.df.x2, simplify = F)))
+#predicted.df.x2$x3 <- rep(c('a', 'b', 'c'), each = 1000)
+#plot(df$x1, predict(test.glmer, type = 'response'), pch = 16, cex = 0.4, col = 'blue', xlab = 'x1', ylab = 'Predicted Prob.', main = 'glmer Function')
+#lines(predicted.df.x1$x1[1:1000], predict.glmer.x1[1:1000], col = 'black', lwd = 2)
+
+#pred.seq = seq(min(dd$pred),max(dd$pred), length.out=100)
+#sum.seq = seq(min(dd$sum),max(dd$sum), length.out=100)
+#fit <- predict(glmer1, newdata=data.frame(pred=pred.seq, sum=sum.seq), type = 'response')
+	
+glmer1 = glmer(obs ~ pred + sum + (1|class/order/family), data = dd, family = binomial,  control = glmerControl(optimizer = "bobyqa"), verbose = 1)
+isSingular(glmer1)
+	
+summary(glmer1)$coefficients
+	
+# pdf(here(outputpath,'prediction_outputs','sjsdm-graph', sjsdmVfolder, 'prediction', glue('lme-obs_{set}_{datafolder}_{abund}_{formula}.pdf')), height=12,width=17)
+	
+par(mfrow=c(2,3),cex=1.05)
+	
+hist(dd$pred, cex.lab=1.2)
+hist(dd$sum, cex.lab=1.2)
+hist(dd$obs, cex.lab=1.2)
+	
+dd1 = dd[seq(1,dim(dd)[1],by=2),]
+	
+plot(dd1$pred, dd1$obs, pch=20, main='lme')
+points(dd1$pred, predict(glmer1, dd1, type = 'response'), pch=4, col='lightblue')
+	
+plot(dd1$sum, dd1$obs, pch=20, main='obs~pred + sum, ~1 | class/order/family')
+points(dd1$sum,predict(glmer1, dd1,type = 'response'), pch=4, col='lightblue')
 	
 dev.off()
 	
