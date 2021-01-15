@@ -1,12 +1,14 @@
-#### Read data on Ada  #####
+#### Read data LOCAL  #####
+
+# write all new variables to github
 
 ## Only local: 
 # setwd("J:/UEA/gitHRepos/HJA_analyses_Kelpie/Hmsc_CD/oregon_ada")
 wd <- here::here()
 wd
-setwd(file.path(wd, "Hmsc_CD/oregon_ada"))
+setwd(wd)
 dir()
-getwd()
+
 
 # wd set on pipeline on Ada
 
@@ -41,7 +43,7 @@ rm(datFile, gitHub, kelpierundate, minimaprundate, outputidxstatstabulatefolder,
 # load("data/demStats.rdata") # temporary location for moment...  REPLACED By topo.df
 
 # load new topo vars
-load("data/topo_data.rdata")
+load("Hmsc_CD/oregon_ada/data/topo_data.rdata")
 # head(topo.df)
 
 
@@ -228,4 +230,5 @@ all(P$tip.label %in% colnames(Y.train.qp))
 rm(c, i, tax.cols, spp)
 # rm(otu.ab.csv, otuenv)
 
-write.csv(env.vars, "biodiversity_site_info_GIS_vars_20210115.csv", row.names = F)
+#write.csv(env.vars, "HJA_scripts/10_eo_data/biodiversity_site_info_GIS_vars_20210115.csv", row.names = F)
+#write.csv(env.vars, "Hmsc_CD/local/data/biodiversity_site_info_GIS_vars_20210115.csv", row.names = F)
