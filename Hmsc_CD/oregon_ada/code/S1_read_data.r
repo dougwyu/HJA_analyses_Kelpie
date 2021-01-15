@@ -2,6 +2,9 @@
 
 ## Only local: 
 # setwd("J:/UEA/gitHRepos/HJA_analyses_Kelpie/Hmsc_CD/oregon_ada")
+# wd <- here::here()
+# wd
+# setwd(file.path(wd, "Hmsc_CD/oregon_ada"))
 # dir()
 getwd()
 
