@@ -42,26 +42,35 @@ sum(rowSums(Y.train.pa2) == 0)
 names(X.train)
 
 # new Selection of topo - lidar predictors
-preds <- c("be10", "Nss", "Ess", "ht", "cov2_4", "cov4_16", "ht.r1k", "cov2_4.r1k", "cov4_16.r1k", "mTopo") # , "cut.r1k.pt"
-length(preds)
+# preds <- c("be10", "Nss", "Ess", "ht", "cov2_4", "cov4_16", "ht.r1k", "cov2_4.r1k", "cov4_16.r1k", "mTopo") # , "cut.r1k.pt"
+# length(preds)
 
 # check names
-all(preds %in% colnames(X.train))
-XFormula <- as.formula(paste0("~ ", paste0(preds, collapse = " + ")))
-XFormula
+# all(preds %in% colnames(X.train))
+# XFormula <- as.formula(paste0("~ ", paste0(preds, collapse = " + ")))
+# XFormula
+# 
+# preds2 <- c("be10","Nss", "Ess", "ht", "cov2_4", "cov4_16", "ht.r500", "cov2_4.r500", "cov4_16.r500", "mTopo") # , "cut.r1k.pt"
+# length(preds2)
+# 
+# # check names
+# all(preds2 %in% colnames(X.train))
+# XFormula2 <- as.formula(paste0("~ ", paste0(preds2, collapse = " + ")))
+# XFormula2
+
+XFormula1 <- as.formula(~be10+B11_median+mean.EVI+insideHJA + Ess + ht + ht.r500 + cov4_16 + cov4_16.r500 + mTopo)
+# XFormula2 <- as.formula(~be10+B11_median+mean.EVI+insideHJA + Ess + ht + ht.r1k + cov2_4 + cov2_4.r1k + mTopo)
+# XFormula3 <- as.formula(~be10+B11_median+mean.EVI+insideHJA + Ess + ht + ht.r1k + cov4_16 + cov4_16.r1k + mTopo)
+# XFormula4 <- as.formula(~be500+slope+cov2_4+ht.r500+cov2_4.r500+cov4_16.r500+mTopo+mean.EVI+B11_median+insideHJA)
 
 
-preds2 <- c("be10","Nss", "Ess", "ht", "cov2_4", "cov4_16", "ht.r500", "cov2_4.r500", "cov4_16.r500", "mTopo") # , "cut.r1k.pt"
-length(preds2)
-
-# check names
-all(preds2 %in% colnames(X.train))
-XFormula2 <- as.formula(paste0("~ ", paste0(preds2, collapse = " + ")))
-XFormula2
-
+# check predictor names
+all(all.vars(XFormula1) %in% names(X.train))
+# all(all.vars(XFormula2) %in% names(X.train))
+# all(all.vars(XFormula3) %in% names(X.train))
+# all(all.vars(XFormula4) %in% names(X.train))
 
 # Note: X covariates are scaled in hmsc by default.
-
 # S$site_trap_period is a unique sample code in the StudyDesign matrix, but is currently not included in the models.
 head(S.train)
 length(unique(S.train$SiteName))
@@ -86,25 +95,18 @@ rL.site <- HmscRandomLevel(sData = xy)
 ## Make models
 models <- list(
   
-  m1 = Hmsc(Y = Y.train.pa,
-            XData = X.train, XFormula = XFormula,
-            phyloTree = P,
-            distr = "probit"),
-  
-  m1 = Hmsc(Y = Y.train.pa,
-            XData = X.train, XFormula = XFormula2,
+  m1 = Hmsc(Y = Y.train.pa2, # reduced species set
+            XData = X.train, XFormula = XFormula1,
             phyloTree = P,
             distr = "probit")
-  
-  
-  )
+)
 
-names(models) <- c("pa_full_nsp_nTopo", "pa_full_nsp_nTopo_500")
-modelnames <- c("pa_full_nsp_nTopo", "pa_full_nsp_nTopo_500")
+names(models) <- c("pa_nsp_nTopo_v3m2_1")
+modelnames <-  c("pa_nsp_nTopo_v3m2_1")
 
 models
 
-rm(S.train, X.train, P, XFormula, rL.site, studyDesign, preds, preds2, XFormula2)
+rm(S.train, X.train, P, rL.site, studyDesign, XFormula1)
 ## now in pipeline
 # save(models, modelnames, resFolder, file = file.path(modFolder, "unfitted_models.rdata"))
 

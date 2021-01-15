@@ -23,11 +23,11 @@ sp_res_fxn <- function(cordord, abund) {
 }
 
 plot_factors <- function(alphanum, abund, model, spData, siteData, 
-                         cont_pred1 = elevation_m, cont_pred2 = lg_YrsDisturb, cat_pred = InsideHJA) {
+                         cont_pred1 = elevation_m, cont_pred2 = lg_YrsDisturb, cat_pred = insideHJA) {
   alpha <- alphanum
   cont_pred1 <- ensym(cont_pred1)
   cont_pred2 <- ensym(cont_pred2)
-  # cat_pred <- ensym(cat_pred)
+  cat_pred <- ensym(cat_pred)
   
   
   ggplot() + 
@@ -38,9 +38,9 @@ plot_factors <- function(alphanum, abund, model, spData, siteData,
                  size = .1) +
     geom_point(aes(x = Factor1, y = Factor2, 
                    color = !!cont_pred1, 
-                   size = !!cont_pred2), 
-                   #,shape = as.factor(vars(cat_pred))
-                   data = siteData) + 
+                   size = !!cont_pred2, 
+                   shape = !!cat_pred),
+               data = siteData) + 
     # geom_text_repel(aes(x = Factor1, y = Factor2, 
     #                     label = env.csv$SiteName), 
     #                 data = siteData, 
@@ -58,13 +58,13 @@ plot_xy_factor1 <- function(abund, model, siteData,
                             cont_pred2 = lg_YrsDisturb, cat_pred = insideHJA) {
   
   cont_pred2 <- ensym(cont_pred2)
-  # cat_pred <- ensym(cat_pred)
+  cat_pred <- ensym(cat_pred)
   
   ggplot() + 
     geom_point(aes(x = UTM_E, y = UTM_N, 
                    color = Factor1, 
-                   size = !!cont_pred2), # YrsSinceDist, l_rumple
-                   #shape = as.factor(!!cat_pred))
+                   size = !!cont_pred2, # YrsSinceDist, l_rumple
+                   shape = !!cat_pred),
                data = siteData) +
     # geom_text_repel(aes(x = UTM_E, y = UTM_N, 
     #                     label = env.csv$SiteName), 
@@ -81,15 +81,15 @@ plot_xy_factor1 <- function(abund, model, siteData,
 
 plot_xy_factor2 <- function(abund, model, siteData,
                             cont_pred2 = lg_YrsDisturb, cat_pred = insideHJA) {
-  cont_pred2 <- ensym(cont_pred2)
-  # cat_pred <- ensym(cat_pred)
   
+  cont_pred2 <- ensym(cont_pred2)
+  cat_pred <- ensym(cat_pred)
   
   ggplot() + 
     geom_point(aes(x = UTM_E, y = UTM_N, 
                    color = Factor2, 
-                   size = !!cont_pred2), # YrsSinceDist, l_rumple
-                   #, shape = as.factor(cat_pred)
+                   size = !!cont_pred2, # YrsSinceDist, l_rumple
+                   shape = !!cat_pred),
                data = site_res) +
     # geom_text_repel(aes(x = UTM_E, y = UTM_N, 
     #                     label = env.csv$SiteName), 

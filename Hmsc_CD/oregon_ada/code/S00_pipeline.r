@@ -2,6 +2,7 @@
 
 
 ## Only local: 
+# getwd()
 # setwd("J:/UEA/gitHRepos/HJA_analyses_Kelpie/Hmsc_CD/oregon_ada")
 # dir()
 
@@ -54,7 +55,7 @@ save(models, modelnames, file = file.path(modFolder, "unfitted_models.rdata"))
 # uses models list from 2.
 # samples_list = c(5,250,250,250,250,250)
 # thin_list = c(1,1,10,100,1000,10000)
-samples_list = c(5,100)
+samples_list = c(5,50)
 thin_list = c(1,5)
 # samples_list = c(5)
 # thin_list = c(1)

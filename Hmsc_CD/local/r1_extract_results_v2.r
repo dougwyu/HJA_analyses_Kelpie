@@ -18,8 +18,9 @@ resF <- list.files("Hmsc_CD/oregon_ada/results", pattern = "res\\d*_\\d{2}$", in
 resF
 
 # subset results
-rF <- resF[!resF %in% c("Hmsc_CD/oregon_ada/results/res20210107_01",
-                          "Hmsc_CD/oregon_ada/results/res20201217_01",
+rF <- resF[!resF %in% c("Hmsc_CD/oregon_ada/results/res20210114_01", # false start
+                        "Hmsc_CD/oregon_ada/results/res20210107_01",
+                        "Hmsc_CD/oregon_ada/results/res20201217_01",
                         "Hmsc_CD/oregon_ada/results/res20201127_01",
                         "Hmsc_CD/oregon_ada/results/res20201204_01", # qp 
                         "Hmsc_CD/oregon_ada/results/res20201209_01", # qp
@@ -31,7 +32,6 @@ modRes <- lapply(rF, getAUC, rMod = TRUE)
 
 all.df <- do.call(rbind, modRes)
 
-head(all.df)
 rm(modRes, resF, rF)
 
 all.df <- all.df[order(all.df$AUC_pred, decreasing = TRUE),]

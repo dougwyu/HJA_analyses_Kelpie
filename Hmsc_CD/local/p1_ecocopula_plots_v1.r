@@ -1,23 +1,49 @@
+getwd()
+
+library(Hmsc)
+wd <- here::here()
+wd
+setwd(wd)
+
 
 ## Ecocopula plots ######
 
 library(ggplot2)
 library(cowplot)
+library(mvabund)
 
 ## load ecocopula results
-load("Hmsc_CD/local/ecocopula_modList_pilot.rdata") # fm, cor.preds, modList
-load("Hmsc_CD/local/ecocopula_modList_topo.rdata") # fm, cor.preds, modList
+# load("Hmsc_CD/local/ecocopula_modList_pilot.rdata") # fm, cor.preds, modList
+# load("Hmsc_CD/local/ecocopula_modList_topo.rdata") # fm, cor.preds, modList
+load("Hmsc_CD/oregon_ada/results/ecocopula/ecocopula_modlist_pilot.rdata") # load fm below
+load("Hmsc_CD/oregon_ada/results/ecocopula/ecocopula_modlist_v3.rdata") # 
 
 str(modList, max.level =2)
+# print formulae
+fm
+
+## ANOVA summary
+an <- modList[[6]]$summ
+an$coefficients
+
+sumT <- print.summary.manyglm(an)
+
+lapply(modList, function(x) x$summ)
 
 ##### Plots
 source("Hmsc_CD/local/fn_ecoCopula_plot.r")## modified plot functions...
+cor.preds <- colnames(site_res)[sapply(site_res, is.numeric)]
+cor.preds <- cor.preds[!cor.preds %in% c("Factor1","Factor2")]
 
-mod <- modList[[2]]$mod
-sp_res <- modList[[2]]$sp
-site_res <- modList[[2]]$site
 
-mod.ord <- modList[[2]]$ord
+
+mod <- modList[[6]]$mod
+sp_res <- modList[[6]]$sp
+site_res <- modList[[6]]$site
+mod.ord <- modList[[6]]$ord
+
+head(site_res)
+
 
 alpha <- 4*0.95
 
@@ -32,7 +58,8 @@ ggplot() +
                size = .1) +
   geom_point(aes(x = Factor1, y = Factor2,
                  color = be10,
-                 size = ht), 
+                 size = ht,
+                 shape = insideHJA), 
                  data = site_res)+
   scale_color_gradientn(colours = brewer.pal(n = 10, name = "RdYlBu"))
 
@@ -45,7 +72,8 @@ plot_xy_factor1("pa", "mod1", site_res, cont_pred2 = ht)
 plot_xy_factor2("pa", "mod1", site_res, cont_pred2 = ht)
 
 ## correlation plot
-cor.preds <- colnames(env.vars)[sapply(env.vars, is.numeric)]
+cor.preds <- colnames(site_res)[sapply(site_res, is.numeric)]
+cor.preds <- cor.preds[!cor.preds %in% c("Factor1","Factor2")]
 mod.cor <- cor(mod.ord$scores, site_res[,cor.preds])
 t_corrplot(mod.cor, "mod1")
 
@@ -62,12 +90,27 @@ for(i in seq_along(modList)){
   mod.ord <- modList[[i]]$ord
   sp_res <- modList[[i]]$sp
   site_res <- modList[[i]]$site
+  an <- modList[[i]]$summ # if missing, will be NULL
   
+  
+  #  # get predictors and significance if done anova, not then just predictors
+  if(!is.null(an)){
+    
+    preds <- rownames(an$coefficients)
+    stars <- symnum(an$coefficients[, 2], 
+                     corr = FALSE, na = FALSE, 
+                     cutpoints = c(0, 0.001, 0.01, 0.05, 0.1, 1), 
+                     symbols = c("***", "**", "*", ".", " "))
+    stars <- stars[!preds == "(Intercept)"]
+    preds <- preds[!preds == "(Intercept)"]
+    
+    modName <- paste("predictors:", paste0(preds, stars, collapse = " + "))
+    
+    
+  } else  modName <- paste0("predictors: ", as.character(fm[[i]])[3])
 
   # chk residuals
   # plot(mod) 
-  
-  modName <- paste0("predictors: ", as.character(fm[[i]])[3])
   
   #plot factors
   p1 <- plot_factors(alpha, "pa", "", sp_res, site_res, cont_pred1 = "be10", cont_pred2 = "ht")
@@ -91,8 +134,18 @@ for(i in seq_along(modList)){
   m1 <- plot_grid(pA, pB, title, nrow = 3, rel_heights = c(4,5,1))
   # m1 <- plot_grid(pA, pB, nrow = 2, rel_heights = c(4,5))
   # m1
-  ggsave(paste0("Hmsc_CD/local/plots/mod_topo", i, ".png"), m1, width = 300, height = 250, units = "mm")
+  ggsave(paste0("Hmsc_CD/local/plots/mod_topo3_", i, ".png"), m1, width = 300, height = 250, units = "mm")
 }
+
+
+## Summary of ANOVA
+
+
+
+
+
+
+
 
 
 ## plot factors on map
@@ -186,4 +239,17 @@ mapshot(mv1, url = "Hmsc_CD/local/plots/factor_map.html", selfcontainted = TRUE)
 # dev.off()
 
 
+# for results from 14/01/2020
 
+fm <- list(as.formula(otu.pa ~  be500 + tri + insideHJA + lg_YrsDisturb),
+           as.formula(otu.pa ~ be500 * oldGrowthIndex + tri + insideHJA + lg_YrsDisturb),
+           as.formula(otu.pa ~ be500 * insideHJA + tri + oldGrowthIndex + lg_YrsDisturb),
+           as.formula(otu.pa ~ be500 + tri + insideHJA + oldGrowthIndex + lg_YrsDisturb + mean.NDVI + lg_DistRoad + canopyHeight_m),
+           as.formula(otu.pa ~ be500 * insideHJA + be500 * oldGrowthIndex + tri + lg_YrsDisturb + mean.NDVI + lg_DistRoad),
+           as.formula(otu.pa ~ be10 + Nss + Ess + ht + cov2_4 + cov4_16 + ht.r1k + cov2_4.r1k + cov4_16.r1k + mTopo),
+           as.formula(otu.pa ~ be10 + Nss + Ess + ht + cov2_4 + cov4_16 + ht.r500 + cov2_4.r500 + cov4_16.r500 + mTopo),
+           as.formula(otu.pa ~ be10 + Nss + Ess + ht + cov2_4 + cov4_16 + ht.r250 + cov2_4.r250 + cov4_16.r250 + mTopo),
+           as.formula(otu.pa ~ be500 + slope + twi + ht + cov2_4 + cov4_16 + ht.r500 + cov2_4.r500 + cov4_16.r500 + mTopo)
+)
+
+fm

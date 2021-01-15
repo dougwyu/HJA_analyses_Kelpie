@@ -105,6 +105,19 @@ stopCluster(cl)
 str(modList, max.level =2)
 modList[[3]]$summ
 
-save(modList, file = "results/ecocopula/ecocopula_modList_pilot.rdata")
+lapply(modList, function(x) x$summ)
+
+save(modList, fm, file = "results/ecocopula/ecocopula_modList_pilot.rdata")
+
+# do anova between all models
+# list of model objects
+mods <- lapply(modList, function(x) x$mod)
+str(mods, max.level = 1)
+
+mods$nBoot <- 5
+mods$test <- "LR"
+
+anov <- do.call(mvabund::anova.manyglm, mods)
+anov <- mvabund::anova.manyglm(modList[[2]]$mod, modList[[3]]$mod, nBoot = 100, test = "LR")
 
 dir.exists("results/ecocopula")

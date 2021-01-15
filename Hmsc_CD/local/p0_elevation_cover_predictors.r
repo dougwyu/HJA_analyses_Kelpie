@@ -248,6 +248,76 @@ c("be10", "slope", "Ess", "twi", "ht", "cov2_4", "cov4_16", "mTopo") # , "cut.r1
 c("be10", "slope", "Ess", "twi","ht.r1k", "cov2_4.r1k", "cov4_16.r1k", "mTopo") # , "cut.r1k.pt"
 
 
+## export some plots
+
+##
+library(ggplot2)
+
+load(file.path(gis, "r_utm/cut_stack.rdata")) #cutStack
+load(file.path(gis, "r_utm/elev_cov.rdata")) # terr, covStack
+
+png("Hmsc_CD/local/plots/cut_pred.png", width = 300, height = 300, units = "mm", res = 200)
+plot(cutStack)
+dev.off()
+png("Hmsc_CD/local/plots/terr_pred.png", width = 300, height = 300, units = "mm", res = 200)
+plot(terr)
+dev.off()
+png("Hmsc_CD/local/plots/cov_pred.png", width = 300, height = 300, units = "mm", res = 200)
+plot(covStack)
+dev.off()
+
+## reduce resolution for plotting
+covStack <- aggregate(covStack, 10) # 30 x 30 to ... 
+plot(covStack)
+
+terr <- aggregate(terr, 30)
+
+# prepare for ggplot geom_raster
+coords <- xyFromCell(terr, seq_len(ncell(terr)))
+terr.df <- utils::stack(as.data.frame(getValues(terr)))
+terr.df <- cbind(coords, terr.df)
+head(terr.df)
+
+coords <- xyFromCell(cutStack, seq_len(ncell(cutStack)))
+cut.df <- cbind(coords, utils::stack(data.frame(values(cutStack))))
+head(cut.df)
+
+coords <- xyFromCell(covStack, seq_len(ncell(covStack)))
+cov.df <- cbind(coords, utils::stack(data.frame(values(covStack))))
+head(cov.df)
+
+## do the points
+xy <- data.frame(st_coordinates(xy.utm))
+xy$ind <- unique(terr.df$ind)[1]
+head(xy)
+
+ggplot(terr.df) + 
+  geom_tile(aes(x, y, fill = values)) +
+  geom_point(aes(X,Y, size = 2), data = xy)+
+  facet_wrap(~ ind) +
+  scale_fill_gradientn(colours = rev(terrain.colors(225))) +
+  coord_equal()
 
 
+xy$ind <- unique(cov.df$ind)[1]
+head(xy)
+
+cov.df %>%
+  filter(grepl("ht", ind)) %>%
+  ggplot()+ 
+  geom_tile(aes(x, y, fill = values)) +
+  geom_point(aes(X,Y), size = 1, data = xy)+
+  facet_wrap(~ ind) +
+  scale_fill_gradientn(colours = rev(terrain.colors(225))) +
+  coord_equal()
+ggsave("Hmsc_CD/local/plots/ht_pred.png", width = 300, height = 300, units = "mm")
+
+
+xy$ind <- unique(cut.df$ind)[1]
+ggplot(cut.df) + 
+  geom_tile(aes(x, y, fill = values)) +
+  geom_point(aes(X,Y), data = xy)+
+  facet_wrap(~ ind) +
+  scale_fill_gradientn(colours = rev(terrain.colors(225))) +
+  coord_equal()
 
