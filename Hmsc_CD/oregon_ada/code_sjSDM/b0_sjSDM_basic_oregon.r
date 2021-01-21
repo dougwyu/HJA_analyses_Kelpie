@@ -68,4 +68,4 @@ plot(an)
 dev.off()
 
 
-save(model, "results_sjSDM/oregon_trial.rdata")
+save(model, file ="results_sjSDM/oregon_trial.rdata")
