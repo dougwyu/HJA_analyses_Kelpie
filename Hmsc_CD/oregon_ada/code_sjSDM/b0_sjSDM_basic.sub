@@ -1,0 +1,30 @@
+#!/bin/bash
+#SBATCH -p gpu-P5000-2 					        # -p for 'partition name', P5000-2 is the orig ada gpu
+#SBATCH --qos=gpu						            # QOS to be allowed to use GPU servers
+#SBATCH --gres=gpu:2				          	# Number of GPUs (per node)  # gpu:1 is the default. match n_gpu=2 in sjsdm_cv()
+#SBATCH --mem 128G           						# memory needed?
+#SBATCH --ntasks=2 					          	# number of slots == number of CPU cores (match n_cpu) in sjSDM_cv
+#SBATCH -t 48:00:00 				          	# 48 hrs # time (DD-HH:MM)
+#SBATCH --job-name=sjsdm_or_cv_trial   # job name
+#SBATCH -o code_sjSDM/sjsdm_cv.out			    # log out file
+#SBATCH -e code_sjSDM/sjsdm_cv.err			    # error file out
+#SBATCH --mail-user=hsp20azu@uea.ac.uk 	#sends email to me
+#SBATCH --mail-type=ALL					        #Mail events (NONE, BEGIN, END, FAIL, ALL)
+
+# For P5000
+# #SBATCH -p gpu-P5000-2
+# #SBATCH --qos=gpu
+#
+# For K40
+# #SBATCH -p gpu-K40-1
+# #SBATCH --qos=gpu-K40-1
+#
+# For V100
+# #SBATCH -p gpu-V100-2
+# #SBATCH --qos=gpu
+
+module purge
+module add python/anaconda/2019.10/3.7
+source /gpfs/scratch/hsp20azu/sjSDM_env/bin/activate
+module add R/4.0.0
+Rscript code_sjSDM/b0_sjSDM_basic_oregon_cv.r

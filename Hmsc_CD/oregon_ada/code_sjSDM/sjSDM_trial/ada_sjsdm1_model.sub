@@ -5,9 +5,9 @@
 #SBATCH --mem 128G           						# memory needed?
 #SBATCH --ntasks=2 					          	# number of slots == number of CPU cores (match n_cpu) in sjSDM_cv
 #SBATCH -t 12:00:00 				          	# 48 hrs # time (DD-HH:MM)
-#SBATCH --job-name=sjsdm_oregon_trial   # job name
-#SBATCH -o code_sjSDM/sjsdm.out			    # log out file
-#SBATCH -e code_sjSDM/sjsdm.err			    # error file out
+#SBATCH --job-name=sjsdm_ada_YL         # job name
+#SBATCH -o code_sjSDM/sjsdmYL.out			    # log out file
+#SBATCH -e code_sjSDM/sjsdmYL.err			    # error file out
 #SBATCH --mail-user=hsp20azu@uea.ac.uk 	#sends email to me
 #SBATCH --mail-type=ALL					        #Mail events (NONE, BEGIN, END, FAIL, ALL)
 
@@ -27,4 +27,4 @@ module purge
 module add python/anaconda/2019.10/3.7
 source /gpfs/scratch/hsp20azu/sjSDM_env/bin/activate
 module add R/4.0.0
-Rscript code_sjSDM/b0_sjSDM_basic_oregon.r
+Rscript code_sjSDM/ada_sjsdm1_model.r

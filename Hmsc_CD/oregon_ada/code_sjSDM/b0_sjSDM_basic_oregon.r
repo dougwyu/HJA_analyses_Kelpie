@@ -7,7 +7,8 @@ Sys.setenv(RETICULATE_PYTHON="/gpfs/scratch/hsp20azu/sjSDM_env/bin/python")
 library(sjSDM)
 packageVersion("sjSDM")
 # [1] ‘0.1.3.9000’
-getwd() # always run sub from oregon_ada
+getwd() # always run sub from oregon_ada. # should be /gpfs/home/hsp20azu/oregon_ada
+# setwd("J:/UEA/gitHRepos/HJA_analyses_Kelpie/Hmsc_CD/oregon_ada")
 
 
 # https://theoreticalecology.github.io/s-jSDM/
@@ -16,10 +17,6 @@ getwd() # always run sub from oregon_ada
 # try basic model on oregon data
 source("code_sjSDM/S1_read_data.r")
 # gets env.vars, out.pa.csv, otu.qp.csv, S.train
-
-# get data
-# Y is matrix
-# X is matrix
 
 # Data reduction - reduce species
 raretaxa <- which(colSums(Y.train.pa > 0) < 10)
@@ -69,3 +66,5 @@ dev.off()
 
 
 save(model, file ="results_sjSDM/oregon_trial.rdata")
+
+
