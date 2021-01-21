@@ -1,6 +1,9 @@
 # set some general options
 options(echo=TRUE) # if you want see commands in output file
-Sys.setenv(RETICULATE_PYTHON="/gpfs/scratch/b042/sjSDM_env/bin/python")
+Sys.setenv(RETICULATE_PYTHON="/gpfs/scratch/hsp20azu/sjSDM_env/bin/python")
+library("sjSDM")
+packageVersion("sjSDM")
+
 
 # # arguments
 # args <- commandArgs(trailingOnly = TRUE) # if you want to pass arguments to R from the shell (bash) command line

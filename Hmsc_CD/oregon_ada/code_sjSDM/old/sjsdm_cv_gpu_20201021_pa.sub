@@ -8,7 +8,7 @@
 #SBATCH --job-name=sjsdmcvp # job name
 #SBATCH -o sjsdmcvp.out
 #SBATCH -e sjsdmcvp.err
-#SBATCH --mail-user=dougwyu@mac.com #sends email to me
+#SBATCH --mail-user=hsp20azu@uea.ac.uk #sends email to me
 #SBATCH --mail-type=ALL           #Mail events (NONE, BEGIN, END, FAIL, ALL)
 
 # For P5000

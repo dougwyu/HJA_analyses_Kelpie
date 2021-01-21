@@ -55,7 +55,7 @@ plot(st_geometry(xy.utm), add = T, pch = 2, col = "black", cex = 1.5)
 rm(cut)
 
 # get elevation raster
-# bareearth, projected to UTM 10 N, bilinear, 10m res, converted to m (/0.30480061) in arcgis
+# bareearth, projected to UTM 10N wgs84, bilinear, at 10m res, converted to m (/0.30480061) in arcgis
 be <- raster(file.path(gis, "r_utm/bareEarth_m_10m.tif"))
 be
 
@@ -218,12 +218,12 @@ writeRaster(cutStack, bylayer = T, filename = file.path(gis, "r_utm/disturb.tif"
 cut.r1k.pt <- extract(cutStack$cut_r1k, xy.utm)
 
 ## average elevation
-dem500 <- raster::extract(terr$be10, xy.utm, buffer = 500, fun=mean, na.rm = T)
+be500 <- raster::extract(terr$be10, xy.utm, buffer = 500, fun=mean, na.rm = T)
 # point elevation
 dem.pt <- raster::extract(terr$be10, xy.utm)
 
 ## topographic index
-mTopo <- dem.pt - dem500
+mTopo <- dem.pt - be500
 
 ## All terr
 terr.pt <- raster::extract(terr, xy.utm)
@@ -232,7 +232,7 @@ terr.pt <- raster::extract(terr, xy.utm)
 cov.pt <- raster::extract(covStack, xy.utm)
 
 ## make data frame
-topo.df <- data.frame(uniqueID = xy.utm$uniqueID, terr.pt, cov.pt, be500 = dem500, mTopo, cut.r1k.pt)
+topo.df <- data.frame(uniqueID = xy.utm$uniqueID, terr.pt, cov.pt, be500 = be500, mTopo, cut.r1k.pt)
 head(topo.df)
 str(topo.df)
 summary(topo.df)
