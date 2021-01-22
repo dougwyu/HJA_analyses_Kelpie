@@ -10,6 +10,9 @@ packageVersion("sjSDM")
 getwd() # always run sub from oregon_ada
 
 
+# local
+# setwd("J:/UEA/gitHRepos/HJA_analyses_Kelpie/Hmsc_CD/oregon_ada")
+
 # https://theoreticalecology.github.io/s-jSDM/
 # https://github.com/TheoreticalEcology/s-jSDM
 
