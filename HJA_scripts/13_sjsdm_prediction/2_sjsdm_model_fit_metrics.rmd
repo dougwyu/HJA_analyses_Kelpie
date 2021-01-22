@@ -1,0 +1,417 @@
+obs_spp <- c(0,0,1,1)
+pred_spp <- c(.05,.5,.2,.1)
+	
+log_lik_tmp <- sum(dbinom(x = obs_spp, size = 1, prob = pred_spp, log = TRUE))
+	
+# Jan 21, 2021
+# trying out different evaluation metrics -> community dissimilarity, 
+
+
+
+```{r setup}
+# setwd('/media/yuanheng/SD-64g2/Downloads/backup2/HJA_analyses_Kelpie/HJA_scripts/13_sjsdm_prediction')
+	
+lapply(c("ggplot2",'abind', 'tidyverse','gridBase', 'grid','gridExtra', 'ggcorrplot','here', 'conflicted','reticulate','sjSDM','mgsub','vcd','RColorBrewer', 'reshape2','glue','pROC','nlme','lme4','car','vegan'), library, character.only=T)
+	
+conflict_prefer("filter", "dplyr")
+conflict_prefer("select", "dplyr")
+conflict_prefer('colSums', 'base')
+	
+here()
+packageVersion('sjSDM')
+#[1] ‘0.1.3.9000’
+	
+#source(here("source", "sjsdm_function.r"))
+#source(here("source", "sjsdm-analyse-functions.r"))
+	
+```
+
+
+```{r set-names}
+# ....... folder structure .......
+# bioinfo structure
+samtoolsfilter = "F2308" # F2308 filter only
+samtoolsqual = "q48"
+minimaprundate = 20200929
+kelpierundate = 20200927
+primer = "BF3BR2"
+	
+date.model.run = 20210119   
+envvar = 'gismslidar'
+minocc = 5
+abund = c('qp','pa') # pa , qp
+trap <- "M1"; period = "S1"
+#session = 's1'; malaise = 'm1'
+	
+outputidxstatstabulatefolder = glue("outputs_minimap2_{minimaprundate}_{samtoolsfilter}_{samtoolsqual}_kelpie{kelpierundate}_{primer}_vsearch97")
+outputpath = glue('../../Kelpie_maps/{outputidxstatstabulatefolder}')
+	
+cvfolder = glue("results_{date.cross.validation}_{minocc}minocc_{envvar}_{abund}_loocv")
+datafolder = glue("data_{date.cross.validation}_{minocc}minocc_{envvar}")
+	
+sjsdmV = '0.1.3.9000' # package version
+sjsdmVfolder = glue('sjsdm-{sjsdmV}')
+	
+```
+
+
+```{r load-data}
+# ..... load data ......
+alldata = read.csv(here(outputpath, glue('sample_by_species_table_{samtoolsfilter}_minimap2_{minimaprundate}_kelpie{kelpierundate}_FSL_qp.csv')), header=T, sep=',', stringsAsFactors = F, na.strings='NA')
+dim(alldata)
+names(alldata)[1:10]
+# 103
+	
+# roughness index
+# from "Hmsc_CD/oregon_ada/data/demStats.rdata"
+load(here('source','demStats.rdata'))
+str(dem_stats)
+	
+
+```
+
+
+```{r select subsets}
+# ..... select trap, session .....
+trap; period
+	
+alldata1 = subset(alldata, trap == 'M1' & period == 'S1')
+dim(alldata1)
+	
+names(alldata1)[102:103]
+	
+a = alldata1 %>% select(contains('__'))
+a = a[,which(specnumber(a, MARGIN=2)>=minocc)]
+dim(a)
+	
+alldata1 = cbind(select(alldata1, -contains('__')), a)
+dim(alldata1)
+	
+# ... 80% of data as training ...
+# random selection
+num.sample = dim(a)[1]
+select.percent = .8
+ssdd = 100 		# please keep this value to make results comparable!
+set.seed(ssdd)
+a = base::sample(1:num.sample, round(num.sample*select.percent))
+	
+# [1] 74 78 23 70  4 55 85  7 81 83 43 61 12 51 72 18 25  2 75 68 69 52 48 32 21
+# [26] 27 39 57 16 11 67 71  6 29 45 30 53 79 86 31 33 49 82 28 47 41 87 42 24 80
+# [51]  1  9 20 14 35 40  3 34 84 19 46 63 44 36 26  5 15 22 58 76
+otu = select(alldata1, contains('__'))
+otu.train = otu[a,]
+dim(otu.train)
+otu.test = otu[-a,]
+	
+envnames = c("insideHJA", "elevation_m", "canopyHeight_m", "minT_annual", "precipitation_mm", "distToRoad_m", "distToStream_m", "YrsSinceDist", "B1_20180717", "B2_20180717", "B3_20180717", "B4_20180717", "B5_20180717", "B6_20180717", "B7_20180717", "B10_20180717", "B11_20180717", "NDVI_20180717", "EVI_20180717", "B_20180717", "G_20180717", "W_20180717", "l_Cover_2m_max", "l_Cover_2m_4m", "l_Cover_4m_16m", "l_p25", "l_p95", "l_rumple")
+	
+ori.env = select(left_join(select(alldata1, envnames, "SiteName"), select(dem_stats, 'SiteName', 'tri.pt'), by=c('SiteName'='SiteName')), -'SiteName')
+# add 'roughness' -> tri.pt
+ori.env.train = ori.env[a,]
+ori.env.test = ori.env[-a,]
+str(ori.env.test)
+	
+ori.XY = select(alldata1, starts_with('UTM'))
+ori.XY.train = ori.XY[a,]
+ori.XY.test = ori.XY[-a,]
+str(ori.XY.train)
+	
+# ... view data ...
+par(mfrow=c(1,2))
+hist(ori.env.train$elevation_m)
+hist(ori.env$elevation_m)
+	
+ggplot(ori.XY, aes(UTM_E, UTM_N)) + geom_point() + geom_point(data=ori.XY.train, aes(colour='red')) + scale_colour_manual(labels = c('training'), values = c("red"))
+	
+```
+
+
+```{r transform-data}
+# otu list ([[1]]=='qp', [[2]]=='pa')
+otu.list=vector(mode='list', length=2)
+names(otu.list) = abund
+names(otu.list)
+	
+otu.list$qp = list()
+otu.list$qp[[1]] = otu.train; otu.list$qp[[2]] = otu.test
+	
+otu.list$pa = list()
+otu.list$pa[[1]] = as.data.frame((otu.train>0)*1); otu.list$pa[[2]] = as.data.frame((otu.test>0)*1)
+	
+# .. env data
+scale.env.train.all = select(ori.env.train, -'insideHJA') %>% scale() 
+str(scale.env.train.all)
+	
+scale.env.train = data.frame(scale.env.train.all) %>% add_column(insideHJA=as.factor(ori.env.train$insideHJA), .before=names(ori.env.train)[2])
+str(scale.env.train)
+	
+dd.env.scaler = data.frame(t(data.frame(env.mean = attr(scale.env.train.all, "scaled:center"), env.sd = attr(scale.env.train.all, "scaled:scale"))))
+str(dd.env.scaler)
+	
+rm(scale.env.train.all)
+	
+scale.env.test = as.data.frame(do.call(rbind, apply(select(ori.env.test, -'insideHJA'), 1, function(x){(x-dd.env.scaler['env.mean',])/dd.env.scaler['env.sd',]} ) )) %>% add_column(insideHJA=as.factor(ori.env.test$insideHJA), .before=names(ori.env.test)[2])
+str(scale.env.test)
+	
+# .. spatial data
+XY.train.all = scale(ori.XY.train)
+str(XY.train.all)
+	
+XY.train = data.frame(XY.train.all)
+str(XY.train)
+	
+dd.xy.scaler = data.frame(t(data.frame(sp.mean = attr(XY.train.all, "scaled:center"), sp.sd = attr(XY.train.all, "scaled:scale"))))
+str(dd.xy.scaler)
+base::rownames(dd.xy.scaler)
+	
+rm(XY.train.all)
+	
+XY.test = as.data.frame(do.call(rbind, apply(ori.XY.test, 1, function(x){(x-dd.xy.scaler['sp.mean',])/dd.xy.scaler['sp.sd',]} ) ))
+str(XY.test)
+	
+# ... view data ...
+par(mfrow=c(2,2))
+hist(ori.env.train[,2],xlim=c(1000,5500), breaks = 10)
+hist(ori.env.test[,2],xlim=c(1000,5500), breaks = 10)
+hist(scale(ori.env.test[,2]))
+hist(scale.env.test[,2])
+	
+par(mfrow=c(1,2))
+hist(XY.test[,2])
+hist(XY.train[,2])
+	 
+rm(dd.env.scaler, dd.xy.scaler)
+	
+```
+
+
+```{r load-model}
+# set variables
+formula.env = 'envDNN'
+lambda.env = seq(.01,.2, length.out=3)	# .1
+alpha.env = seq(.8,1, length.out=3)	# .9
+lambda.sp = seq(.01,.2, length.out=3)	# .1
+alpha.sp =  seq(.4,.6, length.out=3)	# .5 
+hidden = list(c(50L,50L,10L), c(25L,25L,10L))
+acti.sp = 'relu'
+drop = seq(.2,.4, length.out=3) # .3
+	
+hiddenN=1; lambda.envN=2; alpha.envN=2; lambda.spN=2; alpha.spN=2;dropN=2
+	
+model.train.qp.B = readRDS(here(outputpath,'sjsdm_general_outputs',sjsdmVfolder,'sjsdm-model-RDS',  glue('s-jSDM_tuning.model_{period}_{trap}_{abund[[1]]}_min{minocc}_{envvar}_{formula.env}_lambdaE{lambda.envN}_{alpha.envN}_{lambda.spN}_{alpha.spN}_hidden{hiddenN}_{dropN}_Bias.RDS')) )
+	
+model.train.pa.B = readRDS(here(outputpath,'sjsdm_general_outputs',sjsdmVfolder,'sjsdm-model-RDS',  glue('s-jSDM_tuning.model_{period}_{trap}_{abund[[2]]}_min{minocc}_{envvar}_{formula.env}_lambdaE{lambda.envN}_{alpha.envN}_{lambda.spN}_{alpha.spN}_hidden{hiddenN}_{dropN}_Bias.RDS')) )
+	
+model.train.qp.noB = readRDS(here(outputpath,'sjsdm_general_outputs',sjsdmVfolder,'sjsdm-model-RDS',  glue('s-jSDM_tuning.model_{period}_{trap}_{abund[[1]]}_min{minocc}_{envvar}_{formula.env}_lambdaE{lambda.envN}_{alpha.envN}_{lambda.spN}_{alpha.spN}_hidden{hiddenN}_{dropN}_noBias.RDS')) )
+	
+model.train.pa.noB = readRDS(here(outputpath,'sjsdm_general_outputs',sjsdmVfolder,'sjsdm-model-RDS',  glue('s-jSDM_tuning.model_{period}_{trap}_{abund[[2]]}_min{minocc}_{envvar}_{formula.env}_lambdaE{lambda.envN}_{alpha.envN}_{lambda.spN}_{alpha.spN}_hidden{hiddenN}_{dropN}_noBias.RDS')) )
+	
+par(mfrow=c(2,2))
+plot(model.train.qp.noB$history)
+plot(model.train.pa.noB$history)
+	
+plot(model.train.qp.B$history)
+plot(model.train.pa.B$history)
+	
+rm(model.train.pa.noB, model.train.qp.noB, model.train.qp.B, model.train.pa.B)
+	
+
+```
+
+
+```{r predict&AUC}
+date = 20210121
+tuning.dd = data.frame(lambda.env = numeric(), alpha.env = numeric(), lambda.SB = numeric(), alpha.SB = numeric(), drop = numeric(), hidden = character(), loglike = numeric(), loss= numeric(), AUC.explain=numeric(), AUC.test=numeric())
+	
+bb = c('noBias', 'Bias')
+	
+for (i in 1:2) {
+	for(j in 1:2) {
+		print(c(i,j))
+		
+		model.train = readRDS(here(outputpath,'sjsdm_general_outputs',sjsdmVfolder,'sjsdm-model-RDS',  glue('s-jSDM_tuning.model_{period}_{trap}_{abund[[i]]}_min{minocc}_{envvar}_{formula.env}_lambdaE{lambda.envN}_{alpha.envN}_{lambda.spN}_{alpha.spN}_hidden{hiddenN}_{dropN}_{bb[j]}.RDS')) )
+		tdd = data.frame(lambda.env = lambda.env[lambda.envN], alpha.env = alpha.env[alpha.envN], lambda.SB = lambda.sp[lambda.spN], alpha.SB = alpha.sp[alpha.spN], drop = drop[dropN], hidden = as.character(hiddenN), loglike = logLik(model.train), loss= model.train$history[length(model.train$history)], AUC.explain=.1, AUC.test=.1)
+		
+		for (pred in 1:2) {
+			
+			# 1 -> 'explain'
+			set='test'; newdd = scale.env.test ; newsp = XY.test; otudd = otu.list[[i]][[pred]]
+			if (pred==1) { set='explain'; newdd = NULL; newsp = NULL; otudd = otu.list[[i]][[pred]] }
+			
+			pred.dd = apply(abind::abind(lapply(1:3, function(i) predict(model.train, newdata=newdd, SP=newsp)) , along = -1L), 2:3, mean)
+			
+			attr(pred.dd, 'dimnames') = NULL
+			
+			if (pred==2) {
+				otudd = rbind(otudd, count=(base::colSums(otudd)>0 & base::colSums(otudd)<dim(otudd)[1])*1 )
+				pred.dd = pred.dd[ ,which(otudd[dim(otudd)[1],] == 1)]
+				otudd = otudd[1:(dim(otudd)[1]-1), which(otudd[dim(otudd)[1],] == 1)]
+			}
+			
+			otudd.pa = (otudd>0)*1
+			roc.dd = lapply(1:dim(otudd)[2], function(i) roc(otudd.pa[,i], pred.dd[,i]))
+			auc.mean = mean(as.numeric(sapply(lapply(roc.dd, function(i) str_split(auc(i), ':')), function(x) x[[1]][1] )))
+			
+			if (pred==1) {tdd$AUC.explain=auc.mean}
+			if (pred==2) {tdd$AUC.test=auc.mean}
+			
+			saveRDS(list(pred.Y=pred.dd, otu=otudd, roc.allS=roc.dd, auc.mean=auc.mean), here(outputpath,'prediction_outputs','sjsdm-model-RDS', sjsdmVfolder, 'prediction', glue('roc_result_{set}_{period}_{trap}_{abund[i]}_min{minocc}_{formula.env}_lambdaE{lambda.envN}_{alpha.envN}_{lambda.spN}_{alpha.spN}_hidden{hiddenN}_{dropN}_{bb[j]}.RDS')))
+		}
+		
+		tuning.dd = rbind(tuning.dd, tdd)
+		
+		rm(model.train, tdd)
+		
+		write.table(tuning.dd, file=here(outputpath, 'sjsdm_general_outputs', sjsdmVfolder, 'DNN_tune', glue('manual_tuning.sjsdm_{period}_{trap}_min{minocc}_{envvar}_{formula.env}_{date}.csv')), row.names=F, sep=',')
+	
+	}
+}
+	
+
+# .... make table for prevalent information .............
+# ....... needed for selecting data ..........
+explain = readRDS( here(outputpath,'prediction_outputs','sjsdm-model-RDS', sjsdmVfolder, 'prediction', glue('roc_result_explain_{period}_{trap}_{abund[1]}_min{minocc}_{formula.env}_lambdaE{lambda.envN}_{alpha.envN}_{lambda.spN}_{alpha.spN}_hidden{hiddenN}_{dropN}_{bb[1]}.RDS')))
+names(explain)
+	
+a = data.frame(sum=colSums(explain$otu), otu=attr(colSums(explain$otu),'names'))
+a = a[order(a$sum, decreasing=T),]
+a$sum.seq = 1:dim(a)[1]
+str(a)
+# 268, 3
+	
+# ... taxonomy 
+a$order = sapply(strsplit(sapply(str_split(a$otu, '__'), function(aa) aa[2]), '_'), function(aa) aa[2])
+a = left_join(a, (a %>% count(order)), by=c('order'='order'))
+unique(a$n)
+	
+a$class = sapply(strsplit(sapply(str_split(a$otu, '__'), function(aa) aa[2]), '_'), function(aa) aa[1])
+a$family = sapply(strsplit(sapply(str_split(a$otu, '__'), function(aa) aa[2]), '_'), function(aa) aa[3])
+	
+str(a)
+	
+
+```
+
+
+```{r correlate-auc}
+# .... (define) ....
+auc.all = data.frame(otu=names(otu.list$qp[[1]]), auc.pa=rep(.1,length=dim(otu.list$qp[[1]])[2]), auc.qp=rep(.1,length=dim(otu.list$qp[[1]])[2]))
+str(auc.all)
+# dim[1] == 268!!!
+	
+set = c('explain','test' ) # 'test' , 'explain'
+formula = 'envDNN' # 'envDNN' , 'spDNN' , 'noDNN'
+bb = c('noBias', 'Bias')
+	
+x=2; i=1; j=2
+roc.dd.qp = readRDS(here(outputpath,'prediction_outputs','sjsdm-model-RDS', sjsdmVfolder, 'prediction', glue('roc_result_{set[x]}_{period}_{trap}_{abund[i]}_min{minocc}_{formula.env}_lambdaE{lambda.envN}_{alpha.envN}_{lambda.spN}_{alpha.spN}_hidden{hiddenN}_{dropN}_{bb[j]}.RDS'))) 
+names(roc.dd.qp)
+	
+x=2; i=2; j=2
+roc.dd.pa = readRDS(here(outputpath,'prediction_outputs','sjsdm-model-RDS', sjsdmVfolder, 'prediction', glue('roc_result_{set[x]}_{period}_{trap}_{abund[i]}_min{minocc}_{formula.env}_lambdaE{lambda.envN}_{alpha.envN}_{lambda.spN}_{alpha.spN}_hidden{hiddenN}_{dropN}_{bb[j]}.RDS'))) 
+names(roc.dd.pa)
+	
+# ... make long table 
+b.qp = data.frame( auc.qp = as.numeric(sapply(lapply(roc.dd.qp$roc.allS, function(i) str_split(auc(i), ':')), function(x) x[[1]][1] )), otu.qp = names(roc.dd.qp$otu) )
+str(b.qp)
+	
+b.pa = data.frame( auc.pa = as.numeric(sapply(lapply(roc.dd.pa$roc.allS, function(i) str_split(auc(i), ':')), function(x) x[[1]][1] )), otu.pa = names(roc.dd.pa$otu) )
+str(b.pa)
+	
+auc.qppa = inner_join(b.qp, b.pa, by=c('otu.qp'='otu.pa'))
+str(auc.qppa)
+	
+auc.all = left_join(auc.all, auc.qppa, by=c('otu'='otu.qp'), suffix=c('', glue('.{set[x]}.{bb[j]}')), copy=T)
+str(auc.all)
+	
+# .. after all variables are added
+auc.all = dplyr::select(auc.all, -'auc.pa',-'auc.qp')
+	
+# ... extract taxonomy info
+auc.all = left_join(auc.all, select(a, 'otu','order','class','family','sum','n'), by=c('otu'='otu'))
+abc = data.frame(seq.order=letters[1:length(unique(a$n))], order=sort(unique(a$n),decreasing=T))
+auc.all$Oorder = sapply(1:dim(auc.all)[1], function(x) paste(abc$seq.order[abc$order==auc.all$n[x]],'.',auc.all$order[x],'.',auc.all$n[x], sep=''))
+str(auc.all)
+	
+# ....... regression .......
+set  # 'test' , 'explain'
+formula  # 'envDNN-spAll' 
+bb
+	
+# ... loop ...
+setS = c('test', 'explain')  # 'test' , 'explain'
+	
+dd.ggplot = vector(mode = "list", length = 4)
+str(dd.ggplot)
+	
+plot.list=list(ggplot(),ggplot(),ggplot(),ggplot())
+	
+for (i in 1:2) {
+	for (j in 1:2) {
+		set = setS[j]  # 'test' , 'explain'
+		bias = bb[i]  # 'noBias' , 'Bias'
+	
+		auc.1 = select(auc.all, glue('auc.qp.{set}.{bias}'), glue('auc.pa.{set}.{bias}'), 'sum', 'order', 'class', 'family', 'Oorder') %>% rename(auc.qp=1, auc.pa=2, incident=3)
+		auc.1 = na.omit(auc.1)
+		str(auc.1)
+		dd.ggplot[[j+(i-1)*2]] = auc.1
+	
+		plot.list[[j+(i-1)*2]] = ggplot(dd.ggplot[[j+(i-1)*2]], aes(auc.pa, auc.qp)) + geom_point(aes(colour=factor(Oorder), size=incident))+ scale_size(range = c(1, 7)) + scale_colour_manual(values=colorRampPalette(c('dodgerblue3','firebrick2','yellow'))(12)) + geom_smooth(method='lm', se=F, colour='gray') + geom_abline(slope=1,intercept=0, linetype = "dashed", colour='gray', size=1.5) + theme(panel.background=element_rect(fill='snow')) + ggtitle(glue('{set}, {bias}')) + xlim(.3,1) + ylim(.3,1)
+	
+	}
+}
+	
+#m1 = lm(auc.qp ~ auc.pa, data=auc.1)
+#summary(m1)
+	
+# pdf(here(outputpath,'prediction_outputs', 'sjsdm-graph', sjsdmVfolder, 'prediction', glue('auc-correlation_{period}_{trap}_min{minocc}_{formula}_tuned_{date}.pdf')), width=16, height=13)
+	
+grid.arrange(plot.list[[1]],plot.list[[2]],plot.list[[3]],plot.list[[4]], nrow=2, widths=c(.48,.52))   #, layout_matrix= rbind(c(1), c(2,3), c(4,5)), heights=c(.4,5,5)
+	
+dev.off()
+	
+```
+
+
+```{r violin-auc}
+bb
+setS = c('test', 'explain')  # 'test' , 'explain'
+	
+dd = auc.all
+names(dd)
+	
+dd.ggplot = vector(mode = "list", length = 2)
+str(dd.ggplot)
+	
+plot.list=list(ggplot(),ggplot())
+	
+# .. plot ..........
+set = setS[j]  # 'test' , 'explain'
+bias = bb[2]  # 'noBias' , 'Bias'
+abd = abund[1]	# "qp" "pa"
+	
+auc.1 = select(auc.all, glue('auc.{abd}.{setS[1]}.{bias}'), glue('auc.{abd}.{setS[2]}.{bias}'), 'sum', 'order', 'class', 'family', 'Oorder', 'otu') %>% rename(auc.test=1, auc.explain=2, incident=3)
+auc.1 = na.omit(auc.1)
+str(auc.1)
+	
+cc = a %>% count(order)
+cc = cc[order(cc$n, decreasing=T),]
+	
+plot.list[[1]] = ggplot(auc.1, aes(x=order, y=auc.test)) + geom_hline(yintercept=.75, col='gray') + geom_jitter(width = 0.2, aes(colour = order)) + geom_boxplot(width=0.1) + scale_x_discrete(limit=cc$order) + annotate(geom="text", y=-.43, x=1:length(cc$n), label=as.character(cc$n), col='red') + theme_minimal() + theme(legend.position = "none") + ggtitle(glue('{setS[1]}, {bias}, {abd}'))
+	
+plot.list[[2]] = ggplot(auc.1, aes(x=order, y=auc.explain)) + geom_hline(yintercept=.75, col='gray') + geom_jitter(width = 0.2, aes(colour = order)) + geom_boxplot(width=0.1) + scale_x_discrete(limit=cc$order) + annotate(geom="text", y=-.43, x=1:length(cc$n), label=as.character(cc$n), col='red') + theme_minimal() + theme(legend.position = "none") + ggtitle(glue('{setS[2]}, {bias}, {abd}'))
+	
+
+# pdf(here(outputpath,'prediction_outputs', 'sjsdm-graph', sjsdmVfolder, 'prediction', glue('violin_order_{period}_{trap}_{abd}_min{minocc}_{bias}_{date}.pdf')), width=9, height=8)
+	
+grid.arrange(plot.list[[1]],plot.list[[2]], nrow=2) 
+	
+dev.off()
+	
+
+```
+
+
+
+
+
