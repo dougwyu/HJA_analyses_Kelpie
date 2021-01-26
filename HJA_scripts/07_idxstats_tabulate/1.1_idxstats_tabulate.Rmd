@@ -992,3 +992,4 @@ git2r::repository(here::here())
 
 envDocument::env_doc("table", git = FALSE)
 ```
+</details>
