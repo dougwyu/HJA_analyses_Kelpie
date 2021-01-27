@@ -143,14 +143,17 @@ env.vars <- otuenv %>%
          lg_cover2m_max = log(l_Cover_2m_max + 0.001),
          lg_cover2m_4m = log(l_Cover_2m_4m + 0.001),
          lg_cover4m_16m = log(l_Cover_4m_16m + 0.001)) %>%
-  dplyr::select(uniqueID, clearcut,insideHJA,oldGrowthIndex, elevation_m, canopyHeight_m, precipitation_mm, minT_annual, maxT_annual, mean.NDVI, mean.EVI, mean.green, mean.wet, mean.bright, l_p25, l_rumple, B1_median, B2_median,B3_median,B4_median,B5_median,B6_median,B7_median,B10_median,B11_median,lg_DistStream, lg_DistRoad, lg_YrsDisturb, lg_cover2m_max, lg_cover2m_4m, lg_cover4m_16m) %>% 
+  dplyr::select(uniqueID, clearcut,insideHJA,oldGrowthIndex, elevation_m, canopyHeight_m, precipitation_mm, minT_annual, maxT_annual, mean.NDVI, mean.EVI, mean.green, mean.wet, mean.bright, l_p25, l_p95, l_rumple, B1_median, B2_median,B3_median,B4_median,B5_median,B6_median,B7_median,B10_median,B11_median,lg_DistStream, lg_DistRoad, lg_YrsDisturb, lg_cover2m_max, lg_cover2m_4m, lg_cover4m_16m) %>% 
   dplyr::left_join(y = topo.df, by = "uniqueID") %>%
-  mutate(across(where(is.numeric), scale), # scale here
-         clearcut = factor(clearcut),
-         insideHJA = factor(insideHJA))
+  mutate(
+    #across(where(is.numeric), scale), # scale here # scale when defining models etc.
+     clearcut = factor(clearcut),
+     insideHJA = factor(insideHJA))
   #dplyr::select(-uniqueID)
 
 # str(env.vars)
+# head(env.vars)
+summary(env.vars)
 
 # reduce variables with Variance INflation Factor, 
 # source("https://raw.githubusercontent.com/Cdevenish/R-Material/master/Functions/Eco/viffer.r")
@@ -184,6 +187,7 @@ env.vars <- otuenv %>%
 
 # variable selection made a S2_define_models
 X.train <- env.vars
+
 
 ## Study design data
 S.train <- otuenv %>% 
@@ -231,5 +235,5 @@ all(P$tip.label %in% colnames(Y.train.qp))
 rm(c, i, tax.cols, spp)
 # rm(otu.ab.csv, otuenv)
 
-#write.csv(env.vars, "HJA_scripts/10_eo_data/biodiversity_site_info_GIS_20210115.csv", row.names = F)
-#write.csv(env.vars, "Hmsc_CD/local/data/biodiversity_site_info_GIS_20210115.csv", row.names = F)
+write.csv(env.vars, "HJA_scripts/10_eo_data/biodiversity_site_info_GIS_20210127.csv", row.names = F)
+write.csv(env.vars, "Hmsc_CD/local/data/biodiversity_site_info_GIS_20210127.csv", row.names = F)
