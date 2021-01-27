@@ -10,6 +10,8 @@ packageVersion("sjSDM")
 getwd() # always run sub from oregon_ada
 
 
+
+
 # local
 # setwd("J:/UEA/gitHRepos/HJA_analyses_Kelpie/Hmsc_CD/oregon_ada")
 
@@ -21,15 +23,15 @@ source("code_sjSDM/S1_read_data.r")
 # gets env.vars, out.pa.csv, otu.qp.csv, S.train
 
 # Data reduction - reduce species
-raretaxa <- which(colSums(Y.train.pa > 0) < 10)
+raretaxa <- which(colSums(otu.pa.csv > 0) < 10)
 length(raretaxa)
-Y.train.pa_min10 <- as.matrix(Y.train.pa[, -raretaxa]) # reduced species
+Y.pa.min10 <- as.matrix(otu.pa.csv[, -raretaxa]) # reduced species
 rm(raretaxa)
 
 XFormula1 <- as.formula(~be10+B11_median+mean.EVI+insideHJA + Ess + ht + ht.r500 + cov4_16 + cov4_16.r500 + mTopo)
 # check names
-all(all.vars(XFormula1) %in% names(X.train))
-str(X.train)
+all(all.vars(XFormula1) %in% names(env.vars))
+# str(X.train)
 
 
 # spatial data here:
@@ -41,23 +43,79 @@ xy.scale <- scale(S.train[,c("UTM_E", "UTM_N")])
 # mm <- model.matrix(XFormula1, data = env.vars)
 # head(mm)
 
+# do testing and training data
+test.size <- floor(nrow(Y.pa.min10)*0.2)
+train.size <- nrow(Y.pa.min10) - test.size
+
+set.seed(99)
+test.rows <- sample(1:nrow(Y.pa.min10), size = test.size)
+train.rows <- setdiff(1:nrow(Y.pa.min10), test.rows)
+
+# sort(c(test.rows, train.rows))
+
+Y.test.pa.min10 <- Y.pa.min10[test.rows, ]
+Y.train.pa.min10 <- Y.pa.min10[train.rows, ]
+
+X.test <- env.vars[test.rows,]
+X.train <- env.vars[train.rows,]
+
+xy.train <- xy.scale[train.rows,]
+xy.test <- xy.scale[test.rows,]
+
 # make and run model
-model <- sjSDM(Y = Y.train.pa_min10,
-               env = linear(data = env.vars, 
-                            formula = ~be10+B11_median+mean.EVI+insideHJA + Ess + ht + ht.r500 + cov4_16 + cov4_16.r500 + mTopo), # linear model on env covariates
-               spatial = linear(data = xy.scale, formula = ~0+UTM_E:UTM_N), # interactions of coordinates
-               se = TRUE, family=binomial("probit"), sampling = 100L,
-               device = "gpu")
+model <- sjSDM(
+  Y = Y.train.pa.min10,
+  env = linear(data = X.train,
+               # linear model on env covariates
+               formula = ~be10+B11_median+mean.EVI+insideHJA + Ess + ht + ht.r500 + cov4_16 + cov4_16.r500 + mTopo),
+  spatial = linear(data = xy.train, formula = ~0+UTM_E:UTM_N), # interactions of coordinates
+  se = TRUE, family=binomial("probit"), 
+  sampling = 100L,
+  device = "gpu")
 
 # model summary
 summary(model)
 
-
 ## S3 method for class 'sjSDM'
-link_pred <- predict(model, newdata = env.vars, SP = xy.scale, type = "link")
-raw_pred <- predict(model, newdata = env.vars, SP = xy.scale, type = "raw")
+pred.link.train <- predict(model, newdata = X.train, SP = xy.train, type = "link")
+pred.raw.train <- predict(model, newdata = X.train, SP = xy.train, type = "raw")
 
-save(model, link_pred, raw_pred, file ="results_sjSDM/oregon_trial.rdata")
+pred.link.test <- predict(model, newdata = X.test, SP = xy.test, type = "link")
+pred.raw.test <- predict(model, newdata = X.test, SP = xy.test, type = "raw")
+
+
+## testing AUC - Yuanghen code.
+for (pred in 1:2) {
+  
+  # 1 -> 'test'
+  newdd = X.test; newsp = xy.test; otudd = Y.test.pa.min10
+  
+  if (pred==2) { newdd = NULL; newsp = NULL; otudd = Y.train.pa.min10}
+  
+  predL <- lapply(1:3, function(i) predict(model, newdata=newdd, SP=newsp))
+  pred.dd = apply(abind::abind(predL, along = -1L), 2:3, mean)
+  attr(pred.dd, 'dimnames') = NULL
+  
+  if (pred==1){
+    otudd = rbind(otudd, count=(base::colSums(otudd)>0 & base::colSums(otudd)<dim(otudd)[1])*1 )
+    pred.dd = pred.dd[ , which(otudd[dim(otudd)[1],] == 1)]
+    otudd = otudd[1:(dim(otudd)[1]-1), which(otudd[dim(otudd)[1],] == 1)]
+  }
+  
+  otudd.pa = (otudd>0)*1
+  roc.dd = lapply(1:dim(otudd)[2], function(i) pROC::roc(otudd.pa[,i], pred.dd[,i]))
+  auc.mean = mean(as.numeric(sapply(lapply(roc.dd, function(i) stringr::str_split(pROC::auc(i), ':')), function(x) x[[1]][1] )))
+  
+  if (pred==2) {AUC.explain <- auc.mean}
+  if (pred==1) {AUC.test <- auc.mean}
+}
+
+
+save(model, 
+     pred.link.train, pred.link.test, pred.raw.train, pred.raw.test,
+     predL, AUC.explain, AUC.test,
+     file ="results_sjSDM/oregon_eval.rdata")
+
 
 
 # coefficients
