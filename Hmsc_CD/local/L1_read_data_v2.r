@@ -3,8 +3,7 @@
 # write all new variables to github
 
 ## Only local: 
-# setwd("J:/UEA/gitHRepos/HJA_analyses_Kelpie/Hmsc_CD/oregon_ada")
-wd <- here::here()
+wd <- here::here() # should have root at ".../HJA_analyses_Kelpie"
 wd
 setwd(wd)
 dir()
@@ -22,6 +21,7 @@ minimaprundate <- 20200929
 kelpierundate <- 20200927
 primer <- "BF3BR2"
 
+# reading from github online enables this to be used on ADA
 gitHub <- "https://raw.githubusercontent.com/dougwyu/HJA_analyses_Kelpie/master/Kelpie_maps"
 
 outputidxstatstabulatefolder <- glue::glue("outputs_minimap2_{minimaprundate}_{samtoolsfilter}_{samtoolsqual}_kelpie{kelpierundate}_{primer}_vsearch97")
@@ -43,7 +43,8 @@ rm(datFile, gitHub, kelpierundate, minimaprundate, outputidxstatstabulatefolder,
 # load("data/demStats.rdata") # temporary location for moment...  REPLACED By topo.df
 
 # load new topo vars
-load("Hmsc_CD/oregon_ada/data/topo_data.rdata")
+## load("data/topo_data.rdata")# change route if on ADA
+load("Hmsc_CD/oregon_ada/data/topo_data.rdata") 
 # head(topo.df)
 
 
@@ -230,5 +231,5 @@ all(P$tip.label %in% colnames(Y.train.qp))
 rm(c, i, tax.cols, spp)
 # rm(otu.ab.csv, otuenv)
 
-#write.csv(env.vars, "HJA_scripts/10_eo_data/biodiversity_site_info_GIS_vars_20210115.csv", row.names = F)
-#write.csv(env.vars, "Hmsc_CD/local/data/biodiversity_site_info_GIS_vars_20210115.csv", row.names = F)
+#write.csv(env.vars, "HJA_scripts/10_eo_data/biodiversity_site_info_GIS_20210115.csv", row.names = F)
+#write.csv(env.vars, "Hmsc_CD/local/data/biodiversity_site_info_GIS_20210115.csv", row.names = F)
