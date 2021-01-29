@@ -144,7 +144,14 @@ sapply(1:dim(Y.test)[2], function(i) pROC::roc(Y.test[,i], pred.test[,i], quiet 
 # ind <- which(colSums(Y.test)==0)
 # pred.test[, ind]
 
+Pred.test <- pred.test
+save(Y.test, Pred.test, file = "Hmsc_CD/local/test_example.rdata")
+Y.test <- unname(Y.test[,1:4])
+row.names(Y.test) <- NULL
+Pred.test[,1:5]
 
+dput(Y.test)
+dput(round(Pred.test[,1:4],5))
 
 #######  evaluation 2nd run working #####
 ## from b0_sjSDM_basic_oregon_eval.r
