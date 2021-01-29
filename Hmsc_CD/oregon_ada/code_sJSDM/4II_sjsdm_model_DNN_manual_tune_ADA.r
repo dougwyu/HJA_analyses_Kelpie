@@ -96,7 +96,7 @@ tuning.dd = data.frame(lambda.env = numeric(),
 
 # hiddenN <- dropN <- alpha.spN <- lambda.spN <- alpha.envN <- 1
 
-lambda.envN = 2		# 1,2,3,4 four jobs in AD
+lambda.envN = 3		# 1,2,3,4 four jobs in AD
 
 # testing
 # for (alpha.envN in 1:2) {

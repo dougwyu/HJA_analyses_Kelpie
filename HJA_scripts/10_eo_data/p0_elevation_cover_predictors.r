@@ -16,10 +16,12 @@ nadutm10 <- 26910
 # nad83 <- 4269
 
 # gis <- "J:/UEA/Oregon/gis"
-gis <- file.path(wd, "HJA_scripts/10_eo_data/raw_gis_data") # pending some layers still, eg "bareEarth_m_10m.tif"
+gis <- file.path(wd, "HJA_scripts/10_eo_data/raw_gis_data") 
 
 ## 
 dir(gis)
+# raster files are here:
+dir(file.path(gis, "r_utm"))
 
 # get points
 # get data
@@ -57,15 +59,11 @@ rm(cut)
 
 # get elevation raster
 # bareearth, projected to UTM 10N wgs84, bilinear, at 10m res, converted to m (/0.30480061) in arcgis
-
-########### STILL TO BE PLACED IN GIS FOLDER #########
-# be <- raster(file.path(gis, "r_utm/bareEarth_m_10m.tif"))
-# be
+be10 <- raster(file.path(gis, "r_utm/bareEarth_m_10m.tif"))
+be10
 
 # latlong_bare_earth.tif (2.8GB) projected to UTM 10 N, bilinear, 10m res, converted to m (/0.30480061) in arcgis
 # saved as "r_utm/bareEarth_m_30m.tif"
-# be30 <- raster(file.path(gis, "r_utm/bareEarth_m_30m.tif"))
-# be30
 
 # get cover data as brick
 list.files(file.path(gis,"r_utm"), "lidar")
@@ -88,7 +86,7 @@ ht[ht>100] <- NA
 hist(ht)
 hist(cov2_4)
 
-hist(be)
+hist(be10)
 
 ## do focal stats, at 250m, 500m, 1000 / 2
 # make focal weigth matrix for radius of 250, 500, 1000
@@ -120,7 +118,7 @@ names(covStack) <- c("ht", "ht.r250", "ht.r500", "ht.r1k",
                     "cov2_4", "cov2_4.r250", "cov2_4.r500", "cov2_4.r1k",
                     "cov4_16", "cov4_16.r250", "cov4_16.r500", "cov4_16.r1k")
 
-terr <- terrain(be, opt = c("slope", "aspect", "TRI"), unit= "degrees")
+terr <- terrain(be10, opt = c("slope", "aspect", "TRI"), unit= "degrees")
 terr
 
 ## Make eastness and northness
@@ -138,7 +136,7 @@ plot(Ess)
 ## TWI
 # dynatopmodel::upslope.area
 system.time(
-  twi <- dynatopmodel::upslope.area(be, atb = T)
+  twi <- dynatopmodel::upslope.area(be10, atb = T)
 )
 twi
 # $atb is the twi
@@ -147,7 +145,7 @@ save(twi$atb, file = file.path(gis, "r_utm/twi.rdata"))
 # user  system elapsed  # on laptop
 # 1299.66    4.90 1424.00
 
-terr <- stack(be, terr, Nss, Ess, twi$atb)
+terr <- stack(be10, terr, Nss, Ess, twi$atb)
 names(terr) <- c("be10","tri","slope","aspect","Nss","Ess","twi")
 
 
@@ -156,24 +154,6 @@ writeRaster(covStack, bylayer = T, filename = file.path(gis, "r_utm/l.tif"), dat
 save(terr, covStack, file = file.path(gis, "r_utm/elev_cov.rdata"))
 
 # load(file.path(gis, "r_utm/elev_cov.rdata"))
-
-# terr30 <- terrain(be30, opt = c("slope", "aspect", "TRI"), units= "degrees")
-# terr30
-# 
-# ## Make eastness and northness
-# Nss30 <- cos(terr30$aspect* pi / 180) # "Northness (aspect)"
-# Ess30 <- sin(terr30$aspect* pi / 180)  # eastness
-# 
-# system.time(
-#   twi30 <- dynatopmodel::upslope.area(be30, atb = T)
-# )
-# twi30
-# 
-# terr30 <- addLayer(terr30, Nss30, Ess30, twi30$atb)
-# names(terr30) <- c( "tri","slope","aspect","Nss","Ess","twi")
-# writeRaster(terr30, bylayer = T, filename = file.path(gis, "r_utm/terr30.tif"), datatype = "FLT4S", suffix = "names")
-# 
-# save(terr30, covStack, file = file.path(gis, "r_utm/elev_cov30.rdata"))
 
 ## do cut within 1 km
 hist(cut.utm$YEAR)
@@ -248,8 +228,8 @@ cat(paste(colnames(topo.df), collapse = '", "'))
 pairs(topo.df[,c("be10", "slope", "Nss", "Ess", "twi", "ht", "ht.r1k", "cov2_4", "cov2_4.r1k", "cov4_16", "cov4_16.r1k", "mTopo", "cut.r1k.pt")])
 
 
-c("be10", "slope", "Ess", "twi", "ht", "cov2_4", "cov4_16", "mTopo") # , "cut.r1k.pt"
-c("be10", "slope", "Ess", "twi","ht.r1k", "cov2_4.r1k", "cov4_16.r1k", "mTopo") # , "cut.r1k.pt"
+# c("be10", "slope", "Ess", "twi", "ht", "cov2_4", "cov4_16", "mTopo") # , "cut.r1k.pt"
+# c("be10", "slope", "Ess", "twi","ht.r1k", "cov2_4.r1k", "cov4_16.r1k", "mTopo") # , "cut.r1k.pt"
 
 
 ## export some plots
