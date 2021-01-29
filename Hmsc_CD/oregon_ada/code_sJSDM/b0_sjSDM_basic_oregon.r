@@ -53,18 +53,18 @@ coef(model)
 imp = importance(model)
 print(imp)
 
-pdf("results_sjSDM/trial_oregon_sJSDM_importance.pdf")
+pdf("results_sjSDM/trial_oregon_sJSDM_importance_k40.pdf")
 plot(imp)
 dev.off()
 
 an = anova(model)
 print(an)
 
-pdf("results_sjSDM/trial_oregon_sJSDM_anova.pdf")
+pdf("results_sjSDM/trial_oregon_sJSDM_anova_k40.pdf")
 plot(an)
 dev.off()
 
 
-save(model, file ="results_sjSDM/oregon_trial.rdata")
+save(model, file ="results_sjSDM/oregon_trial_k40.rdata")
 
 

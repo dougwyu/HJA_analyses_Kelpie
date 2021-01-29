@@ -172,7 +172,7 @@ str(s.otu.test)
 
 
 # save model data
-save(s.otu.train,scale.env.train, XY.train,  s.otu.test, scale.env.test, XY.test, file = "Hmsc_CD/oregon_ada/data/yuanghen_mod_data.rdata")
+save(s.otu.train,scale.env.train, XY.train,  s.otu.test, scale.env.test, XY.test, abund, file = "Hmsc_CD/oregon_ada/data/yuanghen_mod_data.rdata")
 
 # one model to see how long it takes in ADA
 load("data/yuanghen_mod_data.rdata")

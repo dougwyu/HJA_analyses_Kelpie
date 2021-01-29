@@ -22,10 +22,12 @@ packageVersion("sjSDM")
 library(glue)
 library(pROC)
 
-abund = 'qp'		# 'qp','pa'  
+abund = 'qp'		# 'qp','pa'  # is overwritten by data file loading.
 minocc = 5
 trap <- "M1"; period = "S1"
 date.model.run = 20210125   # !!! change accordingly
+
+resFolder <- "results_sjSDM/tuning_YL2"
 
 ### r load data### 
 # otu.train <- read.csv(paste0("data/otu.train.", abund, ".csv"), header = F)
@@ -48,7 +50,7 @@ date.model.run = 20210125   # !!! change accordingly
 
 # data creatd here and saved: Hmsc_CD|oregon_ada|code_sjSDM|sjSDM_trial|ada_sjsdm1_data_setup.r
 load("data/yuanghen_mod_data.rdata")
-# s.otu.train,scale.env.train, XY.train, s.otu.test, scale.env.test, XY.test
+# s.otu.train,scale.env.train, XY.train, s.otu.test, scale.env.test, XY.test, abund
 
 
 ### r model-DNN.env### 
@@ -70,10 +72,13 @@ acti.sp = 'relu'
 drop = seq(.1,.5, length.out=3) # .3
 sample.bio = seq(0,1,length.out=11)
 
+# no models
+4*7*7*2*3  # each lambda
+
 # data storage
-# 4*7*7*2*3*2 * 642
+# 4*7*7*2*3 * 642
 # time
-# 4*7*7*2*3*2 * .5
+# 4*7*7*2*3*2 * .5 # 162 models - 1 hour
 
 tuning.dd = data.frame(lambda.env = numeric(),
                        alpha.env = numeric(),
@@ -91,20 +96,20 @@ tuning.dd = data.frame(lambda.env = numeric(),
 
 # hiddenN <- dropN <- alpha.spN <- lambda.spN <- alpha.envN <- 1
 
-lambda.envN = 1		# 1,2,3,4 four jobs in AD
+lambda.envN = 2		# 1,2,3,4 four jobs in AD
 
 # testing
-# for (alpha.envN in 1) {
+# for (alpha.envN in 1:2) {
 #   for (lambda.spN in 1) {
 #     for (alpha.spN in 1) {
 #       for (dropN in 1) {
 #         for (hiddenN in 1) {
 
-for (alpha.envN in 1:3) {
-  for (lambda.spN in 1:3) {
-    for (alpha.spN in 1:3) {
-      for (dropN in 1:3) {
-        for (hiddenN in 1:2) {
+for (alpha.envN in seq_along(alpha.env)) {
+  for (lambda.spN in seq_along(lambda.sp)) {
+    for (alpha.spN in seq_along(alpha.sp)) {
+      for (dropN in seq_along(drop)) {
+        for (hiddenN in seq_along(hidden)) {
 
           lambda.bioN = sample(1:11,1)
           alpha.bioN = sample(1:11,1)
@@ -134,7 +139,7 @@ for (alpha.envN in 1:3) {
           
           saveRDS(
             list(model=model.train, random=data.frame('lambda.bioN'=lambda.bioN, 'alpha.bioN'=alpha.bioN)),
-            file.path("results_sjSDM", "tuning_YL",
+            file.path(resFolder,
                       glue::glue('s-jSDM_tuning_model_{period}_{trap}_{abund}_min{minocc}_{formula.env}_lambdaE{lambda.envN}_{alpha.envN}_{lambda.spN}_{alpha.spN}_hidden{hiddenN}_{dropN}.RDS')
                       )
             )
@@ -163,16 +168,22 @@ for (alpha.envN in 1:3) {
                                          along = -1L), 2:3, mean)
 
             attr(pred.dd, 'dimnames') = NULL
+# 
+#             if (pred==1) {
+#               otudd = rbind(otudd, count=(base::colSums(otudd)>0 & base::colSums(otudd)<dim(otudd)[1])*1 )
+#               pred.dd = pred.dd[ ,which(otudd[dim(otudd)[1],] == 1)]
+#               otudd = otudd[1:(dim(otudd)[1]-1), which(otudd[dim(otudd)[1],] == 1)]
+#             }
+ 
+             otudd.pa = (otudd>0)*1
 
-            if (pred==1) {
-              otudd = rbind(otudd, count=(base::colSums(otudd)>0 & base::colSums(otudd)<dim(otudd)[1])*1 )
-              pred.dd = pred.dd[ ,which(otudd[dim(otudd)[1],] == 1)]
-              otudd = otudd[1:(dim(otudd)[1]-1), which(otudd[dim(otudd)[1],] == 1)]
-            }
-
-            otudd.pa = (otudd>0)*1
-            roc.dd = lapply(1:dim(otudd)[2], function(i) pROC::roc(otudd.pa[,i], pred.dd[,i]))
-            auc.mean = mean(as.numeric(sapply(lapply(roc.dd, function(i) stringr::str_split(pROC::auc(i), ':')), function(x) x[[1]][1] )))
+#             roc.dd = lapply(1:dim(otudd)[2], function(i) pROC::roc(otudd.pa[,i], pred.dd[,i]))
+#             auc.mean = mean(as.numeric(sapply(lapply(roc.dd, function(i) stringr::str_split(pROC::auc(i), ':')), function(x) x[[1]][1] )))
+            
+            auc <- tryCatch(expr = sapply(1:ncol(pred.dd), function(i) Metrics::auc(otudd.pa[,i],pred.dd[,i])),
+                     error = function(err){ return(NA) })
+            
+            auc.mean <- mean(auc, na.rm= T)
 
             if (pred==2) {tdd$AUC.explain=auc.mean}
             if (pred==1) {tdd$AUC.test=auc.mean}
@@ -185,8 +196,8 @@ for (alpha.envN in 1:3) {
           rm(model.train, tdd)
           
           write.table(tuning.dd, 
-                      file = file.path("results_sjSDM/tuning_YL", 
-                  glue::glue('manual_tuning_sjsdm_{period}_{trap}_{abund}_min{minocc}_{formula.env}_{date.model.run}.csv')),
+                      file = file.path(resFolder, 
+                  glue::glue('manual_tuning_sjsdm_{period}_{trap}_{abund}_min{minocc}_{formula.env}_{date.model.run}_lambdaE{lambda.envN}.csv')),
                       row.names=F, sep=',')
           
           }
