@@ -46,9 +46,6 @@ trap <- "M1"; period = "S1"
 outputidxstatstabulatefolder = glue("outputs_minimap2_{minimaprundate}_{samtoolsfilter}_{samtoolsqual}_kelpie{kelpierundate}_{primer}_vsearch97")
 outputpath = glue('../../Kelpie_maps/{outputidxstatstabulatefolder}')
 	
-cvfolder = glue("results_{date.cross.validation}_{minocc}minocc_{envvar}_{abund}_loocv")
-datafolder = glue("data_{date.cross.validation}_{minocc}minocc_{envvar}")
-	
 sjsdmV = '0.1.3.9000' # package version
 sjsdmVfolder = glue('sjsdm-{sjsdmV}')
 	
@@ -412,6 +409,348 @@ dev.off()
 ```
 
 
+```{r extract-pred-values}
+# ..... make table
+# .... (define) ....
+i=1; j=2
+roc.dd.qp = readRDS(here(outputpath,'prediction_outputs','sjsdm-model-RDS', sjsdmVfolder, 'prediction', glue('roc_result_test_{period}_{trap}_{abund[i]}_min{minocc}_{formula.env}_lambdaE{lambda.envN}_{alpha.envN}_{lambda.spN}_{alpha.spN}_hidden{hiddenN}_{dropN}_{bb[j]}.RDS'))) 
+names(roc.dd.qp)
+	
+predy.all = vector(mode='list', length=2*2*2)
+str(predy.all)
+	
+set = 'test'  # 'test' , 'explain'
+formula = 'envDNN' # 'envDNN' , 'spDNN' , 'noDNN'
+bb = c('noBias', 'Bias')
+	
+for (i in 1:2) {
+	for (j in 1:2) {
+		print(c(i,j))
+		
+		roc.dd = readRDS(here(outputpath,'prediction_outputs','sjsdm-model-RDS', sjsdmVfolder, 'prediction', glue('roc_result_{set}_{period}_{trap}_{abund[i]}_min{minocc}_{formula.env}_lambdaE{lambda.envN}_{alpha.envN}_{lambda.spN}_{alpha.spN}_hidden{hiddenN}_{dropN}_{bb[j]}.RDS'))) 
+		names(roc.dd)
+		
+		predy.all[[((i-1)*2+j)*2-1]] = roc.dd$pred.Y
+		predy.all[[((i-1)*2+j)*2]] = roc.dd$otu
+		names(predy.all)[((i-1)*2+j)*2-1] = glue('pred.{abund[i]}.{bb[j]}')
+		names(predy.all)[((i-1)*2+j)*2] = glue('obs.{abund[i]}.{bb[j]}')
+		
+	}
+}
+	
+names(predy.all)
+	
+
+```
 
 
+```{r logLikelihood}
+rsq.all = vector(mode='list', length=4*2)
+str(rsq.all)
+	
+# ..... loop over all spp in the sample & samples in spp
+for (i in 1:(length(predy.all)/2)) {
+	rsq = data.frame(id=rownames(predy.all[[i*2]]), loglik=rep(.1, length.out=dim(predy.all[[i*2]])[1]), nagelR=rep(.1, length.out=dim(predy.all[[i*2]])[1]), id2=1:dim(predy.all[[i*2]])[1])
+	rsq.spp = data.frame(id=names(predy.all[[i*2]]), loglik=rep(.1, length.out=dim(predy.all[[i*2]])[2]), nagelR=rep(.1, length.out=dim(predy.all[[i*2]])[2]), id2=1:dim(predy.all[[i*2]])[2])
+	
+	# spp in the sample
+	for (j in 1:dim(predy.all[[i]])[1]) {
+		print(c(i,j))
+#		meanp = mean(predy.all[[i*2-1]])
+		p = (predy.all[[i*2-1]][j,])
+		y = ((predy.all[[i*2]][j,]>0)*1)
+		
+		loglikP = sum( log( p*y + (1-p)*(1-y) ) )
+		loglikN = sum( log( mean(p)*y + (1-mean(p))*(1-y) ) )		 
+#		rsq$logrsq[j] = (loglikP-loglikN)/(1-loglikN)
+		rsq$nagelR[j] = (1-exp(2/length(p)*(loglikN-loglikP))) / (1-exp(2/length(p)*loglikN))
+		rsq$loglik[j] = loglikP
+	}
+	names(rsq.all)[i] = paste0('sample.',strsplit(names(predy.all)[i*2],'obs.')[[1]][2])
+	rsq.all[[i]] = rsq
+	
+	# samples in spp
+	for (j in 1:dim(predy.all[[i]])[2]) {
+		print(c(i,j))
+		
+		p = (predy.all[[i*2-1]][,j])
+		y = ((predy.all[[i*2]][,j]>0)*1)
+		
+		loglikP = sum( log( p*y + (1-p)*(1-y) ) )
+		loglikN = sum( log( mean(p)*y + (1-mean(p))*(1-y) ) )
+		rsq.spp$nagelR[j] = (1-exp(2/length(p)*(loglikN-loglikP))) / (1-exp(2/length(p)*loglikN))
+		rsq.spp$loglik[j] = loglikP
+	}
+	names(rsq.all)[i+4] = paste0('spp.',strsplit(names(predy.all)[i*2],'obs.')[[1]][2])
+	rsq.all[[i+4]] = rsq.spp
+}
+	 
+mean(rsq.all[[1]][,2]); mean(rsq.all[[2]][,2]); mean(rsq.all[[3]][,2]); mean(rsq.all[[4]][,2]) 
+mean(rsq.all[[1]][,3]); mean(rsq.all[[2]][,3]); mean(rsq.all[[3]][,3]); mean(rsq.all[[4]][,3]) 
+(rsq.all[[1]][1,2:3]); (rsq.all[[2]][1,2:3]); (rsq.all[[3]][1,2:3]); (rsq.all[[4]][1,2:3]) 
+names(rsq.all)
+	
 
+```
+
+
+```{r community-dissimilarity}
+thred1 = .1		# how to cut between presence/absence
+thred2 = .4
+	
+comm.all = vector(mod='list', length=(4*2))
+comm.all.2 = vector(mod='list', length=(4*2))
+str(comm.all)
+	
+# ..... loop over all spp in the sample
+tt = thred1
+dd = comm.all
+	
+for (i in 1:(length(predy.all)/2)) {
+	comm = data.frame(id=rownames(predy.all[[i*2]]), brayCurtis=rep(.1, length.out=dim(predy.all[[i*2]])[1]), Jaccard=rep(.1, length.out=dim(predy.all[[i*2]])[1]), id2=1:dim(predy.all[[i*2]])[1])
+	comm.spp = data.frame(id=names(predy.all[[i*2]]), brayCurtis=rep(.1, length.out=dim(predy.all[[i*2]])[2]), Jaccard=rep(.1, length.out=dim(predy.all[[i*2]])[2]), id2=1:dim(predy.all[[i*2]])[2])
+	# species-wise
+	for (j in 1:dim(predy.all[[i]])[2]) {
+		print(c(i,j))
+		p = ((predy.all[[i*2-1]][,j]>=tt)*1)
+		y = ((predy.all[[i*2]][,j]>0)*1)
+		
+		# ... Bray-Curtis
+		comm.spp$brayCurtis[j] = (sum(y)+sum(p) - 2*sum(((y+p)==2)*1)) / (sum(y)+sum(p))
+		comm.spp$Jaccard[j] = 2*comm.spp$brayCurtis[j]/(1+comm.spp$brayCurtis[j])
+		
+	}
+	names(dd)[i+4] = paste0('spp.',strsplit(names(predy.all)[i*2],'obs.')[[1]][2])
+	dd[[i+4]] = comm.spp
+	# sample-wise
+	for (j in 1:dim(predy.all[[i]])[1]) {
+		print(c(i,j))
+		p = ((predy.all[[i*2-1]][j,]>=tt)*1)
+		y = ((predy.all[[i*2]][j,]>0)*1)
+		
+		comm$brayCurtis[j] = (sum(y)+sum(p) - 2*sum(((y+p)==2)*1)) / (sum(y)+sum(p))
+		comm$Jaccard[j] = 2*comm$brayCurtis[j]/(1+comm$brayCurtis[j])
+		
+	}
+	names(dd)[i] = paste0('sample.',strsplit(names(predy.all)[i*2],'obs.')[[1]][2])
+	dd[[i]] = comm
+	
+}
+comm.all = dd
+	
+names(comm.all); names(comm.all.2)
+	 
+mean(comm.all[[1]][,2]); mean(comm.all[[2]][,2]); mean(comm.all[[3]][,2]); mean(comm.all[[4]][,2]) 
+mean(comm.all[[1]][,3]); mean(comm.all[[2]][,3]); mean(comm.all[[3]][,3]); mean(comm.all[[4]][,3]) 
+	
+names(comm.all)
+	
+
+```
+
+
+```{r probabilistic-confusion-matrix}
+# Lawson-2014-MEE, Wilkinson-2020-MEE
+confM = vector(mode='list', length=4)
+str(confM)
+	
+# ..... loop over all spp in the sample
+for (i in 1:(length(predy.all)/2)) {
+	dd = data.frame(id=rownames(predy.all[[i*2]]), posit.lik.rate=rep(.1, length.out=dim(predy.all[[i*2]])[1]), neg.lik.rate=rep(.1, length.out=dim(predy.all[[i*2]])[1]), id2=1:dim(predy.all[[i*2]])[1])
+#	rsq.spp = data.frame(id=names(predy.all[[i*2]]), loglik=rep(.1, length.out=dim(predy.all[[i*2]])[2]), nagelR=rep(.1, length.out=dim(predy.all[[i*2]])[2]), id2=1:dim(predy.all[[i*2]])[2])
+	
+	# spp in the sample
+	for (j in 1:dim(predy.all[[i]])[1]) {
+		print(c(i,j))
+		
+		p = (predy.all[[i*2-1]][j,])
+		y = ((predy.all[[i*2]][j,]>0)*1)
+		
+		tp = sum(p*y)
+		fp = sum(p*(1-y))
+		fa = sum((1-p)*y)
+		ta = sum((1-p)*(1-y))
+#		tp; fp; fa; ta
+		dd$posit.lik.rate[j] = tp/(tp+fa)/fp*(fp+ta)
+		dd$neg.lik.rate[j] = fa/(fa+tp)/ta*(ta+fp)
+	}
+	names(confM)[i] = paste0('sample.',strsplit(names(predy.all)[i*2],'obs.')[[1]][2])
+	confM[[i]] = dd
+}
+	
+confM[[i]]
+names(confM)
+	
+# community
+data = confM
+str(data[[1]]); names(data)
+	
+y1 = 'positive likelihood rate'
+y2 = 'negative likelihood rate'
+ylim = c(0, max(data[[3]]$posit.lik.rate))
+p1= 2
+p2 = 3
+	
+# ...................... sample-wise ..............................
+# pdf(here(outputpath,'prediction_outputs', 'sjsdm-graph',sjsdmVfolder,'metrics','confusion-base-sample.pdf'), width=7,height=7)
+	
+par(mfrow=c(2,1), las=1, mar=c(4,4,1,1))
+	
+# .. 1st index
+plot(data$sample.qp.Bias$id2, data$sample.qp.Bias[,p1], xaxt='n', type='n', ylim=ylim,xlim=c(1,20), xlab='sample',ylab=y1)
+axis(1,data$sample.qp.Bias$id2)
+points(data$sample.qp.Bias$id2, data$sample.qp.Bias[,p1], col='black', pch=17,type='b')
+points(data$sample.pa.Bias$id2, data$sample.pa.Bias[,p1], col='black', pch=25,type='b',lty=2)
+	
+points(data$sample.qp.noBias$id2, data$sample.qp.noBias[,p1], col='red', pch=3,type='b')
+points(data$sample.pa.noBias$id2, data$sample.pa.noBias[,p1], col='red', pch=4,type='b',lty=2)
+	
+# .. legend
+legend('bottomright',legend=round(c(mean(data$sample.qp.Bias[,p1]), mean(data$sample.pa.Bias[,p1]), mean(data$sample.qp.noBias[,p1]), mean(data$sample.pa.noBias[,p1])),2),pch=c(17,25,3,4), col=c('black','black','red','red'),lty=c(1,2,1,2), bty='n')
+	
+# .. 2nd index
+ylim = c(0, max(data[[2]]$neg.lik.rate))
+	
+plot(data$sample.qp.Bias$id2, data$sample.qp.Bias[,p2], xaxt='n', type='n', ylim=ylim,xlim=c(1,20), xlab='sample',ylab=y2)
+axis(1,data$sample.qp.Bias$id2)
+points(data$sample.qp.Bias$id2, data$sample.qp.Bias[,p2], col='black', pch=17,type='b')
+points(data$sample.pa.Bias$id2, data$sample.pa.Bias[,p2], col='black', pch=25,type='b',lty=2)
+	
+points(data$sample.qp.noBias$id2, data$sample.qp.noBias[,p2], col='red', pch=3,type='b')
+points(data$sample.pa.noBias$id2, data$sample.pa.noBias[,p2], col='red', pch=4,type='b',lty=2)
+	
+# .. legend
+legend('bottomright',legend=c(paste0('qp.Bias ', round(mean(data$sample.qp.Bias[,p2]),2)), paste0('pa.Bias ', round(mean(data$sample.pa.Bias[,p2]),2)), paste0('qp.noBias ', round(mean(data$sample.qp.noBias[,p2]),2)), paste0('pa.noBias ', round(mean(data$sample.pa.noBias[,p2]),2))),pch=c(17,25,3,4), col=c('black','black','red','red'),lty=c(1,2,1,2), bty='n')
+	
+dev.off()
+	
+```
+
+
+```{r plot-metrics-sample}
+# community
+data = comm.all		# comm.all.2
+str(data[[1]]); names(data)
+	
+tt = thred1		# thred2
+y1 = paste0('Bray-Curtis, thred: ',tt) 
+y2 = 'Jaccard'
+ylim = c(0,1)
+	
+# likelihood
+data = rsq.all
+y1 = 'log-Likelihood'
+y2 = 'NagelR2'
+ylim = c(range(rsq.all)[1]*1.1,-50)
+	
+p1= 2
+p2 = 3
+	
+# ...................... sample-wise ..............................
+# pdf(here(outputpath,'prediction_outputs', 'sjsdm-graph',sjsdmVfolder,'metrics',glue('community-base-sample-{tt}.pdf')), width=7,height=7)
+	
+# pdf(here(outputpath,'prediction_outputs', 'sjsdm-graph',sjsdmVfolder,'metrics','likelihood-base-sample.pdf'), width=7,height=7)
+	
+par(mfrow=c(2,1), las=1, mar=c(4,4,1,1))
+	
+# .. 1st index
+plot(data$sample.qp.Bias$id2, data$sample.qp.Bias[,p1], xaxt='n', type='n', ylim=ylim,xlim=c(1,20), xlab='sample',ylab=y1)
+axis(1,data$sample.qp.Bias$id2)
+points(data$sample.qp.Bias$id2, data$sample.qp.Bias[,p1], col='black', pch=17,type='b')
+points(data$sample.pa.Bias$id2, data$sample.pa.Bias[,p1], col='black', pch=25,type='b',lty=2)
+	
+points(data$sample.qp.noBias$id2, data$sample.qp.noBias[,p1], col='red', pch=3,type='b')
+points(data$sample.pa.noBias$id2, data$sample.pa.noBias[,p1], col='red', pch=4,type='b',lty=2)
+	
+# .. legend
+legend('bottomright',legend=c(paste0('qp.Bias ', round(mean(data$sample.qp.Bias[,p1]),2)), paste0('pa.Bias ', round(mean(data$sample.pa.Bias[,p1]),2)), paste0('qp.noBias ', round(mean(data$sample.qp.noBias[,p1]),2)), paste0('pa.noBias ', round(mean(data$sample.pa.noBias[,p1]),2))),pch=c(17,25,3,4), col=c('black','black','red','red'),lty=c(1,2,1,2), bty='n')
+	
+# .. 2nd index
+# ylim=c(-3,1)		# log-lik
+	
+plot(data$sample.qp.Bias$id2, data$sample.qp.Bias[,p2], xaxt='n', type='n', ylim=ylim,xlim=c(1,20), xlab='sample',ylab=y2)
+axis(1,data$sample.qp.Bias$id2)
+points(data$sample.qp.Bias$id2, data$sample.qp.Bias[,p2], col='black', pch=17,type='b')
+points(data$sample.pa.Bias$id2, data$sample.pa.Bias[,p2], col='black', pch=25,type='b',lty=2)
+	
+points(data$sample.qp.noBias$id2, data$sample.qp.noBias[,p2], col='red', pch=3,type='b')
+points(data$sample.pa.noBias$id2, data$sample.pa.noBias[,p2], col='red', pch=4,type='b',lty=2)
+	
+# .. legend
+legend('bottomright',legend=round(c(mean(data$sample.qp.Bias[,p2]), mean(data$sample.pa.Bias[,p2]), mean(data$sample.qp.noBias[,p2]), mean(data$sample.pa.noBias[,p2])),2),pch=c(17,25,3,4), col=c('black','black','red','red'),lty=c(1,2,1,2), bty='n')
+	
+dev.off()
+	
+
+```
+
+
+```{r plot-metrics-species}
+# community
+data = comm.all
+str(data[[1]]); names(data)
+	
+tt = thred1
+y1 = paste0('Bray-Curtis, thred: ',tt) 
+y2 = 'Jaccard'
+ylim = c(0,1)
+	
+# likelihood
+data = rsq.all
+str(data[[1]]); names(data)
+	
+y1 = 'log-Likelihood'
+y2 = 'NagelR2'
+ylim = c(-40,0)
+	
+p1= 2
+p2 = 3
+	
+# ............... plot species-wise ......................
+# pdf(here(outputpath,'prediction_outputs', 'sjsdm-graph',sjsdmVfolder,'metrics',glue('community-base-spp-{tt}.pdf')), width=10,height=5)
+	
+# pdf(here(outputpath,'prediction_outputs', 'sjsdm-graph',sjsdmVfolder,'metrics',glue('likelihood-base-spp.pdf')), width=10,height=5)
+	
+par(mfrow=c(2,2), las=1, mar=c(4,4,1,1))
+	
+# .. 1st index
+plot(data$spp.qp.Bias$id2, data$spp.qp.Bias[,p1], xaxt='n', type='n', ylim=ylim, xlim=c(1,length(data$spp.qp.Bias$id2)+2), xlab='species',ylab=y1)
+axis(1,data$spp.qp.Bias$id2)
+lines(data$spp.qp.Bias$id2, data$spp.qp.Bias[,p1], col='black', lwd=1.5)
+lines(data$spp.pa.Bias$id2, data$spp.pa.Bias[,p1], col='blue', lwd=1.5, lty=2)
+	
+# .. legend
+legend('bottomright',legend=c(paste0('qp.Bias ', round(mean(data$spp.qp.Bias[,p1]),2)), paste0('pa.Bias ', round(mean(data$spp.pa.Bias[,p1]),2))), col=c('black','blue'),lty=c(1,2), bty='n')
+	
+# .. 1st index II
+plot(data$spp.qp.noBias$id2, data$spp.qp.noBias[,p1], xaxt='n', type='n', ylim=ylim, xlim=c(1,length(data$spp.qp.Bias$id2)+2), xlab='species',ylab=y1)
+axis(1,data$spp.qp.noBias$id2)
+lines(data$spp.qp.noBias$id2, data$spp.qp.noBias[,p1], col='black', lwd=1.5)
+lines(data$spp.pa.noBias$id2, data$spp.pa.noBias[,p1], col='blue', lwd=1.5, lty=2)
+	
+# .. legend
+legend('bottomright',legend=c(paste0('qp.noBias ', round(mean(data$spp.qp.noBias[,p1]),2)), paste0('pa.noBias ', round(mean(data$spp.pa.noBias[,p1]),2))), col=c('black','blue'),lty=c(1,2), bty='n')
+	
+# .. 2nd index
+# ylim = c(-23,1)
+	
+plot(data$spp.qp.Bias$id2, data$spp.qp.Bias[,p2], xaxt='n', type='n', ylim=ylim, xlim=c(1,length(data$spp.qp.Bias$id2)+2), xlab='species',ylab=y2)
+axis(1, data$spp.qp.Bias$id2)
+lines(data$spp.qp.Bias$id2, data$spp.qp.Bias[,p2], col='black', lwd=1.5)
+lines(data$spp.pa.Bias$id2, data$spp.pa.Bias[,p2], col='blue', lwd=1.5, lty=2)
+	
+# .. legend
+legend('bottomright',legend=c(paste0('qp.Bias ', round(mean(data$spp.qp.Bias[,p2]),2)), paste0('pa.Bias ', round(mean(data$spp.pa.Bias[,p2]),2))), col=c('black','blue'),lty=c(1,2), bty='n')
+	
+# .. 2nd index II
+plot(data$spp.qp.noBias$id2, data$spp.qp.noBias[,p2], xaxt='n', type='n', ylim=ylim, xlim=c(1,length(data$spp.qp.noBias$id2)+2), xlab='species',ylab=y2)
+axis(1, data$spp.qp.noBias$id2)
+lines(data$spp.qp.noBias$id2, data$spp.qp.noBias[,p2], col='black', lwd=1.5)
+lines(data$spp.pa.noBias$id2, data$spp.pa.noBias[,p2], col='blue', lwd=1.5, lty=2)
+	
+legend('bottomright',legend=c(paste0('qp.noBias ', round(mean(data$spp.qp.noBias[,p2]),2)), paste0('pa.noBias ', round(mean(data$spp.pa.noBias[,p2]),2))), col=c('black','blue'),lty=c(1,2), bty='n')
+	
+dev.off()
+	
+
+```
