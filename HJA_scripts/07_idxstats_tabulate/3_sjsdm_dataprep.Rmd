@@ -117,7 +117,6 @@ min(colSums(otu.pa.csv)) == minocc # should be TRUE
 ```
 
 log and scale env variables
-
 ```{r create scale.env.csv}
 # default is all environmental covariates: GIS + MS + Lidar
 
@@ -211,7 +210,6 @@ write_csv(otu.pa.csv, here("..", "..", "Kelpie_maps", outputidxstatstabulatefold
 Upload the datafiles to ~/Hja_sjsdm/
 
 <details><summary>Reproducibility receipt</summary>
-
 ```{r}
 # datetime
 Sys.time()
@@ -221,5 +219,4 @@ git2r::repository(here::here())
 
 env_doc("table", git = FALSE)
 ```
-
 </details>

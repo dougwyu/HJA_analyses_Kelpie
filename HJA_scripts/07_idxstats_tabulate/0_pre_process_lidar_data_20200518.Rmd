@@ -7,7 +7,7 @@ output: html_document
 
 run once to convert a txt file to a csv file that is used in 07_idxstats_tabulate/1.1_idxstats_tabulate.Rmd
 
-no need to run anymore
+has been run, no need to run anymore
 
 ```{r setup chunk, eval=TRUE, include=TRUE}
 # copy the following into each script   

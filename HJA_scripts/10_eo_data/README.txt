@@ -1,3 +1,5 @@
+topo_data_M1S1_20210131.rdata is a copy of Hmsc_CD/oregon_ada/data/topo_data.rdata and only has M1S1 data
+
 R code to generate new variables is in this folder (10_eo_data):
 p0_elevation_cover_predictors.r
 
@@ -19,7 +21,7 @@ lidar_metric_mosaic_Cover_2m_4m.tif
 lidar_metric_mosaic_Cover_2m_4m_all.tif
 lidar_metric_mosaic_Cover_2m_max.tif
 
-# geographic.. 
+# geographic..
 latlong_bare_earth.tif
 # converted to UTM 10N wgs84, at 10m resolution, converted from feet to m in arcgis
 bareEarth_m_10m.tif

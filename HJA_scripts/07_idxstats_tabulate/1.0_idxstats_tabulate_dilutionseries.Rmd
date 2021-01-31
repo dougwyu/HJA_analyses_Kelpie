@@ -7,7 +7,7 @@ output: html_document
 
 This file takes the idxstats.txt outputs of samtools and bedtools (idxstats, genomecov) and combines them with the sample metadata, does some sanity checks, and removes failed samples
 
-This version is only for the dilution_series samples that i mapped on 20200221 (also using the 20200214 Kelpie OTUs). The purpose of this dataset is to check if the spike-in worked. Multiple samples were diluted by 0.8 in series to make between 4 to 6 samples in a series. If the spike-in worked, then we should see OTU counts vary with a slope ~ 0.8 across the samples. Then we conclude that we can 
+This version is **only** for the dilution_series samples that I mapped on 20200221 (also using the 20200214 Kelpie OTUs). The purpose of this dataset is to check if the spike-in worked. Multiple samples were diluted by 0.8 in series to make between 4 to 6 samples in a series. If the spike-in worked, then we should see OTU counts vary with a slope ~ 0.8 across the samples. Then we conclude that we can 
 
 This code has only been checked on macOS.
 
