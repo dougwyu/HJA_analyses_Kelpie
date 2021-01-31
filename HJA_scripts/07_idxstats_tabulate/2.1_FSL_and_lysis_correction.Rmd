@@ -174,11 +174,10 @@ hist(idx_meta_genomecov_filtered_lysis$lysis_ratio)
 
 Before quasiprobability transformation, check that all OTUs have at least one cell with 0 reads. Otherwise, the lowest read value will be QP-scaled to 0
 ```{r}
-OTUs <- idx_meta_genomecov_filtered_lysis %>% 
-  select(contains("__")) 
+OTUs_mins <- idx_meta_genomecov_filtered_lysis %>% 
+  summarise(across(contains("__"), min))
 
-OTU_mins <- as_tibble(apply(OTUs, 2, min))
-colSums(OTU_mins) == 0
+rowSums(OTUs_mins) == 0
 # If TRUE, can go ahead with QP transformation
 ```
 
