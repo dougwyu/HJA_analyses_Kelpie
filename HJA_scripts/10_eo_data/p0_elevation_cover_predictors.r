@@ -50,6 +50,8 @@ rm(gitHub, otuenv, outputidxstatstabulatefolder, datFile, primer,
 xy.utm <- st_transform(xy.sf, crs = utm10N)
 rm(xy.sf)
 
+length(unique(xy.utm$SiteName))
+
 # write
 # st_write(xy.utm, file.path(gis, "s_utm/m1s1_utm10.shp"), delete_layer = T)
 
