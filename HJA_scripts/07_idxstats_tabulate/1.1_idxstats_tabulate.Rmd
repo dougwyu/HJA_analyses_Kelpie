@@ -485,7 +485,7 @@ genomecoverages_summ <- future_map_dfr(genomecov_files,
                                    .options = furrr_options(seed = TRUE)
                                    ); 
 notify("Your loadfile2 function has finished.", "Message from R", speakIt=TRUE)
-tictoc::toc() 
+tictoc::toc() # 299 secs
 # using future_map_dfr() instead of future_map() avoids having to run this line after
 # genomecoverages_summ <- do.call(rbind, genomecoverages_summ) 
 
@@ -818,16 +818,17 @@ Load additional environmental covariate data calculated by Christian Devenish, s
 As of 20210131, topo.df is missing values for 6 sites: 335225, 593665, HOBO-016, HOBO-036, HOBO-317, and SM-05, which are sites that did not have an M1S1 sample and thus were not included in topo_data.rdata. Asking Christian to add these, and when i get new file, i will rerun and produce a new envdataGISMSLidar, which i will use to produce a new idx_meta_genomecov_filtered_wide in the next chunk
 ```{r}
 load(file.path("..", "10_eo_data", "topo_data.rdata"))
-# topo.df
-topo <- topo.df %>% 
-    separate(uniqueID, into = c("site", "trap", "period"), sep = "_") %>% 
-    select(-trap, -period) %>% 
-    rename("SiteName" = "site")
+
+# don't need this code because the 20210201 version of topo.df already has siteName only, without trap and period
+# topo <- topo.df %>% 
+#     separate(siteName, into = c("site", "trap", "period"), sep = "_") %>% 
+#     select(-trap, -period) %>% 
+#     rename("SiteName" = "site")
+
+topo <- topo.df %>% rename(SiteName = siteName)
 
 envdataGISMSLidar <-  topo %>% 
     full_join(envdataGISMSLidar, by = ("SiteName"))
-
-# write_csv(envdataGISMSLidar, file.path("..", "10_eo_data", "envdataGISMSLidar_missing_6_sites_20210131.csv"))
 ```
 
 join environmental covariate data to idx_meta_genomecov_filtered_wide, and write output. 
