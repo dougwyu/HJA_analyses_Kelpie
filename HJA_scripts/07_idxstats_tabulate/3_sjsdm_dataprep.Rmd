@@ -21,19 +21,18 @@ Prepares datasets for sjSDM analysis
 
 5.  Save the files to a data folder in the sjSDM folder
 
-```{r setup, eval=TRUE, include=TRUE}
+```{r setup}
 # script-specific libraries
 suppressPackageStartupMessages({
   library(corrplot)
-  library(vegan)
-})
+    })
 
 # general-use packages
 suppressPackageStartupMessages({
+  library(tidyverse)
   library(here)
   library(fs)
   library(glue)
-  library(tidyverse) # loads a bunch of packages (see below)
   library(readxl)
   library(cowplot)
   library(lubridate)
@@ -41,30 +40,42 @@ suppressPackageStartupMessages({
   library(broom)
   library(ggeffects)
   library(viridis)
-  library(arsenal) # for summary(comparedf())
+  library(arsenal) # for tableby()
   library(waldo) # for compare()
   library(sjmisc) # for rotate_df()
   library(envDocument)
   library(inspectdf)
   library(conflicted)
+  library(knitr)
+  library(beepr)
+  library(pivottabler)
+  library(furrr)
+  library(scales)
+  library(janitor)
+  library(tictoc)
 })
 
-conflict_prefer("filter", "dplyr", quiet = TRUE)
+
 conflict_prefer("mutate", "dplyr", quiet = TRUE)
 conflict_prefer("select", "dplyr", quiet = TRUE)
 conflict_prefer("summarise", "dplyr", quiet = TRUE)
+conflict_prefer("filter", "dplyr", quiet = TRUE)
 conflict_prefer("first", "dplyr", quiet = TRUE)
 conflict_prefer("here", "here", quiet = TRUE)
 conflict_prefer("separate", "tidyr", quiet = TRUE)
 conflict_prefer("unite", "tidyr", quiet = TRUE)
+conflict_prefer("trim", "sjmisc", quiet=TRUE)
+conflict_prefer("rescale", "scales", quiet=TRUE)
+conflict_prefer("rescale", "discard", quiet=TRUE)
 conflict_prefer("intersect", "dplyr", quiet = TRUE)
 conflict_prefer("setdiff", "dplyr", quiet = TRUE) # w/out this, R crashes
 conflict_prefer("to_factor", "sjmisc", quiet = TRUE)
 conflict_prefer("trim", "glue", quiet = TRUE)
 
-# Provide real numbers, not scientific notation.
+# Real numbers, not scientific notation.
 options(scipen = 999)
 ```
+
 
 ```{r working directory}
 here() # should be: "/Users/Negorashi2011/Dropbox/Working_docs/Luo_Mingjie_Oregon/HJA_analyses_Kelpie/HJA_scripts/07_idxstats_tabulate"
@@ -116,49 +127,59 @@ min(colSums(otu.pa.csv)) == minocc # should be TRUE
 # summcomparedf <- summary(comparedf(otu.pa.csv, otu.pa.csv_test))
 ```
 
-log and scale env variables
+log some variables and scale all numeric variables
 ```{r create scale.env.csv}
 # default is all environmental covariates: GIS + MS + Lidar
 
 scale.env.csv <- otuenv %>% 
   select(!contains("__")) %>% # remove OTUs
   select(-SiteName, -trap, -period, -UTM_E, -UTM_N, -lysis_ratio, 
-         -COISpike_sum, -starts_with("nor")) # %>% 
+         -COISpike_sum, -starts_with("nor"))  %>% 
+  relocate(clearcut, insideHJA) # %>% 
   # mutate(insideHJA = ifelse(insideHJA == "yes", 1, 0)) %>% 
   # mutate(clearcut = ifelse(clearcut == "yes", 1, 0))
 
 names(scale.env.csv)
-#  [1] "clearcut"           "insideHJA"          "oldGrowthIndex"    
-#  [4] "elevation_m"        "canopyHeight_m"     "minT_annual"       
-#  [7] "maxT_annual"        "precipitation_mm"   "distToRoad_m"      
-# [10] "distToStream_m"     "YrsSinceDist"       "B1_20180717"       
-# [13] "B2_20180717"        "B3_20180717"        "B4_20180717"       
-# [16] "B5_20180717"        "B6_20180717"        "B7_20180717"       
-# [19] "B10_20180717"       "B11_20180717"       "NDVI_20180717"     
-# [22] "EVI_20180717"       "B_20180717"         "G_20180717"        
-# [25] "W_20180717"         "B1_20180726"        "B2_20180726"       
-# [28] "B3_20180726"        "B4_20180726"        "B5_20180726"       
-# [31] "B6_20180726"        "B7_20180726"        "B10_20180726"      
-# [34] "B11_20180726"       "NDVI_20180726"      "EVI_20180726"      
-# [37] "B_20180726"         "G_20180726"         "W_20180726"        
-# [40] "B1_20180802"        "B2_20180802"        "B3_20180802"       
-# [43] "B4_20180802"        "B5_20180802"        "B6_20180802"       
-# [46] "B7_20180802"        "B10_20180802"       "B11_20180802"      
-# [49] "NDVI_20180802"      "EVI_20180802"       "B_20180802"        
-# [52] "G_20180802"         "W_20180802"         "B1_20180818"       
-# [55] "B2_20180818"        "B3_20180818"        "B4_20180818"       
-# [58] "B5_20180818"        "B6_20180818"        "B7_20180818"       
-# [61] "B10_20180818"       "B11_20180818"       "NDVI_20180818"     
-# [64] "EVI_20180818"       "B_20180818"         "G_20180818"        
-# [67] "W_20180818"         "mean.NDVI"          "mean.EVI"          
-# [70] "mean.bright"        "mean.green"         "mean.wet"          
-# [73] "mean.NDVI.scale"    "mean.EVI.scale"     "mean.green.scale"  
-# [76] "mean.bright.scale"  "mean.wet.scale"     "l_Cover_2m_max"    
-# [79] "l_Cover_2m_max_all" "l_Cover_2m_4m"      "l_Cover_2m_4m_all" 
-# [82] "l_Cover_4m_16m"     "l_p25"              "l_p25_all"         
-# [85] "l_p95"              "l_p95_all"          "l_rumple"         
+#   [1] "clearcut"           "insideHJA"          "be10"              
+#   [4] "tri"                "slope"              "aspect"            
+#   [7] "Nss"                "Ess"                "twi"               
+#  [10] "ht"                 "ht.r250"            "ht.r500"           
+#  [13] "ht.r1k"             "cov2_4"             "cov2_4.r250"       
+#  [16] "cov2_4.r500"        "cov2_4.r1k"         "cov4_16"           
+#  [19] "cov4_16.r250"       "cov4_16.r500"       "cov4_16.r1k"       
+#  [22] "be500"              "mTopo"              "cut.r1k.pt"        
+#  [25] "oldGrowthIndex"     "elevation_f"        "canopyHeight_f"    
+#  [28] "minT_annual"        "maxT_annual"        "precipitation_mm"  
+#  [31] "distToRoad_m"       "distToStream_m"     "YrsSinceDist"      
+#  [34] "B1_20180717"        "B2_20180717"        "B3_20180717"       
+#  [37] "B4_20180717"        "B5_20180717"        "B6_20180717"       
+#  [40] "B7_20180717"        "B10_20180717"       "B11_20180717"      
+#  [43] "NDVI_20180717"      "EVI_20180717"       "B_20180717"        
+#  [46] "G_20180717"         "W_20180717"         "B1_20180726"       
+#  [49] "B2_20180726"        "B3_20180726"        "B4_20180726"       
+#  [52] "B5_20180726"        "B6_20180726"        "B7_20180726"       
+#  [55] "B10_20180726"       "B11_20180726"       "NDVI_20180726"     
+#  [58] "EVI_20180726"       "B_20180726"         "G_20180726"        
+#  [61] "W_20180726"         "B1_20180802"        "B2_20180802"       
+#  [64] "B3_20180802"        "B4_20180802"        "B5_20180802"       
+#  [67] "B6_20180802"        "B7_20180802"        "B10_20180802"      
+#  [70] "B11_20180802"       "NDVI_20180802"      "EVI_20180802"      
+#  [73] "B_20180802"         "G_20180802"         "W_20180802"        
+#  [76] "B1_20180818"        "B2_20180818"        "B3_20180818"       
+#  [79] "B4_20180818"        "B5_20180818"        "B6_20180818"       
+#  [82] "B7_20180818"        "B10_20180818"       "B11_20180818"      
+#  [85] "NDVI_20180818"      "EVI_20180818"       "B_20180818"        
+#  [88] "G_20180818"         "W_20180818"         "mean.NDVI"         
+#  [91] "mean.EVI"           "mean.bright"        "mean.green"        
+#  [94] "mean.wet"           "mean.NDVI.scale"    "mean.EVI.scale"    
+#  [97] "mean.green.scale"   "mean.bright.scale"  "mean.wet.scale"    
+# [100] "l_Cover_2m_max"     "l_Cover_2m_max_all" "l_Cover_2m_4m"     
+# [103] "l_Cover_2m_4m_all"  "l_Cover_4m_16m"     "l_p25"             
+# [106] "l_p25_all"          "l_p95"              "l_p95_all"         
+# [109] "l_rumple"        
 
-corrplot(cor(scale.env.csv[, -c(1:2)]), method = "ellipse", type = "lower", tl.cex = 0.5)
+corrplot(cor(scale.env.csv[, -c(1:2)]), method = "ellipse", 
+         type = "lower", tl.cex = 0.5)
 
 # GIS + MS + LiDAR:  gismslidar
 # average, optionally log, select, and scale env covariates
@@ -172,7 +193,7 @@ scale.env.csv <- scale.env.csv %>%
     mutate(lg_cover2m_max = log(l_Cover_2m_max + 0.001)) %>% 
     mutate(lg_cover2m_4m = log(l_Cover_2m_4m + 0.001)) %>%
     mutate(lg_cover4m_16m = log(l_Cover_4m_16m + 0.001)) %>%   
-    select(clearcut, insideHJA, oldGrowthIndex, elevation_m, canopyHeight_m, precipitation_mm, mean.NDVI, mean.EVI, mean.green, mean.wet, l_p25, l_rumple, B1_mean, B4_mean, lg_DistStream, lg_DistRoad, lg_YrsDisturb, lg_cover2m_max, lg_cover2m_4m, lg_cover4m_16m) %>% 
+    select(clearcut, insideHJA, be10:cut.r1k.pt, oldGrowthIndex, elevation_f, canopyHeight_f, precipitation_mm, mean.NDVI, mean.EVI, mean.green, mean.wet, l_p25, l_rumple, B1_mean, B4_mean, lg_DistStream, lg_DistRoad, lg_YrsDisturb, lg_cover2m_max, lg_cover2m_4m, lg_cover4m_16m) %>% 
     mutate(across(where(is.numeric), scale))
 
 # msdate <- c("20180717") # alternative "20180726" # date of MS data 
