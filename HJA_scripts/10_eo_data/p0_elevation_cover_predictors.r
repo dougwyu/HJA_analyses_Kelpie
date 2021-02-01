@@ -238,6 +238,7 @@ str(topo.df)
 summary(topo.df)
 
 save(topo.df, file = "Hmsc_CD/oregon_ada/data/topo_data.rdata")
+save(topo.df, file = "HJA_scripts/10_eo_data/topo_data.rdata")
 
 cat(paste(colnames(topo.df), collapse = '", "'))
 
