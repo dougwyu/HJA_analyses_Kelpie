@@ -27,7 +27,7 @@ minocc = 5
 trap <- "M1"; period = "S1"
 date.model.run = 20210125   # !!! change accordingly
 
-resFolder <- "results_sjSDM/tuning_YL2"
+resFolder <- "results_sjSDM/tuning_YL"
 
 ### r load data### 
 # otu.train <- read.csv(paste0("data/otu.train.", abund, ".csv"), header = F)
@@ -96,111 +96,109 @@ tuning.dd = data.frame(lambda.env = numeric(),
 
 # hiddenN <- dropN <- alpha.spN <- lambda.spN <- alpha.envN <- 1
 
-lambda.envN = 3		# 1,2,3,4 four jobs in AD
+# lambda.envN = 1		# 1,2,3,4 four jobs in AD
 
 # testing
-# for (alpha.envN in 1:2) {
+# for(lambda.envN in 1:2){
+# for (alpha.envN in 1) {
 #   for (lambda.spN in 1) {
 #     for (alpha.spN in 1) {
 #       for (dropN in 1) {
 #         for (hiddenN in 1) {
 
-for (alpha.envN in seq_along(alpha.env)) {
-  for (lambda.spN in seq_along(lambda.sp)) {
-    for (alpha.spN in seq_along(alpha.sp)) {
-      for (dropN in seq_along(drop)) {
-        for (hiddenN in seq_along(hidden)) {
-
-          lambda.bioN = sample(1:11,1)
-          alpha.bioN = sample(1:11,1)
-          print(c(lambda.envN, alpha.envN, lambda.spN, alpha.spN, dropN, hiddenN))
-          
-          model.train = sjSDM(
-            Y = s.otu.train,
-            env = DNN(data=scale.env.train, formula = ~.,
-                      hidden=hidden[[hiddenN]],
-                      lambda = lambda.env[lambda.envN],
-                      alpha = alpha.env[alpha.envN],
-                      activation=acti.sp,
-                      dropout=drop[dropN],
-                      bias=T),
-            biotic = bioticStruct(lambda=sample.bio[lambda.bioN],
-                                  alpha=sample.bio[alpha.bioN], 
-                                  on_diag=F, inverse = FALSE),
-            spatial = linear(data=XY.train, ~0+UTM_E*UTM_N, 
-                             lambda=lambda.sp[lambda.spN], 
-                             alpha=alpha.sp[alpha.spN]),
-            learning_rate = 0.003, # 0.003 recommended for high species number 
-            step_size = NULL, iter = 150L, 
-            family=stats::binomial('probit'), 
-            sampling = 5000L, # 150L, 5000L
-            device = "gpu"
-            )
-          
-          saveRDS(
-            list(model=model.train, random=data.frame('lambda.bioN'=lambda.bioN, 'alpha.bioN'=alpha.bioN)),
-            file.path(resFolder,
-                      glue::glue('s-jSDM_tuning_model_{period}_{trap}_{abund}_min{minocc}_{formula.env}_lambdaE{lambda.envN}_{alpha.envN}_{lambda.spN}_{alpha.spN}_hidden{hiddenN}_{dropN}.RDS')
-                      )
-            )
-          
-          # Do testing and save results in data frame
-          tdd = data.frame(lambda.env = lambda.env[lambda.envN], 
-                           alpha.env = alpha.env[alpha.envN], 
-                           lambda.sp = lambda.sp[lambda.spN], 
-                           alpha.sp = alpha.sp[alpha.spN], 
-                           lambda.bio = sample.bio[lambda.bioN],
-                           alpha.bio = sample.bio[alpha.bioN], 
-                           drop = drop[dropN],
-                           hidden = as.character(hiddenN), 
-                           loglike = logLik(model.train), 
-                           loss= model.train$history[length(model.train$history)], 
-                           AUC.explain=.1, AUC.test=.1)
-          
-          for (pred in 1:2) {
-
-            # 1 -> 'test'
-            newdd = scale.env.test ; newsp = XY.test; otudd = s.otu.test
-
-            if (pred==2) { newdd = NULL; newsp = NULL; otudd = s.otu.train}
-
-            pred.dd = apply(abind::abind(lapply(1:3, function(i) predict(model.train, newdata=newdd, SP=newsp)),
-                                         along = -1L), 2:3, mean)
-
-            attr(pred.dd, 'dimnames') = NULL
-# 
-#             if (pred==1) {
-#               otudd = rbind(otudd, count=(base::colSums(otudd)>0 & base::colSums(otudd)<dim(otudd)[1])*1 )
-#               pred.dd = pred.dd[ ,which(otudd[dim(otudd)[1],] == 1)]
-#               otudd = otudd[1:(dim(otudd)[1]-1), which(otudd[dim(otudd)[1],] == 1)]
-#             }
- 
-             otudd.pa = (otudd>0)*1
-
-#             roc.dd = lapply(1:dim(otudd)[2], function(i) pROC::roc(otudd.pa[,i], pred.dd[,i]))
-#             auc.mean = mean(as.numeric(sapply(lapply(roc.dd, function(i) stringr::str_split(pROC::auc(i), ':')), function(x) x[[1]][1] )))
+for(lambda.envN in seq_along(lambda.env)){
+  for (alpha.envN in seq_along(alpha.env)) {
+    for (lambda.spN in seq_along(lambda.sp)) {
+      for (alpha.spN in seq_along(alpha.sp)) {
+        for (dropN in seq_along(drop)) {
+          for (hiddenN in seq_along(hidden)) {
             
-            auc <- tryCatch(expr = sapply(1:ncol(pred.dd), function(i) Metrics::auc(otudd.pa[,i],pred.dd[,i])),
-                     error = function(err){ return(NA) })
+            lambda.bioN = sample(1:11,1)
+            alpha.bioN = sample(1:11,1)
+            print(c(lambda.envN, alpha.envN, lambda.spN, alpha.spN, dropN, hiddenN))
             
-            auc.mean <- mean(auc, na.rm= T)
-
-            if (pred==2) {tdd$AUC.explain=auc.mean}
-            if (pred==1) {tdd$AUC.test=auc.mean}
+            model.train = sjSDM(
+              Y = s.otu.train,
+              env = DNN(data=scale.env.train, formula = ~.,
+                        hidden=hidden[[hiddenN]],
+                        lambda = lambda.env[lambda.envN],
+                        alpha = alpha.env[alpha.envN],
+                        activation=acti.sp,
+                        dropout=drop[dropN],
+                        bias=T),
+              biotic = bioticStruct(lambda=sample.bio[lambda.bioN],
+                                    alpha=sample.bio[alpha.bioN], 
+                                    on_diag=F, inverse = FALSE),
+              spatial = linear(data=XY.train, ~0+UTM_E*UTM_N, 
+                               lambda=lambda.sp[lambda.spN], 
+                               alpha=alpha.sp[alpha.spN]),
+              learning_rate = 0.003, # 0.003 recommended for high species number 
+              step_size = NULL, iter = 150L, 
+              family=stats::binomial('probit'), 
+              sampling = 5000L, # 150L, 5000L
+              device = "gpu"
+            )
+            
+            saveRDS(
+              list(model=model.train, random=data.frame('lambda.bioN'=lambda.bioN, 'alpha.bioN'=alpha.bioN)),
+              file.path(resFolder,
+                        glue::glue('s-jSDM_tuning_model_{period}_{trap}_{abund}_min{minocc}_{formula.env}_lambdaE{lambda.envN}_{alpha.envN}_{lambda.spN}_{alpha.spN}_hidden{hiddenN}_{dropN}.RDS')
+              )
+            )
+            
+            # Do testing and save results in data frame
+            tdd = data.frame(lambda.env = lambda.env[lambda.envN], 
+                             alpha.env = alpha.env[alpha.envN], 
+                             lambda.sp = lambda.sp[lambda.spN], 
+                             alpha.sp = alpha.sp[alpha.spN], 
+                             lambda.bio = sample.bio[lambda.bioN],
+                             alpha.bio = sample.bio[alpha.bioN], 
+                             drop = drop[dropN],
+                             hidden = as.character(hiddenN), 
+                             loglike = logLik(model.train), 
+                             loss= model.train$history[length(model.train$history)], 
+                             AUC.explain=.1, AUC.test=.1)
+            
+            for (pred in 1:2) {
+              
+              # 1 -> 'test'
+              newdd = scale.env.test ; newsp = XY.test; otudd = s.otu.test
+              
+              if (pred==2) { newdd = NULL; newsp = NULL; otudd = s.otu.train}
+              
+              pred.dd = apply(abind::abind(lapply(1:3, function(i) predict(model.train, newdata=newdd, SP=newsp)),
+                                           along = -1L), 2:3, mean)
+              
+              attr(pred.dd, 'dimnames') = NULL
+              
+              if (pred==1) {
+                otudd = rbind(otudd, count=(base::colSums(otudd)>0 & base::colSums(otudd)<dim(otudd)[1])*1 )
+                pred.dd = pred.dd[ ,which(otudd[dim(otudd)[1],] == 1)]
+                otudd = otudd[1:(dim(otudd)[1]-1), which(otudd[dim(otudd)[1],] == 1)]
+              }
+              
+              otudd.pa = (otudd>0)*1
+              
+              roc.dd = lapply(1:dim(otudd)[2], function(i) pROC::roc(otudd.pa[,i], pred.dd[,i]))
+              auc.mean = mean(as.numeric(sapply(lapply(roc.dd, function(i) stringr::str_split(pROC::auc(i), ':')), function(x) x[[1]][1] )))
+              
+              if (pred==2) {tdd$AUC.explain=auc.mean}
+              if (pred==1) {tdd$AUC.test=auc.mean}
+            }
+            
+            tuning.dd = rbind(tuning.dd, tdd)
+            
+            print(c(lambda.envN, alpha.envN, lambda.spN, alpha.spN, dropN))
+            
+            rm(model.train, tdd)
+            
+            write.table(tuning.dd, 
+                        file = file.path(resFolder, 
+                                         glue::glue('manual_tuning_sjsdm_{period}_{trap}_{abund}_min{minocc}_{formula.env}_{date.model.run}.csv')),
+                        row.names=F, sep=',')
+            
           }
-          
-          tuning.dd = rbind(tuning.dd, tdd)
-          
-          print(c(lambda.envN, alpha.envN, lambda.spN, alpha.spN, dropN))
-          
-          rm(model.train, tdd)
-          
-          write.table(tuning.dd, 
-                      file = file.path(resFolder, 
-                  glue::glue('manual_tuning_sjsdm_{period}_{trap}_{abund}_min{minocc}_{formula.env}_{date.model.run}_lambdaE{lambda.envN}.csv')),
-                      row.names=F, sep=',')
-          
-          }
+        }
       }
     }
   }

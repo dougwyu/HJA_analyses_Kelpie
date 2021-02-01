@@ -29,7 +29,7 @@ sapply(1:ncol(Pred.test), function(i) Metrics::auc(Y.test[,i],Pred.test[,i]))
 # second value is different
 
 # pROC::auc() requires direction to be specified
-rocList <- lapply(1:ncol(Pred.test), function(i) pROC::roc(Y.test[,i],Pred.test[,i]))
+rocList <- lapply(1:ncol(Pred.test), function(i) pROC::roc(Y.test[,i],Pred.test[,i], direction = "<"))
 
 ## In the second species, the average predicted values at presences happen to be lower than the average values for absences
 ## Can see this as the equivalent of the Wilcoxon test - see plots

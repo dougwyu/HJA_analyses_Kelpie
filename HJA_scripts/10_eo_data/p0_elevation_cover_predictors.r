@@ -17,20 +17,34 @@ nadutm10 <- 26910
 
 # gis <- "J:/UEA/Oregon/gis"
 gis <- file.path(wd, "HJA_scripts/10_eo_data/raw_gis_data") 
-
-## 
+ 
 dir(gis)
 # raster files are here:
 dir(file.path(gis, "r_utm"))
 
 # get points
-# get data
-source("Hmsc_CD/local/L1_read_data.r")
-rm(Y.train.pa, Y.train.qp, P, otu.pa.csv, otu.qp.csv, X.train)
+samtoolsfilter <- "F2308" # F2308 filter only
+samtoolsqual <- "q48"
+minimaprundate <- 20200929
+kelpierundate <- 20200927
+primer <- "BF3BR2"
 
-head(S.train)
-xy.sf <- st_as_sf(S.train, coords = c("UTM_E", "UTM_N"), crs = nadutm10)
-rm(S.train)
+gitHub <- "https://raw.githubusercontent.com/dougwyu/HJA_analyses_Kelpie/master/Kelpie_maps"
+
+outputidxstatstabulatefolder <- paste0("outputs_minimap2_",minimaprundate,"_",samtoolsfilter,"_", 
+                                       samtoolsqual, "_kelpie", kelpierundate,"_", primer,"_vsearch97")
+
+datFile <- paste0("sample_by_species_table_", samtoolsfilter, "_minimap2_", minimaprundate,"_kelpie",
+                  kelpierundate,"_uncorr.csv")
+
+otuenv <- read.csv(file.path(gitHub, outputidxstatstabulatefolder, datFile))
+
+otuenv[1:6,1:10]
+coords <- unique(otuenv[,c("SiteName", "UTM_E", "UTM_N")])
+xy.sf <- st_as_sf(coords, coords = c("UTM_E", "UTM_N"), crs = nadutm10)
+
+rm(gitHub, otuenv, outputidxstatstabulatefolder, datFile, primer, 
+   kelpierundate, minimaprundate, samtoolsfilter, samtoolsqual)
 
 # transform to wgs utm to match rasters
 xy.utm <- st_transform(xy.sf, crs = utm10N)
@@ -140,7 +154,7 @@ system.time(
 )
 twi
 # $atb is the twi
-save(twi$atb, file = file.path(gis, "r_utm/twi.rdata"))
+save(twi, file = file.path(gis, "r_utm/twi.rdata"))
 
 # user  system elapsed  # on laptop
 # 1299.66    4.90 1424.00
@@ -198,6 +212,8 @@ writeRaster(cutStack, bylayer = T, filename = file.path(gis, "r_utm/disturb.tif"
 
 # load(file.path(gis, "r_utm/cut_stack.rdata"))
 
+### Extract values  ####
+
 ## Extract values and add to data frame
 cut.r1k.pt <- extract(cutStack$cut_r1k, xy.utm)
 
@@ -216,7 +232,7 @@ terr.pt <- raster::extract(terr, xy.utm)
 cov.pt <- raster::extract(covStack, xy.utm)
 
 ## make data frame
-topo.df <- data.frame(uniqueID = xy.utm$uniqueID, terr.pt, cov.pt, be500 = be500, mTopo, cut.r1k.pt)
+topo.df <- data.frame(siteName = xy.utm$SiteName, terr.pt, cov.pt, be500 = be500, mTopo, cut.r1k.pt)
 head(topo.df)
 str(topo.df)
 summary(topo.df)

@@ -40,6 +40,7 @@ Y.train.pa.min10 <- Y.pa.min10[train.rows, ]
 X.test <- env.vars[test.rows,]
 X.train <- env.vars[train.rows,]
 
+
 xy.train <- xy.scale[train.rows,]
 xy.test <- xy.scale[test.rows,]
 
@@ -59,16 +60,20 @@ str(model, max.level = 1)
 pred_data <- pred.link.test
 obs_data <- Y.test.pa.min10
 
-x <- pred_data[,58]
-y <- obs_data[,58]
-diff(tapply(x, y, mean, na.rm = T))
+# x <- pred_data[,58]
+# y <- obs_data[,58]
+# diff(tapply(x, y, mean, na.rm = T))
 
 
-x <- as.list(pred_data)
 
-prob.cm <- function(pred_data, obs_data, model, metrics){
+prob.cm <- function(pred_data, obs_data, model, p, k, metrics){
 
-  if(missing(metrics)) metrics <- c("TPR", "TPR", "TNR", "FNR", "Prev", "Acc", "Tjur", "AUC")
+  # p - number of predictors
+  # k - no estimated parameters
+  
+  if(nrow(pred_data) != nrow(obs_data)) stop("")
+  
+  if(missing(metrics)) metrics <- c("TPR", "TPR", "TNR", "FNR", "Prev", "Acc", "Tjur", "AUC", "R2", "adjR2")
   
   TP <- colSums(pred_data * obs_data) # sum of probability of presences at True presences
   FP <- colSums(pred_data * (1 - obs_data)) # sum of prob of presences at True absences
@@ -103,9 +108,25 @@ prob.cm <- function(pred_data, obs_data, model, metrics){
   AUC <- tryCatch(expr = sapply(1:ncol(pred_data), function(i) Metrics::auc(obs_data[,i],pred_data[,i])),
                   error = function(err){ return(NA) })
   
+  # lawson et al 2014 Appendix S9
+  loglikP <- colSums( log( pred_data * obs_data + (1-pred_data)*(1-obs_data) ) )
+  loglikN <- colSums( log( mean(pred_data)*obs_data + (1-mean(pred_data))*(1-obs_data) ) ) # NUll intercept only, (so mean)
+  rsq <- (loglikP-loglikN)/(1-loglikN)
+  
+  # Guisan
+  adjR2 <- 1-( (n-1)/(n-p) ) * (1-rsq)
+  
+  # Nakagawa 
+  rsq <- 1 - (loglikN/loglikP)^(2/n)
+  
+  adjR2 <- rsq/(1 - loglikN^(2/n))
   
   # cm = cbind(TP=TP, FP=FP, TN=TN, FN=FN),
-  res <- cbind(TPR=TPR, FPR=FPR, TNR=TNR, FNR=FNR, Prev=Prevalence, Acc=Accuracy, Tjur=Tjur, AUC=AUC)
+  res <- cbind(TPR=TPR, FPR=FPR, TNR=TNR, FNR=FNR, 
+               Prev=Prevalence, Acc=Accuracy, 
+               Tjur=Tjur, 
+               AUC=AUC, 
+               R2 = rsq, adjR2 = adjR2)
   
   # subset, if required
   res <- res[,metrics]
@@ -114,7 +135,7 @@ prob.cm <- function(pred_data, obs_data, model, metrics){
 }
 
 # probabilistic confusion matrix
-cm <- prob.cm(pred.link.test, Y.test.pa.min10)
+cm <- prob.cm(pred.link.test, Y.test.pa.min10, p = 10)
 head(cm)
 apply(cm, 2, mean, na.rm = T)
 
