@@ -7,17 +7,17 @@ output: html_document
 
 Prepares datasets for sjSDM analysis
 
-1.  Reads in one of the otuenv sub-datasets output by 2.1_FSL_correction.Rmd (currently M1S1). This file has been log(FSL)-corrected, subset to M1S1, M2S1, M1S2, or M2S2, and saved as a csv file:
+1.  Reads in one of the otuenv sub-datasets output by 2.1_FSL_correction.Rmd (currently M1S1). This file has been log(FSL)-corrected, subset to M1S1, M2S1, M1S2, or M2S2, and saved as a csv file.
     otuenv_M1S1_minimap2_20200929_kelpie20200927.csv
     otuenv_M2S1_minimap2_20200929_kelpie20200927.csv
     otuenv_M1S2_minimap2_20200929_kelpie20200927.csv
     otuenv_M2S2_minimap2_20200929_kelpie20200927.csv
-
-2.  Creates a scaled XY file for sampling locations
+    
+2.  Creates a scaled XY.csv file for sampling locations
 
 3.  Creates two sample X OTU tables, limited to OTUs that appear >=minocc times (currently 5), one with quasiprobabilities and one with presence-absence:  otu.pa.csv and otu.qp.csv
 
-4.  Create an environmental covariates table from a subset of all the env covariates, some of which are averaged, some are logged, and numeric ones are scaled
+4.  Create an environmental covariates table from a subset of all the env covariates, some of which are averaged, some are logged, and numeric ones are scaled: scale.env.csv
 
 5.  Save the files to a data folder in the sjSDM folder
 
