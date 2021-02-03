@@ -7,7 +7,7 @@
 ```{r setup}
 # setwd('.../HJA_analyses_Kelpie/HJA_scripts/12_sjsdm_general_model_outputs')
 	
-lapply(c('tidyverse','here','conflicted','reticulate','sjSDM','glue'), library, character.only=T)
+lapply(c('tidyverse','here','conflicted','reticulate','sjSDM','glue','vegan'), library, character.only=T)
 	
 conflict_prefer("filter", "dplyr")
 conflict_prefer("select", "dplyr")
