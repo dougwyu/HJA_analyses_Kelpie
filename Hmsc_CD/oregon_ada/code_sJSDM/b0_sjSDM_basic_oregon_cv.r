@@ -1,5 +1,6 @@
 
 ## sJSDM on ADA
+# setwd("J:/UEA/gitHRepos/HJA_analyses_Kelpie/Hmsc_CD/oregon_ada")
 
 ## trial run 
 options(echo=TRUE) # if you want see commands in output file
@@ -8,6 +9,7 @@ library(sjSDM)
 packageVersion("sjSDM")
 # [1] ‘0.1.3.9000’
 getwd() # always run sub from oregon_ada
+library(dplyr)
 
 
 # https://theoreticalecology.github.io/s-jSDM/
@@ -16,44 +18,55 @@ getwd() # always run sub from oregon_ada
 # try basic model on oregon data
 source("code_sjSDM/S1_read_data.r")
 # gets env.vars, out.pa.csv, otu.qp.csv, S.train
+rm(P, otu.qp.csv)
 
 # Data reduction - reduce species
-raretaxa <- which(colSums(Y.train.pa > 0) < 10)
+raretaxa <- which(colSums(otu.pa.csv > 0) < 10)
 length(raretaxa)
-Y.train.pa_min10 <- as.matrix(Y.train.pa[, -raretaxa]) # reduced species
+otu.pa.minocc <- as.matrix(otu.pa.csv[, -raretaxa]) # reduced species
 rm(raretaxa)
 
-XFormula1 <- as.formula(~be10+B11_median+mean.EVI+insideHJA + Ess + ht + ht.r500 + cov4_16 + cov4_16.r500 + mTopo)
+
+# scale all togher for now... just for test
+env.vars.scale <- env.vars %>%
+  mutate(across(where(is.numeric), scale))
+head(env.vars.scale)
+
+# XFormula1 <- as.formula(~be10+B11_median+mean.EVI+insideHJA + Ess + ht + ht.r500 + cov4_16 + cov4_16.r500 + mTopo)
 # check names
-all(all.vars(XFormula1) %in% names(X.train))
-str(X.train)
+# all(all.vars(XFormula1) %in% names(env.vars.scale))
 
 
 # spatial data here:
-head(S.train)
-xy.scale <- scale(S.train[,c("UTM_E", "UTM_N")])
-# head(xy.scale)
+# spatial data here:
+head(Sp.data)
+# scale spatial coords
+Sp.data.scale <- scale(Sp.data[, c("UTM_E", "UTM_N")])
+head(Sp.data.scale)
+is.matrix(Sp.data.scale)
 
 # this is what goes into the model
-# mm <- model.matrix(XFormula1, data = env.vars)
+# mm <- model.matrix(XFormula1, data = env.vars.scale)
 # head(mm)
 
 # make and run model
-model <- sjSDM(Y = Y.train.pa_min10,
-               env = linear(data = env.vars, 
-                            formula = ~be10+B11_median+mean.EVI+insideHJA + Ess + ht + ht.r500 + cov4_16 + cov4_16.r500 + mTopo), # linear model on env covariates
-               spatial = linear(data = xy.scale, formula = ~0+UTM_E:UTM_N), # interactions of coordinates
-               se = TRUE, family=binomial("probit"), sampling = 100L,
+model <- sjSDM(Y = otu.pa.minocc,
+               env = linear(data = env.vars.scale, 
+                            formula = ~be10+B11_median+mean.EVI+insideHJA + Ess + ht + ht.r500 + 
+                              cov4_16 + cov4_16.r500 + mTopo), # linear model on env covariates
+               spatial = linear(data = Sp.data.scale, formula = ~0+UTM_E:UTM_N), # interactions of coordinates
+               se = TRUE, family=binomial("probit"), sampling = 1000L, iter = 100L,
                device = "gpu")
 
+
 # model summary
-summary(model)
+# summary(model)
 
 # coefficients
 # coef(model)
 
-# imp = importance(model)
-# print(imp)
+imp = importance(model)
+print(imp)
 # 
 # pdf("results_sjSDM/trial_oregon_sJSDM_importance.pdf")
 # plot(imp)
@@ -81,10 +94,11 @@ summary(model)
 # sample.bio = seq(0,1,length.out=11)
 
 # sjSDM_cv
-tune_results = sjSDM_cv(Y = Y.train.pa_min10,
-                        env = linear(data = env.vars, 
-                                     formula = ~be10+B11_median+mean.EVI+insideHJA + Ess + ht + ht.r500 + cov4_16 + cov4_16.r500 + mTopo),
-                        spatial = linear(xy.scale, ~0 + UTM_E:UTM_N),
+tune_results = sjSDM_cv(Y = otu.pa.minocc,
+                        env = linear(data = env.vars.scale, 
+                                     formula = ~be10+B11_median+mean.EVI+insideHJA + Ess + ht + ht.r500 +
+                                       cov4_16 + cov4_16.r500 + mTopo),
+                        spatial = linear(Sp.data.scale, ~0 + UTM_E:UTM_N),
                         biotic = bioticStruct(on_diag = FALSE, inverse = FALSE), # inverse=TRUE is 'better' but much slower
                         tune = "random", # random steps in tune-parameter space
                         learning_rate = 0.003, # 0.01 default, 0.003 recommended for high species number
@@ -118,4 +132,4 @@ dev.off()
 best <- plot(tune_results, perf = "logLik")
 
 # save results
-save(model, tune_results, best, file ="results_sjSDM/oregon_trial_tune.rdata")
+save(model, imp, tune_results, best, file ="results_sjSDM/oregon_trial_tune2.rdata")

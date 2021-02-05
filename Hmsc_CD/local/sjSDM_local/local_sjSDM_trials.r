@@ -7,6 +7,7 @@ library(sjSDM)
 packageVersion("sjSDM")
 # [1] ‘0.1.3.9000’
 getwd() 
+
 # setwd("J:/UEA/gitHRepos/HJA_analyses_Kelpie")
 
 # https://theoreticalecology.github.io/s-jSDM/
@@ -14,6 +15,7 @@ getwd()
 
 # try basic model on oregon data
 source("Hmsc_CD/local/L1_read_data_v3.r")
+rm(P, otu.sp.csv)
 
 # Data reduction - reduce species to only those with more than minocc across all sites
 minocc <- 25
@@ -47,7 +49,7 @@ head(Sp.data.scale)
 
 
 # make and run model
-model <- sjSDM(Y = Y.train.pa_minocc,
+model <- sjSDM(Y = otu.pa.minocc,
                env = linear(data = env.vars.scale, 
                             formula = ~be10+B11_median+mean.EVI+insideHJA + Ess + ht + ht.r500 + 
                               cov4_16 + cov4_16.r500 + mTopo), # linear model on env covariates
@@ -99,3 +101,34 @@ tune_results = sjSDM_cv(Y = otu.pa.minocc,
 )
 
 save(tune_results, file = "Hmsc_CD/local/sjSDM_local/trial29_tune.rdata")
+
+
+
+load("Hmsc_CD/local/sjSDM_local/trial29_res.rdata")
+
+mod.summ <- summary(model)
+
+str(mod.summ, max.level = 1)
+
+# coeffecients for all evn vars and species
+mod.summ$coefs
+
+mod.summ$coefmat[1:10, 1:4]
+mod.summ$P[1:10, 1:10]
+
+## extract ssignificant vars
+29*11 # no sp * no coeff
+
+sum(mod.summ$coefmat[, 4] < 0.05)
+
+sig.vars <- rownames(mod.summ$coefmat)[mod.summ$coefmat[, 4] < 0.05]
+
+var.df <- data.frame(rowN = sig.vars) %>%
+  tidyr::separate(col = rowN, into = c("species", "predictor"),
+                  remove = FALSE, sep = " ") %>%
+  filter(predictor != "(Intercept)")
+
+var.df
+barplot(sort(table(var.df$predictor)))
+
+

@@ -11,38 +11,57 @@ getwd() # always run sub from oregon_ada. # should be /gpfs/home/hsp20azu/oregon
 # setwd("J:/UEA/gitHRepos/HJA_analyses_Kelpie/Hmsc_CD/oregon_ada")
 
 
-# https://theoreticalecology.github.io/s-jSDM/
-# https://github.com/TheoreticalEcology/s-jSDM
 
 # try basic model on oregon data
 source("code_sjSDM/S1_read_data.r")
 # gets env.vars, out.pa.csv, otu.qp.csv, S.train
+rm(P, otu.qp.csv)
 
 # Data reduction - reduce species
-raretaxa <- which(colSums(Y.train.pa > 0) < 10)
+raretaxa <- which(colSums(otu.pa.csv > 0) < 10)
 length(raretaxa)
-Y.train.pa_min10 <- as.matrix(Y.train.pa[, -raretaxa]) # reduced species
+otu.pa.minocc <- as.matrix(otu.pa.csv[, -raretaxa]) # reduced species
 rm(raretaxa)
 
-XFormula1 <- as.formula(~be10+B11_median+mean.EVI+insideHJA + Ess + ht + ht.r500 + cov4_16 + cov4_16.r500 + mTopo)
-# check names
-all(all.vars(XFormula1) %in% names(X.train))
-str(X.train)
 
-# this is what goes into the model
-# mm <- model.matrix(XFormula1, data = env.vars)
-# head(mm)
+# scale all togher for now... just for test
+env.vars.scale <- env.vars %>%
+  mutate(across(where(is.numeric), scale))
+head(env.vars.scale)
+
+# XFormula1 <- as.formula(~be10+B11_median+mean.EVI+insideHJA + Ess + ht + ht.r500 + cov4_16 + cov4_16.r500 + mTopo)
+# check names
+# all(all.vars(XFormula1) %in% names(env.vars.scale))
+
 
 # spatial data here:
-head(S.train)
+# spatial data here:
+head(Sp.data)
+# scale spatial coords
+Sp.data.scale <- scale(Sp.data[, c("UTM_E", "UTM_N")])
+head(Sp.data.scale)
+is.matrix(Sp.data.scale)
+
+# this is what goes into the model
+# mm <- model.matrix(XFormula1, data = env.vars.scale)
+# head(mm)
 
 # make and run model
-model <- sjSDM(Y = Y.train.pa_min10,
-               env = linear(data = env.vars, 
-                            formula = ~be10+B11_median+mean.EVI+insideHJA + Ess + ht + ht.r500 + cov4_16 + cov4_16.r500 + mTopo), # linear model on env covariates
-               spatial = linear(data = S.train, formula = ~0+UTM_E:UTM_N), # interactions of coordinates
-               se = TRUE, family=binomial("probit"), sampling = 100L,
+model <- sjSDM(Y = otu.pa.minocc,
+               env = linear(data = env.vars.scale, 
+                            formula = ~be10+B11_median+mean.EVI+insideHJA + Ess + ht +
+                              ht.r500 + cov4_16 + cov4_16.r500 + mTopo), # linear model on env covariates
+               spatial = linear(data = Sp.data.scale, formula = ~0+UTM_E:UTM_N), # interactions of coordinates
+               se = TRUE, family=binomial("probit"), sampling = 1000L, iter = 500L,
                device = "gpu")
+
+
+# model summary
+# summary(model)
+
+# coefficients
+# coef(model)
+
 
 # model summary
 summary(model)

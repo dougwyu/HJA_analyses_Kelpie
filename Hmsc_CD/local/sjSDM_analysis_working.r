@@ -70,7 +70,8 @@ colSums(link_pred>0)
 
 
 #### Tuning data
-load("Hmsc_CD/oregon_ada/results_sjSDM/oregon_trial_tune.rdata")
+dir("Hmsc_CD/oregon_ada/results_sjSDM")
+load("Hmsc_CD/oregon_ada/results_sjSDM/oregon_trial_tune2.rdata")
 
 str(model, max.level = 1)
 str(tune_results, max.level = 1)
