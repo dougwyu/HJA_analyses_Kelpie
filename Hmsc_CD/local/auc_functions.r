@@ -24,6 +24,7 @@ Pred.test
 
 # calculate AUC values - pROC
 sapply(1:ncol(Pred.test), function(i) as.numeric(pROC::roc(Y.test[,i],Pred.test[,i])$auc))
+
 # Metrics package
 sapply(1:ncol(Pred.test), function(i) Metrics::auc(Y.test[,i],Pred.test[,i]))
 # second value is different

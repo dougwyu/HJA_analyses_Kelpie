@@ -3,6 +3,7 @@
 # setwd("J:/UEA/gitHRepos/HJA_analyses_Kelpie/Hmsc_CD/oregon_ada")
 # dir()
 
+
 # Jan 18, 2021
 # Jan 25, 2021
 # code on sjsdm model run with DNN (for ADA cluster)
@@ -22,34 +23,17 @@ packageVersion("sjSDM")
 library(glue)
 library(pROC)
 
-abund = 'pa'		# 'qp','pa'  # is overwritten by data file loading.
+abund = 'qp'		# 'qp','pa'  # is overwritten by data file loading.
 minocc = 5
 trap <- "M1"; period = "S1"
 date.model.run = 20210125   # !!! change accordingly
 
-resFolder <- "results_sjSDM/tuning_YL_pa_newVars" # tuning_YL_qp
+resFolder <- paste0("tuning_YL_", abund, "_newVars") # tuning_YL_qp
+dir.create(resFolder)
 
 ### r load data### 
-# otu.train <- read.csv(paste0("data/otu.train.", abund, ".csv"), header = F)
-# scale.env.train <- read.table("data/scale.env.train.csv", sep = " ", header = T)
-# XY.train <- read.table("data/scale.XY.train.csv", sep = ",", header = T)
-
-# head(otu.train)
-# str(otu.train)
-# 
-# head(scale.env.train)
-# str(scale.env.train)
-# 
-# head(XY.train)
-
-# from here
-# "J:\UEA\gitHRepos\HJA_analyses_Kelpie\Hmsc_CD\oregon_ada\data\otu.train.pa.csv"
-# "J:\UEA\gitHRepos\HJA_analyses_Kelpie\Hmsc_CD\oregon_ada\data\otu.train.qp.csv"
-# "J:\UEA\gitHRepos\HJA_analyses_Kelpie\Hmsc_CD\oregon_ada\data\scale.env.train.csv"
-# "J:\UEA\gitHRepos\HJA_analyses_Kelpie\Hmsc_CD\oregon_ada\data\scale.XY.train.csv"
-
 # data creatd here and saved: Hmsc_CD|oregon_ada|code_sjSDM|sjSDM_trial|ada_sjsdm1_data_setup.r
-load(paste0("data/yuanghen_mod_data_newVars_", abund, ".rdata"))
+load(paste0("yuanghen_mod_data_newVars_", abund, ".rdata"))
 # s.otu.train,scale.env.train, XY.train, s.otu.test, scale.env.test, XY.test, abund
 
 
@@ -94,11 +78,11 @@ tuning.dd = data.frame(lambda.env = numeric(),
                        AUC.test=numeric())
 
 
-# hiddenN <- dropN <- alpha.spN <- lambda.spN <- alpha.envN <- 1
+# hiddenN <- dropN <- alpha.spN <- lambda.spN <- alpha.envN <- lambda.envN <- 1
 
 # lambda.envN = 1		# 1,2,3,4 four jobs in AD
 
-# testing
+# testing - comment in for testing. L86 to L91
 # for(lambda.envN in 1:2){
 # for (alpha.envN in 1) {
 #   for (lambda.spN in 1) {
@@ -106,6 +90,7 @@ tuning.dd = data.frame(lambda.env = numeric(),
 #       for (dropN in 1) {
 #         for (hiddenN in 1) {
 
+## coment out for testing L94 to L99
 for(lambda.envN in seq_along(lambda.env)){
   for (alpha.envN in seq_along(alpha.env)) {
     for (lambda.spN in seq_along(lambda.sp)) {

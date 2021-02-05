@@ -68,6 +68,18 @@ summary(model)
 # 
 # save(model, file ="results_sjSDM/oregon_trial.rdata")
 
+## Full tuning parameters
+# lambda.env = seq(0,.3, length.out=4)	# .1
+# alpha.env = seq(.7,1, length.out=4)		# .9
+# lambda.sp = seq(0,1, length.out=7)	# .1
+# alpha.sp =  seq(0,1, length.out=7)	# .5 
+
+## tuning not included in sjSDM_cv()
+# hidden = list(c(50L,50L,10L), c(25L,25L,10L))
+# acti.sp = 'relu'
+# drop = seq(.1,.5, length.out=3) # .3
+# sample.bio = seq(0,1,length.out=11)
+
 # sjSDM_cv
 tune_results = sjSDM_cv(Y = Y.train.pa_min10,
                         env = linear(data = env.vars, 
