@@ -15,7 +15,7 @@ options(echo=TRUE) # if you want see commands in output file
 Sys.setenv(RETICULATE_PYTHON="/gpfs/scratch/hsp20azu/sjSDM_env/bin/python")
 library(sjSDM)
 packageVersion("sjSDM")
-# [1] ‘0.1.3.9000’
+# [1] 0.1.3.9000
 
 # lapply(c('tidyverse','reticulate','sjSDM','glue','vegan'), library, character.only=T)
 
@@ -49,7 +49,7 @@ resFolder <- "results_sjSDM/tuning_YL_pa_newVars" # tuning_YL_qp
 # "J:\UEA\gitHRepos\HJA_analyses_Kelpie\Hmsc_CD\oregon_ada\data\scale.XY.train.csv"
 
 # data creatd here and saved: Hmsc_CD|oregon_ada|code_sjSDM|sjSDM_trial|ada_sjsdm1_data_setup.r
-load(paste0("data/yuanghen_mod_data_newVars_", abund, ".rdata"))
+load(paste0("data/yuanheng_mod_data_newVars_", abund, ".rdata"))
 # s.otu.train,scale.env.train, XY.train, s.otu.test, scale.env.test, XY.test, abund
 
 

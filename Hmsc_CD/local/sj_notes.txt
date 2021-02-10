@@ -1,0 +1,5 @@
+tuning.R 
+
+if n_gpu is not null, it sends the device2
+
+tuning calls sjSDM

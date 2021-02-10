@@ -47,7 +47,7 @@ is.matrix(Sp.data.scale)
 # head(mm)
 
 # make and run model
-model <- sjSDM(Y = otu.pa.minocc,
+model <- sjSDM_cv(Y = otu.pa.minocc,
                env = linear(data = env.vars.scale, 
                             formula = ~be10+B11_median+mean.EVI+insideHJA + Ess + ht +
                               ht.r500 + cov4_16 + cov4_16.r500 + mTopo), # linear model on env covariates

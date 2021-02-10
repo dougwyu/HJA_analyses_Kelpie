@@ -99,7 +99,7 @@ is.matrix(Sp.data.scale)
 
 # sjSDM_cv
 results_old_vars_cv = sjSDM_cv(Y = otu.pa.minocc,
-                         env = DNN(data = env.vars.old,
+                         env = linear(data = env.vars.old,
                                    formula = ~.),
                          spatial = linear(Sp.data.scale, ~0 + UTM_E:UTM_N),
                          biotic = bioticStruct(on_diag = FALSE, inverse = FALSE), # inverse=TRUE is 'better' but much slower
@@ -107,25 +107,25 @@ results_old_vars_cv = sjSDM_cv(Y = otu.pa.minocc,
                          family = stats::binomial("probit"), # for both p/a and quasiprob data, default
                          device = "gpu",
                          iter = 100L, # 2L
-                         sampling = 1000L # default is 5000L
+                         sampling = 5000L # default is 5000L
 )
 
 
-
-# ncores
-# NULL, # or 10L for small models, run this many sjsdm models at once (1 per CPU core). 10L is too much for large models because the 10 CPUs try to run on only the 2 GPUs available on ada: 5/GPU
-
-# sjSDM_cv
+# 
+# # ncores
+# # NULL, # or 10L for small models, run this many sjsdm models at once (1 per CPU core). 10L is too much for large models because the 10 CPUs try to run on only the 2 GPUs available on ada: 5/GPU
+# 
+# # sjSDM_cv
 results_new_vars_cv <- sjSDM_cv(Y = otu.pa.minocc,
-                             env = DNN(data = env.vars.new, 
+                             env = linear(data = env.vars.new,
                                        formula = ~.),
                              spatial = linear(Sp.data.scale, ~0 + UTM_E:UTM_N),
-                             biotic = bioticStruct(on_diag = FALSE, inverse = FALSE), # inverse=TRUE is 'better' 
+                             biotic = bioticStruct(on_diag = FALSE, inverse = FALSE), # inverse=TRUE is 'better'
                              learning_rate = 0.003, # 0.01 default, 0.003 recommended for high species number
                              family = stats::binomial("probit"), # for both p/a and quasiprob data, default
                              device = "gpu",
                              iter = 100L, # 2L
-                             sampling = 1000L # default is 5000L
+                             sampling = 5000L # default is 5000L
 )
 
 
