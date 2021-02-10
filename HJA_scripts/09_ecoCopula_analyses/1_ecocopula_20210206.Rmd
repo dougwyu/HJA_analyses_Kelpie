@@ -191,7 +191,7 @@ env.csv <- otuenv %>%
     mutate(lg_cover2m_max = log(l_Cover_2m_max + 0.001)) %>% 
     mutate(lg_cover2m_4m = log(l_Cover_2m_4m + 0.001)) %>%
     mutate(lg_cover4m_16m = log(l_Cover_4m_16m + 0.001)) %>%   
-    select(SiteName, trap, period, lysis_ratio, COISpike_sum, clearcut, insideHJA, oldGrowthIndex, elevation_f, canopyHeight_f, precipitation_mm, be10:cut.r1k.pt, mean.NDVI, mean.EVI, mean.green, mean.wet, l_p25, l_rumple, contains("20180717"), lg_DistStream, lg_DistRoad, lg_YrsDisturb, lg_cover2m_max, lg_cover2m_4m, lg_cover4m_16m) %>%
+    select(SiteName, trap, period, lysis_ratio, COISpike_sum, clearcut, insideHJA, oldGrowthIndex, elevation_f, canopyHeight_f, minT_annual, maxT_annual, precipitation_mm, be10:cut.r1k.pt, mean.NDVI, mean.EVI, mean.green, mean.wet, l_p25, l_p95, l_rumple, contains("20180717"), lg_DistStream, lg_DistRoad, lg_YrsDisturb, lg_cover2m_max, lg_cover2m_4m, lg_cover4m_16m) %>%
   mutate(across(where(is.numeric) & !lysis_ratio & !COISpike_sum, scale)) %>%
   mutate(offset = (COISpike_sum / lysis_ratio)) %>% 
   relocate(offset, .after = COISpike_sum)
@@ -200,23 +200,24 @@ names(env.csv)
 #  [1] "SiteName"         "trap"             "period"          
 #  [4] "lysis_ratio"      "COISpike_sum"     "offset"          
 #  [7] "clearcut"         "insideHJA"        "oldGrowthIndex"  
-# [10] "elevation_f"      "canopyHeight_f"   "precipitation_mm"
-# [13] "be10"             "tri"              "slope"           
-# [16] "aspect"           "Nss"              "Ess"             
-# [19] "twi"              "ht"               "ht.r250"         
-# [22] "ht.r500"          "ht.r1k"           "cov2_4"          
-# [25] "cov2_4.r250"      "cov2_4.r500"      "cov2_4.r1k"      
-# [28] "cov4_16"          "cov4_16.r250"     "cov4_16.r500"    
-# [31] "cov4_16.r1k"      "be500"            "mTopo"           
-# [34] "cut.r1k.pt"       "mean.NDVI"        "mean.EVI"        
-# [37] "mean.green"       "mean.wet"         "l_p25"           
-# [40] "l_rumple"         "B1_20180717"      "B2_20180717"     
-# [43] "B3_20180717"      "B4_20180717"      "B5_20180717"     
-# [46] "B6_20180717"      "B7_20180717"      "B10_20180717"    
-# [49] "B11_20180717"     "NDVI_20180717"    "EVI_20180717"    
-# [52] "B_20180717"       "G_20180717"       "W_20180717"      
-# [55] "lg_DistStream"    "lg_DistRoad"      "lg_YrsDisturb"   
-# [58] "lg_cover2m_max"   "lg_cover2m_4m"    "lg_cover4m_16m"  
+# [10] "elevation_f"      "canopyHeight_f"   "minT_annual"     
+# [13] "maxT_annual"      "precipitation_mm" "be10"            
+# [16] "tri"              "slope"            "aspect"          
+# [19] "Nss"              "Ess"              "twi"             
+# [22] "ht"               "ht.r250"          "ht.r500"         
+# [25] "ht.r1k"           "cov2_4"           "cov2_4.r250"     
+# [28] "cov2_4.r500"      "cov2_4.r1k"       "cov4_16"         
+# [31] "cov4_16.r250"     "cov4_16.r500"     "cov4_16.r1k"     
+# [34] "be500"            "mTopo"            "cut.r1k.pt"      
+# [37] "mean.NDVI"        "mean.EVI"         "mean.green"      
+# [40] "mean.wet"         "l_p25"            "l_p95"           
+# [43] "l_rumple"         "B1_20180717"      "B2_20180717"     
+# [46] "B3_20180717"      "B4_20180717"      "B5_20180717"     
+# [49] "B6_20180717"      "B7_20180717"      "B10_20180717"    
+# [52] "B11_20180717"     "NDVI_20180717"    "EVI_20180717"    
+# [55] "B_20180717"       "G_20180717"       "W_20180717"      
+# [58] "lg_DistStream"    "lg_DistRoad"      "lg_YrsDisturb"   
+# [61] "lg_cover2m_max"   "lg_cover2m_4m"    "lg_cover4m_16m"
 ```
 
 the smaller the lysis_ratio, the larger the original sample, and i just increase the number of reads by the lysis_ratio (e.g. if the lysis_ratio is 0.5, the numbers of reads in that row are increased by 2X)
@@ -422,19 +423,33 @@ otu.mod2 <- manyglm(otu.ord ~ 1 + offset(log(COISpike_sum)),
 plot(otu.mod2) # chk residuals
 otu.mod2.ord <- cord(otu.mod2)
 
-# with be500
-otu.mod3 <- manyglm(otu.ord ~ be500 + offset(log(COISpike_sum)), 
+# with old vars
+otu.mod3 <- manyglm(otu.ord ~ insideHJA + elevation_f + canopyHeight_f +
+                      minT_annual + precipitation_mm + lg_DistRoad +
+                      lg_DistStream + lg_YrsDisturb + 
+                      B1_20180717 + B2_20180717 + B3_20180717 + B4_20180717 + 
+                      B5_20180717 + B6_20180717 + B7_20180717 + B10_20180717 + 
+                      B11_20180717 + NDVI_20180717 + EVI_20180717 + B_20180717 +
+                      G_20180717 + W_20180717 + lg_cover2m_max + lg_cover2m_4m +
+                      lg_cover4m_16m + l_p25 + l_p95 + l_rumple + offset(log(COISpike_sum)), 
                     family = "negative.binomial", 
                     data = env.csv
                     )
 plot(otu.mod3) # chk residuals
 otu.mod3.ord <- cord(otu.mod3)
 
-# with all variables that look correlated with Factor 1
-otu.mod6 <- manyglm(otu.ord ~ tri + be500 + Nss + cov4_16.r500 + 
-                      B1_20180717 + B2_20180717 + B3_20180717 + B4_20180717 +
-                      B6_20180717 + B7_20180717 + NDVI_20180717 +
-                      lg_DistRoad + mean.wet + l_p25 + lg_YrsDisturb +
+# new vars
+otu.mod6 <- manyglm(otu.ord ~ be10 + insideHJA + tri + slope + Nss + Ess + ht +
+                      ht.r250 + ht.r500 + ht.r1k + cov2_4 + cov2_4.r250 +
+                      cov2_4.r500 + cov2_4.r1k + cov4_16 + cov4_16.r250 +
+                      cov4_16.r500 + cov4_16.r1k + be500 + mTopo +
+                      cut.r1k.pt + minT_annual + maxT_annual + 
+                      precipitation_mm + lg_DistStream + lg_DistRoad +
+                      lg_YrsDisturb + B1_20180717 + B2_20180717 + 
+                      B3_20180717 + B4_20180717 + B5_20180717 + B6_20180717 +
+                      B7_20180717 + B10_20180717 + B11_20180717 + 
+                      NDVI_20180717 + EVI_20180717 + B_20180717 + 
+                      G_20180717 + W_20180717 + l_p25 + l_rumple +
                       offset(log(COISpike_sum)), 
                     family = "negative.binomial", 
                     data = env.csv,
@@ -448,11 +463,11 @@ otu.mod6.ord <- cord(otu.mod6)
 # mod2: no covariates
 cordord <- "otu.mod2.ord"; model <- "otu.ord ~ 1" 
 # OR
-# mod3: elevation_f 
-cordord <- "otu.mod3.ord"; model <- "otu.ord ~ be500"
+# mod3: old vars 
+cordord <- "otu.mod3.ord"; model <- "otu.ord ~ old vars"
 # OR
-# mod6: elevation_f 
-cordord <- "otu.mod6.ord"; model <- "otu.ord ~ 18 covariates"
+# mod6: new vars 
+cordord <- "otu.mod6.ord"; model <- "otu.ord ~ new vars"
 
 
 site_res <- site_res_fxn(cordord = get(cordord), env.csv, XY.csv)
