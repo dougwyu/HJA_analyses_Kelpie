@@ -61,7 +61,6 @@ env.vars <- otuenv %>%
 head(env.vars)
 
 library(sf)
-library(raster)
 
 # wgs84 UTM 10N
 utm10N <- 32610
@@ -82,12 +81,13 @@ hja <- st_read("J:/UEA/Oregon/gis/s_nad_utm/HJA_Boundary.shp")
 hja_bound <- subset(hja, FP_NAME == "H.J. Andrew Experimental Forest")
 hja_bound
 
-vars <- c("clearcut","insideHJA","oldGrowthIndex", "elevation_m", "canopyHeight_m",
+vars <- c("SiteName", "clearcut","insideHJA","oldGrowthIndex", "elevation_m", "canopyHeight_m",
 "precipitation_mm", "minT_annual", "maxT_annual", "mean.NDVI",
 "Nss", "Ess", "ht.r500", "cov2_4.r500", "cov4_16.r500", "mTopo", "cut.r1k.pt")
 
+labs <- pts.sf$SiteName
 
-mv1 <- mapview::mapview(pts.sf, zcol = vars, label= pts.sf$SiteName,homebutton = FALSE,
+mv1 <- mapview::mapview(pts.sf, zcol = vars, homebutton = FALSE,
               map.types = c("Esri.WorldImagery", "OpenStreetMap.HOT"),
               legend = F)
 mv1
@@ -104,8 +104,7 @@ mv <- mv1 + mv2
 mv
 
 # save
-# mapviewOptions(fgb = FALSE)
-mapview::mapshot(mv, url = "Hmsc_CD/local/plots/pts_map.html", selfcontainted = TRUE) 
+mapview::mapshot(mv, url = "Hmsc_CD/local/plots/pts_map.html", selfcontainted = TRUE)
 # only works in wd at moment. moved from there.
 mapview::mapshot(mv, url = "pts_map.html", selfcontainted = TRUE)
 getwd()
