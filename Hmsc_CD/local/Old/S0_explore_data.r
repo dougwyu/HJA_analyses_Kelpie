@@ -71,6 +71,8 @@ str(S.train)
 # HJ Andrews Experimental Forest. # https://www.davidbuckleyborden.com/hja-experimental-forest
 # EPSG:32610 # WGS 84 / UTM zone 10N
 
+# https://andrewsforest.oregonstate.edu/
+
 # library(sf)
 # library(mapview)
 
