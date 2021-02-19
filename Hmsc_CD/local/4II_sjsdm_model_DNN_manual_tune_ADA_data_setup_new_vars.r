@@ -111,6 +111,10 @@ otu.test = otu[-a,]
 cat(paste(non.sp.cols, collapse = '", "'))
 newvars <- c("be10", "tri", "slope", "Nss", "Ess", "ht", "ht.r250", "ht.r500", "ht.r1k", "cov2_4", "cov2_4.r250", "cov2_4.r500", "cov2_4.r1k", "cov4_16", "cov4_16.r250", "cov4_16.r500", "cov4_16.r1k", "be500", "mTopo", "cut.r1k.pt", "insideHJA", "minT_annual", "maxT_annual", "precipitation_mm", "lg_DistStream", "lg_DistRoad", "lg_YrsDisturb", "B1_20180717", "B2_20180717", "B3_20180717", "B4_20180717", "B5_20180717", "B6_20180717", "B7_20180717", "B10_20180717", "B11_20180717", "NDVI_20180717", "EVI_20180717", "B_20180717", "G_20180717", "W_20180717", "l_p25", "l_rumple")
 
+## env vars
+# all.env.vars <- alldata1[,newvars]
+# save(all.env.vars, otu, file = "Hmsc_CD/working_cd/checkData.rdata")
+
 # divide into training and testing
 ori.env.train = alldata1[a,newvars]
 ori.env.test = alldata1[-a,newvars]

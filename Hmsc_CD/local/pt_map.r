@@ -73,6 +73,13 @@ pts.sf <- st_as_sf(env.vars, coords = c("UTM_E", "UTM_N"), crs = nadutm10)
 
 pts.sf
 
+# export all points to shapefile / kml
+st_write(pts.sf, "J:/UEA/Oregon/gis/s_nad_utm/all_pts.shp")
+
+# transform to wgs and export to kml
+pts.wgs <- st_transform(pts.sf, crs = 4326)
+st_write(pts.wgs, "J:/UEA/Oregon/gis/s_wgs/all_pts.kml")
+
 ## bring in HJA boundary
 # https://data-osugisci.opendata.arcgis.com/datasets/74312b6130cb4e9b8c454ae1195f6482_9/data
 
@@ -80,6 +87,10 @@ hja <- st_read("J:/UEA/Oregon/gis/s_nad_utm/HJA_Boundary.shp")
 
 hja_bound <- subset(hja, FP_NAME == "H.J. Andrew Experimental Forest")
 hja_bound
+
+hja.wgs <- st_transform(hja_bound, crs = 4326)
+st_write(hja.wgs, "J:/UEA/Oregon/gis/s_wgs/hja.kml")
+
 
 vars <- c("SiteName", "clearcut","insideHJA","oldGrowthIndex", "elevation_m", "canopyHeight_m",
 "precipitation_mm", "minT_annual", "maxT_annual", "mean.NDVI",
