@@ -33,8 +33,8 @@ getwd() # always run sub from oregon_ada
 
 library(dplyr)
 
-resFolder <-"code_sjSDM/r20210219/results"
-if(!dir.exists(resFolder)) dir.create(resFolder, recursive = TRUE)
+resFolder <-"code_sjSDM/r20210217a/results"
+if(!dir.exists(resFolder)) dir.create(resFolder)
 
 ## Updated to new vars, also changes to elevation_m, canopy_height_m  to _f. 
 
@@ -45,7 +45,7 @@ device <- "gpu"
 iter <- 150L
 sampling <- 5000L
 ## Number of samples from tuning grid - random search
-noSteps <- 1000
+noSteps <- 500
 
 # no of CV folds
 k <- 5
@@ -63,7 +63,7 @@ device <- "cpu"
 iter <- 10L
 sampling <- 100L
 noSteps <- 2
-k <- 2
+k = 2
 
 ### 1. Get data from github #####
 
@@ -149,14 +149,6 @@ env.vars <- otuenv %>%
          lg_cover2m_max = log(l_Cover_2m_max + 0.001),
          lg_cover2m_4m = log(l_Cover_2m_4m + 0.001),
          lg_cover4m_16m = log(l_Cover_4m_16m + 0.001)) %>%
-  # dplyr::select(uniqueID, clearcut,insideHJA,oldGrowthIndex, elevation_m, canopyHeight_m, precipitation_mm, minT_annual,
-  #               maxT_annual, mean.NDVI, mean.EVI, mean.green, mean.wet, mean.bright, l_p25, l_p95, l_rumple, B1_median,
-  #               B2_median,B3_median,B4_median,B5_median,B6_median,B7_median,B10_median,B11_median,lg_DistStream,
-  #               lg_DistRoad, lg_YrsDisturb, lg_cover2m_max, lg_cover2m_4m, lg_cover4m_16m, l_Cover_2m_4m,l_Cover_4m_16m,
-  #               be10, tri, slope, twi, Nss, Ess, ht, ht.r250, ht.r500, ht.r1k, cov2_4, cov2_4.r250, cov2_4.r500, cov2_4.r1k,
-  #               cov4_16, cov4_16.r250, cov4_16.r500, cov4_16.r1k, be500, mTopo, cut.r1k.pt,B1_20180717, B2_20180717,
-  #               B3_20180717, B4_20180717, B5_20180717, B6_20180717, B7_20180717, B10_20180717, B11_20180717, NDVI_20180717,
-  #               EVI_20180717, B_20180717, G_20180717, W_20180717) %>%
   mutate(
     #across(where(is.numeric), scale), # scale here # scale when defining models etc.
     clearcut = factor(clearcut),
@@ -171,6 +163,11 @@ oldVars <- c("insideHJA", "elevation_f", "canopyHeight_f", "minT_annual", "preci
 
 # new vars
 newvars <- c("be10", "tri", "slope", "Nss", "Ess", "ht", "ht.r250", "ht.r500", "ht.r1k", "cov2_4", "cov2_4.r250", "cov2_4.r500", "cov2_4.r1k", "cov4_16", "cov4_16.r250", "cov4_16.r500", "cov4_16.r1k", "be500", "mTopo", "cut.r1k.pt", "insideHJA", "minT_annual", "maxT_annual", "precipitation_mm", "lg_DistStream", "lg_DistRoad", "lg_YrsDisturb", "B1_20180717", "B2_20180717", "B3_20180717", "B4_20180717", "B5_20180717", "B6_20180717", "B7_20180717", "B10_20180717", "B11_20180717", "NDVI_20180717", "EVI_20180717", "B_20180717", "G_20180717", "W_20180717", "l_p25", "l_rumple")
+
+# all.env.vars2 <- env.vars[,newvars]
+# otu.pa.csv2 <- otu.pa.csv
+# save(all.env.vars2, otu.pa.csv2, file= "../working_cd/checkData2.rdata")
+
 
 ### 2. Make testing and training k folds #####
 
@@ -221,28 +218,19 @@ tune.results <- data.frame(tr = 1:noSteps,
                            tune.grid[tune.rows,], 
                            lambda.bio = sample(sample.bio, size = noSteps, replace = TRUE),
                            alpha.bio = sample(sample.bio, size = noSteps, replace = TRUE),
-                           loglike_sjSDM = NA, 
+                           loglike = NA, 
                            loss= NA, 
-                           AUC.train = NA, 
-                           AUC.test = NA,
-                           ll.train = NA,
-                           ll.test = NA,
-                           nagel.train = NA,
-                           nagel.test = NA,
-                           plr.train = NA,
-                           plr.test = NA)
-
-
+                           AUC.explain = NA, 
+                           AUC.test = NA)
 str(tune.results)
 # Add in k, to keep all cross validation runs. Average later.
 tune.results <- cbind(tune.results[rep(seq(noSteps), k),], k = rep(1:k, each = noSteps))
-rownames(tune.results) <- NULL
 head(tune.results)
-
 
 # clean up
 rm(lambda.env, alpha.env, lambda.sp, alpha.sp, hidden.ind, drop, sample.bio, acti.sp)
 
+# i= 1
 
 # Choose pa or qp reponse data and family
 if(abund == "pa") {
@@ -256,7 +244,7 @@ if(abund == "pa") {
 
 
 ### 3. Create scaled testing training data sets, run models and evaluate ####
-# i= 1
+# i = 1
 for(i in 1:k){
   
   # select X data
@@ -313,7 +301,7 @@ for(i in 1:k){
     #alpha.bioN = sample(1:11,1)
   
     print(paste("k", i, "tune run", j))
-    # print(tune.results[tune.results$k == i, ][j,])
+    print(tune.results[tune.results$k == i, ][j,])
     
     # subset this round of tuning parameters to make easier to insert in model specs
     tr <- subset(tune.results, k == i)[j,,drop = T]
@@ -352,33 +340,26 @@ for(i in 1:k){
                                        i, "_tr_", j, "_", abund, ".rds")))
     
     # Do testing and save results in data frame
-    tune.results$loglike_sjSDM[tune.results$k == i][j] <- logLik(model.train)
+    tune.results$loglike[tune.results$k == i][j] <- logLik(model.train)
     tune.results$loss[tune.results$k == i][j] <-model.train$history[length(model.train$history)]
     
-    
-    ## Model evaluation - AUC, LL, r2
     for (pred in 1:2) {
       
       # pred = 1
       # 1 -> 'test'
       newdd = scale.env.test ; newsp = XY.test.scale; otudd = s.otu.test
       
-      ## pred = 2 # training
+      # pred = 2
       if (pred==2) { newdd = NULL; newsp = NULL; otudd = s.otu.train}
-      # Error in reticulate::py_is_null_xptr(fa) : 
-      #   Cannot convert object to an environment: [type=double; target=ENVSXP].
-      # if (pred==2) { newdd = scale.env.train; newsp = XY.train.scale; otudd = s.otu.train}
       
-      # predict for all species = sites X columns
-      pred.dd = apply(abind::abind(lapply(1:3, function(i) 
-        predict(model.train, newdata=newdd, SP=newsp)),
-        along = -1L), 2:3, mean)
+      # predict for all species
+      pred.dd = apply(abind::abind(lapply(1:3, function(i) predict(model.train, newdata=newdd, SP=newsp)),
+                                   along = -1L), 2:3, mean)
       
       attr(pred.dd, 'dimnames') = NULL
       
       # convert observed to pa (if qp)
       otudd.pa = (otudd>0)*1
-      # sum(colSums(otudd.pa)==0)
       
       # AUC for all species - if not present, then NA
       auc <- sapply(1:dim(otudd)[2], function(i) {
@@ -387,15 +368,17 @@ for(i in 1:k){
           as.numeric(pROC::roc(otudd.pa[,i], pred.dd[,i], direction = "<", quiet=T)$auc)},
           error = function(err){ return(NA)}
         )
-      })
+      }
+      )
       
-      if (pred==2) {tune.results$AUC.train[tune.results$k == i][j] = mean(auc, na.rm = TRUE)}
+      if (pred==2) {tune.results$AUC.explain[tune.results$k == i][j] = mean(auc, na.rm = TRUE)}
       if (pred==1) {tune.results$AUC.test[tune.results$k == i][j] = mean(auc, na.rm = TRUE)}
+      
       
       
       ## Extra evaluation metrics
       # ll, nagel & plr for spp 
-      rsq = data.frame(ll=rep(.1, length.out=ncol(pred.dd)), 
+      rsq <- data.frame(ll=rep(.1, length.out=ncol(pred.dd)), 
                        nagel=rep(.1, length.out=ncol(pred.dd)), 
                        plr=rep(.1, length.out=ncol(pred.dd)))
       
@@ -410,25 +393,34 @@ for(i in 1:k){
         rsq$nagel[m] = (1-exp(2/length(p)*(loglikN-loglikP))) / (1-exp(2/length(p)*loglikN))
         rsq$ll[m] = loglikP
         
-        tp = sum(p*y); fp = sum(p*(1-y)); fa = sum((1-p)*y); ta = sum((1-p)*(1-y))
+        tppp = sum(p*y); 
+        fppp = sum(p*(1-y)); 
+        fapp = sum((1-p)*y); 
+        tapp = sum((1-p)*(1-y))
         
-        rsq$plr[m] = tp/(tp+fa)/fp*(fp+ta) # get NaN if species missing at all sites. OK> 
+        rsq$plr[m] = tppp/(tppp+fapp)/fppp*(fppp+tapp) # get NaN if species missing at all sites. OK> 
         
       }
       
-      if (pred==2) {
-        tune.results$ll.train[tune.results$k == i][j] = mean(rsq$ll, na.rm = T)
-        tune.results$nagel.train[tune.results$k == i][j] = mean(rsq$nagel, na.rm = T)
-        tune.results$plr.train[tune.results$k == i][j]  = mean(rsq$plr, na.rm = T)}
+      # if (pred==2) {
+      #   tune.results$ll.train[tune.results$k == i][j] = mean(rsq$ll, na.rm = T)
+      #   tune.results$nagel.train[tune.results$k == i][j] = mean(rsq$nagel, na.rm = T)
+      #   tune.results$plr.train[tune.results$k == i][j]  = mean(rsq$plr, na.rm = T)}
+      # 
+      # if (pred==1) {
+      #   tune.results$ll.test[tune.results$k == i][j] = mean(rsq$ll, na.rm = T)
+      #   tune.results$nagel.test[tune.results$k == i][j] = mean(rsq$nagel, na.rm = T)
+      #   tune.results$plr.test[tune.results$k == i][j] = mean(rsq$plr, na.rm = T)}
       
-      if (pred==1) {
-        tune.results$ll.test[tune.results$k == i][j] = mean(rsq$ll, na.rm = T)
-        tune.results$nagel.test[tune.results$k == i][j] = mean(rsq$nagel, na.rm = T)
-        tune.results$plr.test[tune.results$k == i][j] = mean(rsq$plr, na.rm = T)}
       
       
       
-    } # end of evaluation loop
+      
+      
+      
+      
+      
+    }
     
     rm(model.train)
     
@@ -448,16 +440,15 @@ write.table(tune.results,
                                               noSteps,
                                               ".csv")), row.names=F, sep=',')
 
-
 head(tune.results)
 
 ### 5. Average AUC by tune runs ####
 
 tune.mean <- tune.results %>%
-  group_by(across(c(-loglike, -loss, -k, -contains("train|test"))), ) %>%
-  summarise(across(contains("train|test"), mean)
-    #auc_explain = mean(AUC.train),
-    #auc_test = mean(AUC.test)
+  group_by(across(c(-loglike, -loss, -k, -starts_with("AUC"))), ) %>%
+  summarise(
+    auc_explain = mean(AUC.explain),
+    auc_test = mean(AUC.test)
   )
 
 data.frame(tune.mean)

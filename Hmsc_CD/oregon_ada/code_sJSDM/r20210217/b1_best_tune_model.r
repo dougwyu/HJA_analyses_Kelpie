@@ -6,12 +6,12 @@
 
 ## 0. Contents #####
 ## 1. Gets data from github with criteria below
-## 2. Creates k folds and sets up tuning grid, and results table for grid runs per k
-## 3. Creates scaled data sets per k, runs, saves, evaluates model for each tune grid step
+## 2. Creates k folds and best tuning parameters for final model
+## 3. Creates scaled data sets per k, runs, saves, evaluates model 
 ## 4. Writes results to csv. 
 ## 5. Averages results by k cv and writes to cv. 
 
-## Individual species AUCs are not saved.
+## Individual species AUCs are saved.
 
 
 #### Read data on Ada  #####
@@ -33,7 +33,7 @@ getwd() # always run sub from oregon_ada
 
 library(dplyr)
 
-resFolder <-"code_sjSDM/r20210219/results"
+resFolder <-"code_sjSDM/r20210217/results"
 if(!dir.exists(resFolder)) dir.create(resFolder, recursive = TRUE)
 
 ## Updated to new vars, also changes to elevation_m, canopy_height_m  to _f. 
@@ -44,26 +44,24 @@ abund <- "pa"
 device <- "gpu"
 iter <- 150L
 sampling <- 5000L
-## Number of samples from tuning grid - random search
-noSteps <- 1000
 
 # no of CV folds
 k <- 5
 
 # timings... 
 # models take approx to 0.28 mins run (Run time 00:36:11 for 125 models)
-noSteps * k * 0.28/60
+# noSteps * k * 0.28/60
 
 # Storage
 # About ~600k per model .rds -- in GB
-noSteps * k * 600  / 1048576
+# noSteps * k * 600  / 1048576
 
 # for testing on cpu
-device <- "cpu"
-iter <- 10L
-sampling <- 100L
-noSteps <- 2
-k <- 2
+# device <- "cpu"
+# iter <- 10L
+# sampling <- 100L
+# noSteps <- 2
+# k <- 2
 
 ### 1. Get data from github #####
 
@@ -189,38 +187,16 @@ table(fold.id)
 ## Create tuning grid
 # set variables
 # formula.env = 'envDNN'
-lambda.env = seq(0,.3, length.out=4)	# .1
-alpha.env = seq(.7,1, length.out=4)		# .9
-lambda.sp = seq(0,1, length.out=5)	# .1 ## Changed to 5
-alpha.sp =  seq(0,1, length.out=5)	# .5 ## Changed to 5
 hidden <- list(c(50L,50L,10L), c(25L,25L,10L))
-hidden.ind = seq_along(hidden)
-acti.sp = 'relu'
-drop = seq(.1,.5, length.out=3) # .3
-sample.bio = seq(0,1,length.out=11)
 
-## Make grid of priority tune parameters, choose, from these in sampling, then add lower priority parameters
-tune.grid <- expand.grid(lambda.env = lambda.env, alpha.env= alpha.env, lambda.sp = lambda.sp,
-                         alpha.sp = alpha.sp, hidden.ind = hidden.ind,
-                         drop= drop, acti.sp = acti.sp, stringsAsFactors = FALSE)
-head(tune.grid)
-
-#  no models
-# 4*4*7*7*2*3 *11
-# data storage
-# 4*7*7*2*3 * 642
-# time
-# 4*7*7*2*3*2 * .5 # 162 models - 1 hour
-
-# get samples from tune grid
-tune.rows <- sample(1:nrow(tune.grid), size = noSteps, replace = FALSE)
+## get best tune run
+pa <- read.csv(file.path(resFolder, "manual_tuning_sjsdm_5CV_M1S1_mean_AUC_pa_min_5_nSteps_500.csv"))
+pa.best <- pa[which.max(pa$auc_test),,drop = T]
+pa.best
 
 
 # add in lambda.bio and alpha.bio from random samples of sample.bio, and add results columns
-tune.results <- data.frame(tr = 1:noSteps,
-                           tune.grid[tune.rows,], 
-                           lambda.bio = sample(sample.bio, size = noSteps, replace = TRUE),
-                           alpha.bio = sample(sample.bio, size = noSteps, replace = TRUE),
+eval.results <- data.frame(k = 1:k,
                            loglike_sjSDM = NA, 
                            loss= NA, 
                            AUC.train = NA, 
@@ -230,19 +206,13 @@ tune.results <- data.frame(tr = 1:noSteps,
                            nagel.train = NA,
                            nagel.test = NA,
                            plr.train = NA,
-                           plr.test = NA)
-
-
-str(tune.results)
-# Add in k, to keep all cross validation runs. Average later.
-tune.results <- cbind(tune.results[rep(seq(noSteps), k),], k = rep(1:k, each = noSteps))
-rownames(tune.results) <- NULL
-head(tune.results)
-
+                           plr.test = NA,
+                           tjur.train = NA,
+                           tjur.test = NA,
+                           cor.train = NA,
+                           cor.test = NA)
 
 # clean up
-rm(lambda.env, alpha.env, lambda.sp, alpha.sp, hidden.ind, drop, sample.bio, acti.sp)
-
 
 # Choose pa or qp reponse data and family
 if(abund == "pa") {
@@ -253,6 +223,11 @@ if(abund == "pa") {
       # family <- stats::binomial()
     } else stop("check abund")
   } 
+
+
+# species results
+sp.res.train <- vector(length = k, mode = "list")
+sp.res.test <- vector(length = k, mode = "list")
 
 
 ### 3. Create scaled testing training data sets, run models and evaluate ####
@@ -284,7 +259,7 @@ for(i in 1:k){
   
   scale.env.test = as.data.frame(do.call(rbind,apply(dplyr::select(env.test, -'insideHJA'), 1, function(x){(x-dd.env.scaler['env.mean',])/dd.env.scaler['env.sd',]} ) )) %>%
     tibble::add_column(insideHJA=env.test$insideHJA)
-
+  
   
   # .. spatial data
   XY.train.scale <- scale(XY.train)
@@ -293,7 +268,7 @@ for(i in 1:k){
                                          sp.sd = attr(XY.train.scale, "scaled:scale"))))
   
   XY.test.scale <- as.data.frame(do.call(rbind, 
-                                   apply(XY.test, 1,function(x){(x-dd.xy.scaler['sp.mean',])/dd.xy.scaler['sp.sd',]})))
+                                         apply(XY.test, 1,function(x){(x-dd.xy.scaler['sp.mean',])/dd.xy.scaler['sp.sd',]})))
   
   rm(dd.xy.scaler, dd.env.scaler, scale.env.train.all)
   
@@ -303,171 +278,195 @@ for(i in 1:k){
   rm(env.test, env.train, XY.test, XY.train)
   
   
-## Do tuning per k
-  # j = 1
-   
+  ## Do tuning per k
+  # j = 1 # j= 2
   
-  for(j in seq_len(noSteps)){
+  cat(paste("\n run k", i))
+ 
+  # do model    
+  model.train <- sjSDM(
     
-    #lambda.bioN = sample(1:11,1)
-    #alpha.bioN = sample(1:11,1)
+    Y = s.otu.train,
+    
+    env = DNN(data=scale.env.train, formula = ~.,
+              hidden=hidden[[pa.best$hidden.ind]],
+              lambda = pa.best$lambda.env,
+              alpha = pa.best$alpha.env,
+              activation = pa.best$acti.sp,
+              dropout=pa.best$drop,
+              bias=T),
+    
+    biotic = bioticStruct(lambda=pa.best$lambda.bio,
+                          alpha=pa.best$alpha.bio, 
+                          on_diag=F, inverse = FALSE),
+    
+    spatial = linear(data=XY.train.scale, ~0+UTM_E*UTM_N, 
+                     lambda=pa.best$lambda.sp, 
+                     alpha=pa.best$alpha.sp),
+    
+    learning_rate = 0.003, # 0.003 recommended for high species number 
+    iter = iter, 
+    family = family, 
+    sampling = sampling, # 150L, 5000L
+    device = device
+  )
   
-    print(paste("k", i, "tune run", j))
-    # print(tune.results[tune.results$k == i, ][j,])
-    
-    # subset this round of tuning parameters to make easier to insert in model specs
-    tr <- subset(tune.results, k == i)[j,,drop = T]
-
-    # do model    
-    model.train <- sjSDM(
-      
-      Y = s.otu.train,
-      
-      env = DNN(data=scale.env.train, formula = ~.,
-                hidden=hidden[[tr$hidden.ind]],
-                lambda = tr$lambda.env,
-                alpha = tr$alpha.env,
-                activation = tr$acti.sp,
-                dropout=tr$drop,
-                bias=T),
-      
-      biotic = bioticStruct(lambda=tr$lambda.bio,
-                            alpha=tr$alpha.bio, 
-                            on_diag=F, inverse = FALSE),
-      
-      spatial = linear(data=XY.train.scale, ~0+UTM_E*UTM_N, 
-                       lambda=tr$lambda.sp, 
-                       alpha=tr$alpha.sp),
-      
-      learning_rate = 0.003, # 0.003 recommended for high species number 
-      iter = iter, 
-      family = family, 
-      sampling = sampling, # 150L, 5000L
-      device = device
-    )
-    
-    ## SAve each model
-    saveRDS(model.train,
-            file.path(resFolder,paste0("s-jSDM_tuning_model_CV_k_", 
-                                       i, "_tr_", j, "_", abund, ".rds")))
-    
-    # Do testing and save results in data frame
-    tune.results$loglike_sjSDM[tune.results$k == i][j] <- logLik(model.train)
-    tune.results$loss[tune.results$k == i][j] <-model.train$history[length(model.train$history)]
-    
-    
-    ## Model evaluation - AUC, LL, r2
-    for (pred in 1:2) {
-      
-      # pred = 1
-      # 1 -> 'test'
-      newdd = scale.env.test ; newsp = XY.test.scale; otudd = s.otu.test
-      
-      ## pred = 2 # training
-      if (pred==2) { newdd = NULL; newsp = NULL; otudd = s.otu.train}
-      # Error in reticulate::py_is_null_xptr(fa) : 
-      #   Cannot convert object to an environment: [type=double; target=ENVSXP].
-      # if (pred==2) { newdd = scale.env.train; newsp = XY.train.scale; otudd = s.otu.train}
-      
-      # predict for all species = sites X columns
-      pred.dd = apply(abind::abind(lapply(1:3, function(i) 
-        predict(model.train, newdata=newdd, SP=newsp)),
-        along = -1L), 2:3, mean)
-      
-      attr(pred.dd, 'dimnames') = NULL
-      
-      # convert observed to pa (if qp)
-      otudd.pa = (otudd>0)*1
-      # sum(colSums(otudd.pa)==0)
-      
-      # AUC for all species - if not present, then NA
-      auc <- sapply(1:dim(otudd)[2], function(i) {
-        
-        tryCatch({
-          as.numeric(pROC::roc(otudd.pa[,i], pred.dd[,i], direction = "<", quiet=T)$auc)},
-          error = function(err){ return(NA)}
-        )
-      })
-      
-      if (pred==2) {tune.results$AUC.train[tune.results$k == i][j] = mean(auc, na.rm = TRUE)}
-      if (pred==1) {tune.results$AUC.test[tune.results$k == i][j] = mean(auc, na.rm = TRUE)}
-      
-      
-      ## Extra evaluation metrics
-      # ll, nagel & plr for spp 
-      rsq = data.frame(ll=rep(.1, length.out=ncol(pred.dd)), 
-                       nagel=rep(.1, length.out=ncol(pred.dd)), 
-                       plr=rep(.1, length.out=ncol(pred.dd)))
-      
-      # m = 59
-      for (m in 1:ncol(pred.dd)) { 
-        
-        p = pred.dd[,m]; y = otudd.pa[,m]
-        
-        loglikP = sum( log( p*y + (1-p)*(1-y) ) )
-        loglikN = sum( log( mean(p)*y + (1-mean(p))*(1-y) ) )
-        
-        rsq$nagel[m] = (1-exp(2/length(p)*(loglikN-loglikP))) / (1-exp(2/length(p)*loglikN))
-        rsq$ll[m] = loglikP
-        
-        tp = sum(p*y); fp = sum(p*(1-y)); fa = sum((1-p)*y); ta = sum((1-p)*(1-y))
-        
-        rsq$plr[m] = tp/(tp+fa)/fp*(fp+ta) # get NaN if species missing at all sites. OK> 
-        
-      }
-      
-      if (pred==2) {
-        tune.results$ll.train[tune.results$k == i][j] = mean(rsq$ll, na.rm = T)
-        tune.results$nagel.train[tune.results$k == i][j] = mean(rsq$nagel, na.rm = T)
-        tune.results$plr.train[tune.results$k == i][j]  = mean(rsq$plr, na.rm = T)}
-      
-      if (pred==1) {
-        tune.results$ll.test[tune.results$k == i][j] = mean(rsq$ll, na.rm = T)
-        tune.results$nagel.test[tune.results$k == i][j] = mean(rsq$nagel, na.rm = T)
-        tune.results$plr.test[tune.results$k == i][j] = mean(rsq$plr, na.rm = T)}
-      
-      
-      
-    } # end of evaluation loop
-    
-    rm(model.train)
-    
-  }
+  ## SAve each model
+  saveRDS(model.train,
+          file.path(resFolder,paste0("s-jSDM_final_model_CV_k_", 
+                                     i, "_", abund, ".rds")))
+  
+  # Do testing and save results in data frame
+  eval.results$loglike_sjSDM[eval.results$k == i] <- logLik(model.train)
+  eval.results$loss[eval.results$k == i] <-model.train$history[length(model.train$history)]
   
   
 
-}
+  ## Model evaluation - AUC, LL, r2
+  for (pred in 1:2) {
+    
+    # pred = 1
+    # 1 -> 'test'
+    newdd = scale.env.test ; newsp = XY.test.scale; otudd = s.otu.test
+    
+    ## pred = 2 # training
+    if (pred==2) { newdd = NULL; newsp = NULL; otudd = s.otu.train}
+    # Error in reticulate::py_is_null_xptr(fa) : 
+    #   Cannot convert object to an environment: [type=double; target=ENVSXP].
+    # if (pred==2) { newdd = scale.env.train; newsp = XY.train.scale; otudd = s.otu.train}
+    
+    # predict for all species = sites X columns
+    pred.dd = apply(abind::abind(lapply(1:3, function(i) {
+      predict(model.train, newdata=newdd, SP=newsp)}
+    ),along = -1L), 2:3, mean)
+    
+    attr(pred.dd, 'dimnames') = NULL
+    
+    # convert observed to pa (if qp)
+    otudd.pa = (otudd>0)*1
+    # sum(colSums(otudd.pa)==0)
+    
+    # AUC for all species - if not present, then NA
+    auc <- sapply(1:dim(otudd)[2], function(i) {
+      
+      tryCatch({
+        as.numeric(pROC::roc(otudd.pa[,i], pred.dd[,i], direction = "<", quiet=T)$auc)},
+        error = function(err){ return(NA)}
+      )
+    })
+    
+    ## Extra evaluation metrics
+    # ll, nagel & plr for spp 
+    rsq = data.frame(ll=rep(.1, length.out=ncol(pred.dd)), 
+                     nagel=rep(.1, length.out=ncol(pred.dd)), 
+                     plr=rep(.1, length.out=ncol(pred.dd)),
+                     tjur = rep(NA, length.out=ncol(pred.dd)),
+                     cor = rep(NA, length.out=ncol(pred.dd)))
+    
+    # m = 59
+    for (m in 1:ncol(pred.dd)) { 
+      
+      p = pred.dd[,m]; y = otudd.pa[,m]
+      
+      loglikP = sum( log( p*y + (1-p)*(1-y) ) )
+      loglikN = sum( log( mean(p)*y + (1-mean(p))*(1-y) ) )
+      
+      rsq$nagel[m] = (1-exp(2/length(p)*(loglikN-loglikP))) / (1-exp(2/length(p)*loglikN))
+      rsq$ll[m] = loglikP
+      
+      tppp = sum(p*y)
+      fppp = sum(p*(1-y))
+      fapp = sum((1-p)*y) ### Weird behavious if fa object is here... check in sjSDM code... 
+      tapp = sum((1-p)*(1-y))
+      
+      rsq$plr[m] = tppp/(tppp+fapp)/fppp*(fppp+tapp) # get NaN if species missing at all sites. OK> 
+      
+      tjur <- base::diff(tapply(p, y, mean, na.rm = T))
+      rsq$tjur[m] <- ifelse(length(tjur) > 0, tjur, NA)
+      rsq$cor[m] = cor(p, y)
+      
+    }
+    
+    
+    # Tjur <- tryCatch(expr = mapply(function(x,y) {
+    #   tj <- base::diff(tapply(x, y, mean, na.rm = T)) # difference of average predicted values at 1 and 0
+    #   if(!length(tj) > 0) tj <- NA
+    #   return(tj)
+    # }, asplit(pred.dd,2), asplit(otudd.pa,2)), error = function(err){ return(NA)})
+    # 
+    
+    ## add to data frame
 
-#### 4. WRite results to csv ####
-write.table(tune.results,
-            file = file.path(resFolder,paste0("manual_tuning_sjsdm_5CV_M1S1_", 
-                                              abund, 
-                                              "_min_",
-                                              minocc,
-                                              "_nSteps_",
-                                              noSteps,
-                                              ".csv")), row.names=F, sep=',')
+    if (pred==2) {
+      eval.results$AUC.train[eval.results$k == i] = mean(auc, na.rm = TRUE)
+      eval.results$ll.train[eval.results$k == i] = mean(rsq$ll, na.rm = T)
+      eval.results$nagel.train[eval.results$k == i] = mean(rsq$nagel, na.rm = T)
+      eval.results$plr.train[eval.results$k == i]  = mean(rsq$plr, na.rm = T)
+      eval.results$tjur.train[eval.results$k == i]  = mean(rsq$tjur, na.rm = T)
+      eval.results$cor.train[eval.results$k == i]  = mean(rsq$cor, na.rm = T)
+    }
+    
+    if (pred==1) {
+      eval.results$AUC.test[eval.results$k == i] = mean(auc, na.rm = TRUE)
+      eval.results$ll.test[eval.results$k == i] = mean(rsq$ll, na.rm = T)
+      eval.results$nagel.test[eval.results$k == i] = mean(rsq$nagel, na.rm = T)
+      eval.results$plr.test[eval.results$k == i] = mean(rsq$plr, na.rm = T)
+      eval.results$tjur.test[eval.results$k == i]  = mean(rsq$tjur, na.rm = T)
+      eval.results$cor.test[eval.results$k == i]  = mean(rsq$cor, na.rm = T)
+    }
+    
+    ## species results
+    
+    if (pred==1) {
+      rsq$auc <- auc
+      sp.res.test[[i]] <- rsq
+    }
+    
+    if (pred==2) {
+      rsq$auc <- auc
+      sp.res.train[[i]] <- rsq
+    }
+    
+    
+  } # end of evaluation loop
+  
+  rm(model.train)
+  
+} # end of model loop
 
 
-head(tune.results)
+
+head(eval.results)
 
 ### 5. Average AUC by tune runs ####
-
-tune.mean <- tune.results %>%
-  group_by(across(c(-loglike, -loss, -k, -contains("train|test"))), ) %>%
-  summarise(across(contains("train|test"), mean)
-    #auc_explain = mean(AUC.train),
-    #auc_test = mean(AUC.test)
-  )
-
-data.frame(tune.mean)
+# eval.mean <- eval.results %>%
+#   group_by(across(c(-loglike_sjSDM, -loss, -k, -contains(c("train", "test"))))) %>%
+#   #summarise(across(contains(c("train", "test"))), list(mean))
+#   summarise(across(contains(c("train", "test")), list(mean = mean))) 
 
 
-write.table(tune.mean,
-            file = file.path(resFolder,paste0("manual_tuning_sjsdm_5CV_M1S1_mean_AUC_", 
-                                              abund, 
-                                              "_min_",
-                                              minocc,
-                                              "_nSteps_",
-                                              noSteps,
-                                              ".csv")), row.names=F, sep=',')
+## species means
+
+str(sp.res.test, max.level = 2)
+
+names <- colnames(sp.res.test[[1]])
+
+sp.mn.test <- lapply(names, function(z){
+  
+  rowMeans(do.call(cbind, lapply(sp.res.test, function(x) x[[z]])), na.rm = T)
+  
+})
+
+names(sp.mn.test) <- names
+
+
+sp.mn.train <- lapply(names, function(z){
+  
+  rowMeans(do.call(cbind, lapply(sp.res.train, function(x) x[[z]])), na.rm = T)
+  
+})
+
+names(sp.mn.train) <- names
+
+
+save(eval.results, sp.mn.train, sp.mn.test, sp.res.test, sp.res.train, file = file.path(resFolder, "sp_results.rdata"))
