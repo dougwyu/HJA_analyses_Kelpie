@@ -106,7 +106,7 @@ XY.csv <- otuenv %>%
 ```{r create otu.ab.csv, otu.qp.csv, and otu.pa.csv}
 # keep OTUs with >=5 incidences
 # original read number abundance
-minocc <- 10 # set to high number (e.g. 20) for testing
+minocc <- 5 # set to high number (e.g. 20) for testing
 otu.ab.csv <- otuenv %>% select(lysis_ratio, contains("__")) %>% 
   mutate(across(contains("__"), ~ .x / lysis_ratio)) %>% 
   select(-lysis_ratio) %>% 
@@ -484,6 +484,7 @@ p1 <- plot_xy_factor1(abund = abund, model = model)
 p2 <- plot_xy_factor2(abund = abund, model = model)
 
 p0
+p1
 p1 | p2 # if error "Viewport has zero dimension(s)" error, enlarge plot window
 
 phist <- ggplot(sp_res, aes(x = Factor1)) +
