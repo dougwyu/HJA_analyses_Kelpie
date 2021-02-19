@@ -48,7 +48,7 @@ sjsdmVfolder = glue('sjsdm-{sjsdmV}')
 # ... r read-data
 # ...... from rdata ........
 cvn = 'cv1'				# cv2 , cv3
-select.percent = .8		# .7
+select.percent = .7		# .7
 load( here('source',glue('YL_ada_{formula.env}_{select.percent}_{period}_{trap}_{minocc}_{abund}'),glue('YL_ada_{formula.env}_{select.percent}_{period}_{trap}_{minocc}_{abund}_{cvn}.rdata')))
 	
 # .. generate 's.' data
@@ -113,9 +113,9 @@ for (lambda.envN in 1:11) {
 				  spatial = linear(data=XY.train, ~0+UTM_E*UTM_N, lambda=sample.spbio[lambda.spN], alpha=sample.spbio[alpha.spN]),
 				  
 				  learning_rate = 0.003, # 0.003 recommended for high species number 
-				  step_size = NULL, iter = 150L, family=stats::binomial('probit'), sampling = 5000L # 150L, 5000L
+				  step_size = NULL, iter = 150L, family=stats::binomial('probit'), sampling = 3000L # 150L, 5000L
 				 )
-				saveRDS(list(model=model.train, random=data.frame('lambda.bioN'=lambda.bioN, 'alpha.bioN'=alpha.bioN, 'lambda.spN'=lambda.spN, 'alpha.spN'=alpha.spN)), here(outputpath,'sjsdm_general_outputs',sjsdmVfolder,'sjsdm-model-RDS', glue('s-jSDM_tuning.cv_{period}_{trap}_{abund}_{cvn}_min{minocc}_{formula.env}_lambdaE{lambda.envN}_{alpha.envN}_hidden{hiddenN}_{dropN}_{date.model.run}.RDS')) )
+				saveRDS(list(model=model.train, random=data.frame('lambda.bioN'=lambda.bioN, 'alpha.bioN'=alpha.bioN, 'lambda.spN'=lambda.spN, 'alpha.spN'=alpha.spN)), here(outputpath,'sjsdm_general_outputs',sjsdmVfolder,'sjsdm-model-RDS',glue('cv_{date.model.run}'), glue('s-jSDM_tuning.cv_{period}_{trap}_{abund}_{cvn}_min{minocc}_{formula.env}_lambdaE{lambda.envN}_{alpha.envN}_hidden{hiddenN}_{dropN}_{date.model.run}.RDS')) )
 	
 			}
 		}
