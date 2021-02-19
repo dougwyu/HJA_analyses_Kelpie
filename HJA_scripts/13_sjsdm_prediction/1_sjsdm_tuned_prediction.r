@@ -7,7 +7,7 @@
 ```{r setup}
 # setwd('/media/yuanheng/SD-64g2/Downloads/backup2/HJA_analyses_Kelpie/HJA_scripts/13_sjsdm_prediction')
 	
-pacman::p_load('tidyverse','here','conflicted','reticulate','sjSDM','glue','vegan','pROC', 'gridExtra')
+pacman::p_load('tidyverse','here','conflicted','reticulate','sjSDM','glue','vegan','pROC', 'gridExtra','ggeffects','cowplot')
 	
 conflict_prefer("filter", "dplyr")
 conflict_prefer("select", "dplyr")
@@ -33,8 +33,8 @@ primer = "BF3BR2"
 minocc = 5
 trap <- "M1"; period = "S1"
 date.model.run = 20210125   # according to tuning result
-abund = 'pa'		# 'qp','pa'  !!! change accordingly
-formula.env = 'envDNN'		# 'envDNN.newVars'
+abund = 'qp'		# 'qp','pa'  !!! change accordingly
+formula.env = 'envDNN.newVars'		# 'envDNN.newVars'
 	
 outputidxstatstabulatefolder = glue("outputs_minimap2_{minimaprundate}_{samtoolsfilter}_{samtoolsqual}_kelpie{kelpierundate}_{primer}_vsearch97")
 outputpath = glue('../../Kelpie_maps/{outputidxstatstabulatefolder}')
@@ -278,7 +278,7 @@ auc.all = data.frame(otu=as.character(otu.name$otu), auc.pa=rep(.1,length=nrow(o
 str(auc.all)
 # dim[1] == 268!!!
 	
-set = 'explain'  # 1'test' , 2'explain'
+set = 'test'  # 1'test' , 2'explain'
 formula 
 	
 lambda.env1=0.2; alpha.env1=1; lambda.sp1=0.166666666666667; drop1=0.1		# envDNN
@@ -374,25 +374,37 @@ grid.arrange(plot.list[[1]],plot.list[[2]], nrow=1, widths=c(.36,.64))   #, layo
 	
 dev.off()
 	
-# .... prevalent spp
-a = data.frame(sum=colSums(explain$otu), otu=attr(colSums(explain$otu),'names'))
-a = a[order(a$sum, decreasing=T),]
-a$sum.seq = 1:dim(a)[1]
-str(a)
-# 268, 3
-	
-# pdf(here(outputpath,'prediction_outputs', 'sjsdm-graph', sjsdmVfolder, 'prediction', glue('lme_qp_{period}_{trap}_min{minocc}_newVars_tuned_{date.model.run}.pdf')), width=8, height=6.5)
-	
+
+# ............. lme model ................
 auc.all$order =  as.factor(auc.all$order)
-mod1 <- lme4::lmer(auc.qp.test.envDNN.newVars ~ sum + (1 | order), data = auc.all, REML = FALSE)
-plot(auc.all$auc.qp.test.envDNN.newVars, auc.all$sum, ylab='incidence',xlab='auc.qp.test.envDNN.newVars')
-abline(a=coef(mod1)$order[,1], b=coef(mod1)$order[,2])
+names(auc.all)[1:5]
+i = 2
+abund='qp'; formula='envDNN'
+# auc.qp.test.envDNN.newVars
+	
+dd = auc.all[which(auc.all[,i]!='NA'),]
+mod1 <- lme4::lmer(dd[,i] ~ sum + (1 | order), data = dd, REML = FALSE)
+mod2 <- lme4::lmer(dd[,i] ~ 1 + (1 | order), data = dd, REML = FALSE)
+anova(mod1, mod2)
+	
+mod1 <- lme4::lmer(dd[,i] ~ sum + (1 | order), data = dd, REML = T)
+r2=MuMIn::r.squaredGLMM(mod1)
+	
+# pdf(here(outputpath,'prediction_outputs', 'sjsdm-graph', sjsdmVfolder, 'prediction', glue('lme_{abund}_{period}_{trap}_min{minocc}_{formula}_tuned_{date.model.run}.pdf')), width=6, height=8.5)
+	
+#plot(dd$sum, dd[,i], xlab='incidence',ylab=paste0('auc.',abund,'.test.',formula))
+## auc.all$auc.qp.test.envDNN.newVars
+#abline(a=coef(mod1)$order[,1], b=coef(mod1)$order[,2])
+	
+p1 = ggplot(dd, aes(x = sum, y = dd[,i], group = order, colour = order)) + geom_point() + geom_line(data = cbind(dd, pred = predict(mod1)), aes(y = pred), size = 1) + labs(x = "incidence", y = paste0('AUC.',abund,'.test.',formula)) + annotate(geom='text',x=(max(dd$sum)*.9), y=.1, label=paste0('R^2: ',round(r2[[1]],3))) + scale_colour_viridis_d(option = "cividis") + theme(legend.position='bottom')
+p2 = ggplot(dd, aes(x = sum, y = dd[,i], group = order, colour = order)) + geom_point() + geom_line(data = cbind(dd, pred = predict(mod1)), aes(y = pred), size = 1) + labs(x = "incidence", y = paste0('AUC.',abund,'.test.',formula)) + theme_cowplot() + facet_wrap(vars(order)) + scale_colour_viridis_d(option = "cividis") + theme(legend.position='none')
+grid.arrange(p1,p2, nrow=2, heights=c(.65,.35))
 	
 dev.off()
 	
 ```
 
-# envDNN,qp -> unique(roc.dd1$otu.name[roc.dd1$auc==0])[1:2]; unique(roc.dd1$otu.name[roc.dd1$auc==1])[c(2,6)]
+
 ```{r I-map-plot}
 # load data 
 set = c('test','explain')  
