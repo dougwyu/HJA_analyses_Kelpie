@@ -25,15 +25,16 @@
 
 ## trial run 
 options(echo=TRUE) # if you want see commands in output file
-Sys.setenv(RETICULATE_PYTHON="/gpfs/scratch/hsp20azu/sjSDM_env/bin/python")
+Sys.setenv(RETICULATE_PYTHON="/gpfs/scratch/b042/sjSDM_env/bin/python"))
 library(sjSDM)
 packageVersion("sjSDM")
 # [1] ‘0.1.3.9000’
-getwd() # always run sub from oregon_ada
+getwd() # always
 
 library(dplyr)
 
-resFolder <-"code_sjSDM/r20210219/results"
+
+resFolder <-"doug_min6"
 if(!dir.exists(resFolder)) dir.create(resFolder, recursive = TRUE)
 
 ## Updated to new vars, also changes to elevation_m, canopy_height_m  to _f. 
@@ -117,7 +118,7 @@ rm(datFile, gitHub, kelpierundate, minimaprundate, outputidxstatstabulatefolder,
 
 
 # keep OTUs with >=5 incidences
-minocc <- 5 # set to high number (e.g. 20) for testing
+minocc <- 6 # set to high number (e.g. 20) for testing
 otu.qp.csv <- otuenv %>% dplyr::select(contains("__")) ## file above is already qp
 otu.qp.csv <- otu.qp.csv[ , colSums(otu.qp.csv > 0) >= minocc]
 

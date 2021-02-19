@@ -33,7 +33,7 @@ getwd() # always run sub from oregon_ada
 
 library(dplyr)
 
-resFolder <-"code_sjSDM/r20210219/results"
+resFolder <-"code_sjSDM/r20210219a/results"
 if(!dir.exists(resFolder)) dir.create(resFolder, recursive = TRUE)
 
 ## Updated to new vars, also changes to elevation_m, canopy_height_m  to _f. 
