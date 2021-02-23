@@ -33,13 +33,13 @@ getwd() # always run sub from oregon_ada
 
 library(dplyr)
 
-resFolder <-"code_sjSDM/r20210219a/results"
+resFolder <-"code_sjSDM/r20210219c/results"
 if(!dir.exists(resFolder)) dir.create(resFolder, recursive = TRUE)
 
 ## Updated to new vars, also changes to elevation_m, canopy_height_m  to _f. 
 
 # # model settings:
-abund <- "pa"
+abund <- "qp"
 
 device <- "gpu"
 iter <- 150L
@@ -126,8 +126,6 @@ otu.pa.csv <- otu.qp.csv
 otu.pa.csv[otu.pa.csv > 0] <- 1
 min(colSums(otu.pa.csv)) == minocc # should be TRUE
 
-unname(otu.pa.csv[1:10, 1:10])
-unname(otu.qp.csv[1:10, 1:10])
 # rm(minocc)
 
 # remove OTUs, XY, and normalised NDVI and EVI
