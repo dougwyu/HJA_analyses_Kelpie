@@ -33,7 +33,7 @@ getwd() # always run sub from oregon_ada
 
 library(dplyr)
 
-resFolder <-"code_sjSDM/r20210217/results"
+resFolder <-"code_sjSDM/r20210219b/results"
 if(!dir.exists(resFolder)) dir.create(resFolder, recursive = TRUE)
 
 ## Updated to new vars, also changes to elevation_m, canopy_height_m  to _f. 
@@ -114,7 +114,7 @@ rm(datFile, gitHub, kelpierundate, minimaprundate, outputidxstatstabulatefolder,
 
 
 # keep OTUs with >=5 incidences
-minocc <- 5 # set to high number (e.g. 20) for testing
+minocc <- 6 # set to high number (e.g. 20) for testing
 otu.qp.csv <- otuenv %>% dplyr::select(contains("__")) ## file above is already qp
 otu.qp.csv <- otu.qp.csv[ , colSums(otu.qp.csv > 0) >= minocc]
 
@@ -190,8 +190,9 @@ table(fold.id)
 hidden <- list(c(50L,50L,10L), c(25L,25L,10L))
 
 ## get best tune run
-pa <- read.csv(file.path(resFolder, "manual_tuning_sjsdm_5CV_M1S1_mean_AUC_pa_min_5_nSteps_500.csv"))
-pa.best <- pa[which.max(pa$auc_test),,drop = T]
+pa <- read.csv(file.path(resFolder, "manual_tuning_sjsdm_5CV_M1S1_mean_AUC_pa_min_6_nSteps_1000.csv"))
+head(pa)
+pa.best <- pa[which.max(pa$AUC.test_mean),,drop = T]
 pa.best
 
 
@@ -220,7 +221,7 @@ if(abund == "pa") {
   family <- stats::binomial('probit') } else {
     if(abund ==  "qp") {
       Y <- otu.qp.csv
-      # family <- stats::binomial()
+      family <- stats::binomial('probit')
     } else stop("check abund")
   } 
 
@@ -383,7 +384,7 @@ for(i in 1:k){
       
       tjur <- base::diff(tapply(p, y, mean, na.rm = T))
       rsq$tjur[m] <- ifelse(length(tjur) > 0, tjur, NA)
-      rsq$cor[m] = cor(p, y)
+      rsq$cor[m] = suppressWarnings(cor(p, y))
       
     }
     
@@ -473,22 +474,19 @@ save(eval.results, sp.mn.train, sp.mn.test, sp.res.test, sp.res.train, file = fi
 
 
 ### Plots 
-
-
-png("Hmsc_CD/local/plots/eval_metrics_pairs_test.png")
+pdf(file.path(resFolder, "eval_metrics_pairs_test.pdf"))
 plot(sp.res.test[[1]])
 mtext("test")
 dev.off()
 
-png("Hmsc_CD/local/plots/eval_metrics_pairs_train.png")
-plot(sp.res.train[[1]])
-mtext("test")
-dev.off()
+# pdf(file.path(resFolder,"eval_metrics_pairs_train.png"))
+# plot(sp.res.train[[1]])
+# mtext("test")
+# dev.off()
 
 
-png("Hmsc_CD/local/plots/eval_metrics_auc.png")
-plot(sp.mn.train$auc, sp.mn.test$auc, xlim = c(0,1), ylim = c(0,1))
+pdf(file.path(resFolder, "eval_metrics_auc_test_train.pdf"))
+plot(sp.mn.train$auc, sp.mn.test$auc, xlim = c(0,1), ylim = c(0,1), xlab = "AUC train", ylab = "AUC test")
 abline(0,1)
 dev.off()
-
 

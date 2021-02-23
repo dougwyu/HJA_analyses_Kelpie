@@ -21,9 +21,12 @@ mtext("test")
 dev.off()
 
 
+round(mean(sp.mn.test$auc), 2)
+
 png("Hmsc_CD/local/plots/eval_metrics_auc.png")
 plot(sp.mn.train$auc, sp.mn.test$auc, xlim = c(0,1), ylim = c(0,1))
 abline(0,1)
+text(0.2,0.8, paste0("mean test AUC ", round(mean(sp.mn.test$auc), 2)))
 dev.off()
 
 
