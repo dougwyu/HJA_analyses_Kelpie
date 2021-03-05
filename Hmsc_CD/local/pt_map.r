@@ -185,6 +185,10 @@ otuenv %>%
             M1_only = sum(M1[is.na(M2)]),
             M2_only = sum(M2[is.na(M1)]))
 
+
+# Total M1_total M2_total shared M1_only M2_only
+# <int>    <int>    <int>  <int>   <int>   <int>
+#   1   225      222       82     79     143       3
 ## get predictors and coordiantes, sitenames
 
 

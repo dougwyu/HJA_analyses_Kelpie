@@ -115,6 +115,12 @@ ht.r250 <- focal(ht, w = r250, fun = mean, na.rm = T)
 ht.r500 <- focal(ht, w = r500, fun = mean, na.rm = T)
 ht.r1k <- focal(ht, w = r1k, fun = mean, na.rm = T)
 
+d250 <- (focalWeight(be10, d = 250, type = "circle")>0)*1
+dim(d250)
+prod(dim(d250))/2 # get central cell
+d500 <- (focalWeight(be10, d = 500, type = "circle")>0)*1
+d1k <- (focalWeight(be10, d = 1000, type = "circle")>0)*1
+
 # same for cover
 identical((focalWeight(cov2_4, d = 250, type = "circle")>0)*1,r250)
 
@@ -134,8 +140,79 @@ names(covStack) <- c("ht", "ht.r250", "ht.r500", "ht.r1k",
                     "cov2_4", "cov2_4.r250", "cov2_4.r500", "cov2_4.r1k",
                     "cov4_16", "cov4_16.r250", "cov4_16.r500", "cov4_16.r1k")
 
-terr <- terrain(be10, opt = c("slope", "aspect", "TRI"), unit= "degrees")
+terr <- terrain(be10, opt = c("slope", "aspect", "TRI", "TPI"), unit= "degrees")
 terr
+
+# f <- matrix(1, nrow=3, ncol=3)
+# TPI <- focal(be10, w=f, fun=function(x, ...) x[5] - mean(x[-5]), pad=TRUE, padValue=NA)
+# 
+# plot(terr$tpi)
+# plot(TPI)
+
+## Do TPI at three different scales
+# d9 <- matrix(1,3,3)
+# d250 <- (focalWeight(be10, d = 250, type = "circle")>0)*1
+# dim(d250)
+# d500 <- (focalWeight(be10, d = 500, type = "circle")>0)*1
+# d1k <- (focalWeight(be10, d = 1000, type = "circle")>0)*1
+# 
+# ## Do TPI at three different scales
+# c250 <- ceiling(prod(dim(d250))/2)
+# c500 <- ceiling(prod(dim(d500))/2) # get central cell
+# c1k <- ceiling(prod(dim(d1k))/2) # get central cell
+# 
+# 
+# TPI250 <- focal(be10, w=d250, fun=function(x, ...) x[c250] - mean(x[-c250]), pad=TRUE, padValue=NA)
+# writeRaster(TPI250, filename = "data/tpi250.tif", datatype = "FLT4S")
+# 
+# TPI500 <- focal(be10, w=d500, fun=function(x, ...) x[c500] - mean(x[-c500]), pad=TRUE, padValue=NA)
+# writeRaster(TPI500, filename = "data/tpi500.tif", datatype = "FLT4S")
+# 
+# TPI1k <- focal(be10, w=d1k, fun=function(x, ...) x[c1k] - mean(x[-c1k]), pad=TRUE, padValue=NA)
+# writeRaster(TPI1k, filename = "data/tpi1k.tif", datatype = "FLT4S")
+
+## load above from ADA
+TPI250 <- raster(file.path(gis, "r_utm", "tpi250.tif"))
+TPI500 <- raster(file.path(gis, "r_utm", "tpi500.tif"))
+TPI1k <- raster(file.path(gis, "r_utm", "tpi1k.tif"))
+
+TPI250
+
+plot(TPI250)
+plot(TPI500)
+plot(TPI1k)
+
+## make SD categories from TPI 500
+sd <- cellStats(TPI500, "sd")
+mn <- cellStats(TPI500, "mean")
+
+# sd around the mean
+breaks.1sd <- c(-Inf, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, Inf)*sd + mn
+sd500.1sd <- cut(TPI500, breaks = breaks.1sd)
+
+# weiss method + slope
+# classes:       1   2     3   4   5
+breaks <- c(-Inf, -1, -0.5, 0.5, 1, Inf)*sd + mn
+breaks
+
+sd500 <- cut(TPI500, breaks = breaks)
+sd500
+
+plot(sd500, colNA = "black")
+
+sd500_6c <- raster::overlay(sd500, terr$slope, 
+                             fun = function(x,z) {
+                               ifelse((x == 5) & !is.na(z), 1, # ridge > 1 sd
+                                      ifelse((x == 4) & !is.na(z), 2, # upper slope > 0.5 sd  =<1 sd
+                                             ifelse((x == 3) & (z > 5), 3, # middle slope
+                                                    ifelse((x == 3) & (z <= 5), 4, # flat slope
+                                                           ifelse((x == 2) & !is.na(z), 5, # lower slope
+                                                                  ifelse((x == 1) & !is.na(z), 6, NA)))))) # valleys
+     
+                                                       })
+sd500_6c
+plot(sd500_6c)
+plot(stack(sd500.1sd, sd500, sd500_6c), col = rainbow(6))
 
 ## Make eastness and northness
 Nss <- cos(terr$aspect* pi / 180) # "Northness (aspect)" # convert to radians for cos/sin functions
@@ -250,6 +327,91 @@ pairs(topo.df[,c("be10", "slope", "Nss", "Ess", "twi", "ht", "ht.r1k", "cov2_4",
 # c("be10", "slope", "Ess", "twi", "ht", "cov2_4", "cov4_16", "mTopo") # , "cut.r1k.pt"
 # c("be10", "slope", "Ess", "twi","ht.r1k", "cov2_4.r1k", "cov4_16.r1k", "mTopo") # , "cut.r1k.pt"
 
+
+### ADd annual metrics 
+
+# # stdDev bandNames
+# stdN <- c("B1_stdDev", "B2_stdDev", "B3_stdDev", "B4_stdDev", "B5_stdDev", "B6_stdDev", "B7_stdDev", "B10_stdDev", "B11_stdDev", "ndvi_stdDev", "ndmi_stdDev", "nbr_stdDev")
+# 
+# ## q bandNames
+# qN <- c("B1_p0", "B1_p5", "B1_p50", "B1_p95", "B1_p100", "B2_p0", "B2_p5", "B2_p50", "B2_p95", "B2_p100", "B3_p0", "B3_p5", "B3_p50", "B3_p95", "B3_p100", "B4_p0", "B4_p5", "B4_p50", "B4_p95", "B4_p100", "B5_p0", "B5_p5", "B5_p50", "B5_p95", "B5_p100", "B6_p0", "B6_p5", "B6_p50", "B6_p95", "B6_p100", "B7_p0", "B7_p5", "B7_p50", "B7_p95", "B7_p100", "B10_p0", "B10_p5", "B10_p50", "B10_p95", "B10_p100", "B11_p0", "B11_p5", "B11_p50", "B11_p95", "B11_p100", "ndvi_p0", "ndvi_p5", "ndvi_p50", "ndvi_p95", "ndvi_p100", "ndmi_p0", "ndmi_p5", "ndmi_p50", "ndmi_p95", "ndmi_p100", "nbr_p0", "nbr_p5", "nbr_p50", "nbr_p95", "nbr_p100")
+# 
+# # least cloudy
+# cldN <- c("LC08_045029_20180726_B1","LC08_045029_20180726_B2","LC08_045029_20180726_B3","LC08_045029_20180726_B4","LC08_045029_20180726_B5","LC08_045029_20180726_B6","LC08_045029_20180726_B7","LC08_045029_20180726_B10","LC08_045029_20180726_B11","LC08_045029_20180726_ndvi","LC08_045029_20180726_ndmi","LC08_045029_20180726_nbr","LC08_046029_20180818_B1","LC08_046029_20180818_B2","LC08_046029_20180818_B3","LC08_046029_20180818_B4","LC08_046029_20180818_B5","LC08_046029_20180818_B6","LC08_046029_20180818_B7","LC08_046029_20180818_B10","LC08_046029_20180818_B11","LC08_046029_20180818_ndvi","LC08_046029_20180818_ndmi","LC08_046029_20180818_nbr","LC08_045030_20180726_B1","LC08_045030_20180726_B2","LC08_045030_20180726_B3","LC08_045030_20180726_B4","LC08_045030_20180726_B5","LC08_045030_20180726_B6","LC08_045030_20180726_B7","LC08_045030_20180726_B10","LC08_045030_20180726_B11","LC08_045030_20180726_ndvi","LC08_045030_20180726_ndmi","LC08_045030_20180726_nbr")
+
+## Get rasters
+
+std <- brick(file.path(gis, "r_utm/gee/stdDev.tif"))
+qnt <- brick(file.path(gis, "r_utm/gee/quantiles.tif"))
+cld <- brick(file.path(gis, "r_utm/gee/leastCloud2.tif"))
+
+# set NA value
+NAvalue(std) <- -9999
+NAvalue(qnt) <- -9999
+NAvalue(cld) <- -9999
+
+std
+names(std)
+names(qnt)
+names(cld)
+cellStats(std$ndvi_stdDev, range)
+NAvalue(cld)
+
+cellStats(cld$LC08_045029_20180726_B2, range)
+
+plotRGB(cld, r = 4, g = 3, b = 2, stretch = "lin", colNA = "black")
+plot(cld$LC08_045030_20180726_nbr, colNA = "black")
+
+plot(std[[c("ndvi_stdDev", "savi_stdDev")]])
+plot(qnt[[c("ndvi_p50", "savi_p50")]])
+
+plot(qnt[[c("ndvi_p5", "ndvi_p50", "ndvi_p95", 
+       "ndmi_p5", "ndmi_p50", "ndmi_p95",
+       "savi_p5", "savi_p50", "savi_p95")]])
+
+## Make subset stack
+
+annualStack <- raster::stack(std[[c("ndmi_stdDev")]],
+                     qnt[[c("ndvi_p5", "ndvi_p50", "ndvi_p95", 
+                           "ndmi_p5", "ndmi_p50", "ndmi_p95",
+                            "savi_p50")]],
+                     cld[[c("LC08_045029_20180726_B1",
+                            "LC08_045029_20180726_B3","LC08_045029_20180726_B4",
+                            "LC08_045029_20180726_B5",
+                            "LC08_045029_20180726_B7","LC08_045029_20180726_B10")]])
+
+annualStack
+xy.utm
+
+annual.pts <- extract(annualStack, xy.utm)
+pairs(annual.pts)
+
+annual.100m <- extract(annualStack, xy.utm, buffer = 100, fun=mean, na.rm = T)
+
+head(annual.pts)
+head(annual.100m)
+colnames(annual.100m) <- paste0(colnames(annual.100m), "_100m")
+
+tpi <- extract(sd500_6c, xy.utm)
+
+annual.df <- cbind(annual.pts, annual.100m, tpi)
+colnames(annual.df)
+
+# Join with previous
+load("Hmsc_CD/oregon_ada/data/topo_data.rdata") # topo.df
+head(topo.df)
+
+ann.topo <- cbind(SiteName = topo.df$siteName, annual.df)
+
+save(ann.topo, file = "Hmsc_CD/oregon_ada/data/ann_topo.df")
+
+which(is.na(ann.topo$tpi))
+
+
+ann.topo[1:10, 1:10]
+pairs(ann.topo[, c(2,4,7:10, 24:26, 30:32)])
+
+pairs(ann.topo[, c(18:30, 52)])
 
 ## export some plots
 
