@@ -197,8 +197,9 @@ breaks
 
 sd500 <- cut(TPI500, breaks = breaks)
 sd500
+table(values(sd500))
 
-plot(sd500, colNA = "black")
+plot(sd500, colNA = "black", col = rainbow(5))
 
 sd500_6c <- raster::overlay(sd500, terr$slope, 
                              fun = function(x,z) {
@@ -213,6 +214,8 @@ sd500_6c <- raster::overlay(sd500, terr$slope,
 sd500_6c
 plot(sd500_6c)
 plot(stack(sd500.1sd, sd500, sd500_6c), col = rainbow(6))
+
+# SiteName %in% c("076361", "159408") # two points not coverd
 
 ## Make eastness and northness
 Nss <- cos(terr$aspect* pi / 180) # "Northness (aspect)" # convert to radians for cos/sin functions
@@ -393,6 +396,18 @@ head(annual.100m)
 colnames(annual.100m) <- paste0(colnames(annual.100m), "_100m")
 
 tpi <- extract(sd500_6c, xy.utm)
+sum(is.na(tpi))
+which(is.na(tpi))
+
+plot(sd500_6c)
+plot(xy.utm[which(is.na(tpi)),], pch = 16, add = T)
+
+plot(be10)
+plot(xy.utm[which(is.na(tpi)),], pch = 16, add = T)
+
+plot(TPI500)
+plot(xy.utm[which(is.na(tpi)),], pch = 16, add = T)
+
 
 annual.df <- cbind(annual.pts, annual.100m, tpi)
 colnames(annual.df)

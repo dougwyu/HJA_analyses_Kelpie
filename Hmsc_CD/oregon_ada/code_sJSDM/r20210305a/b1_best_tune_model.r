@@ -49,7 +49,7 @@ sampling <- 5000L
 k <- 5
 
 ## Number of samples from tuning grid - random search
-# noSteps <- 500 # for results filename
+noSteps <- 1000 # for results filename
 
 # timings... 
 # models take approx to 0.28 mins run (Run time 00:36:11 for 125 models)
@@ -60,11 +60,11 @@ k <- 5
 # noSteps * k * 600  / 1048576
 
 # for testing on cpu
-device <- "cpu"
-iter <- 10L
-sampling <- 100L
-noSteps <- 2
-k <- 2
+# device <- "cpu"
+# iter <- 10L
+# sampling <- 100L
+# noSteps <- 10
+# k <- 3
 
 ### 1. Get data from github #####
 
@@ -116,7 +116,7 @@ otuenv <- otuenv %>%
 rm(datFile, gitHub, kelpierundate, minimaprundate, outputidxstatstabulatefolder, period, primer, samtoolsfilter, samtoolsqual, trap, fn)
 
 
-# keep OTUs with >=5 incidences
+# keep OTUs with >= minocc incidences
 minocc <- 6 # set to high number (e.g. 20) for testing
 otu.qp.csv <- otuenv %>% dplyr::select(contains("__")) ## file above is already qp
 otu.qp.csv <- otu.qp.csv[ , colSums(otu.qp.csv > 0) >= minocc]
@@ -171,8 +171,8 @@ env.vars <- dplyr::left_join(env.vars, ann.topo, by = "SiteName")
 env.vars$tpi <- as.factor(env.vars$tpi)
 # str(env.vars)
 
+## two poitns not covered by tpi (can fix this later... )
 indNA <- !is.na(env.vars$tpi)
-
 env.vars <- env.vars[indNA,]
 otu.pa.csv <- otu.pa.csv[indNA,]
 otu.qp.csv <- otu.qp.csv[indNA,]
@@ -183,15 +183,19 @@ rm(indNA)
 # oldVars <- c("insideHJA", "elevation_f", "canopyHeight_f", "minT_annual", "precipitation_mm", "distToRoad_m", "distToStream_m", "YrsSinceDist", "B1_20180717", "B2_20180717", "B3_20180717", "B4_20180717", "B5_20180717", "B6_20180717", "B7_20180717", "B10_20180717", "B11_20180717", "NDVI_20180717", "EVI_20180717", "B_20180717", "G_20180717", "W_20180717", "l_Cover_2m_max", "l_Cover_2m_4m", "l_Cover_4m_16m", "l_p25", "l_p95", "l_rumple")
 # 
 # # new vars
-newvars <- c("be10", "tri", "slope", "Nss", "Ess", "ht", "ht.r250", "ht.r500", "ht.r1k", "cov2_4", "cov2_4.r250", "cov2_4.r500", "cov2_4.r1k", "cov4_16", "cov4_16.r250", "cov4_16.r500", "cov4_16.r1k", "be500", "mTopo", "cut.r1k.pt", "insideHJA", "minT_annual", "maxT_annual", "precipitation_mm", "lg_DistStream", "lg_DistRoad", "lg_YrsDisturb", "B1_20180717", "B2_20180717", "B3_20180717", "B4_20180717", "B5_20180717", "B6_20180717", "B7_20180717", "B10_20180717", "B11_20180717", "NDVI_20180717", "EVI_20180717", "B_20180717", "G_20180717", "W_20180717", "l_p25", "l_rumple")
 
-cat(paste(colnames(ann.topo), collapse = '", "'))
-cat(paste(colnames(env.vars), collapse = '", "'))
+# varsName <- "var1"
+# vars <- c("be10", "tri", "slope", "Nss", "Ess", "ht", "ht.r250", "ht.r500", "ht.r1k", "cov2_4", "cov2_4.r250", "cov2_4.r500", "cov2_4.r1k", "cov4_16", "cov4_16.r250", "cov4_16.r500", "cov4_16.r1k", "be500", "mTopo", "cut.r1k.pt", "insideHJA", "minT_annual", "maxT_annual", "precipitation_mm", "lg_DistStream", "lg_DistRoad", "lg_YrsDisturb", "B1_20180717", "B2_20180717", "B3_20180717", "B4_20180717", "B5_20180717", "B6_20180717", "B7_20180717", "B10_20180717", "B11_20180717", "NDVI_20180717", "EVI_20180717", "B_20180717", "G_20180717", "W_20180717", "l_p25", "l_rumple")
+# 
+# cat(paste(colnames(ann.topo), collapse = '", "'))
+# cat(paste(colnames(env.vars), collapse = '", "'))
+# 
+# varsName <- "vars2"
+# vars <- c("be10", "tri", "slope", "Nss", "Ess","ndmi_stdDev", "ndvi_p5", "ndvi_p50", "ndvi_p95", "ndmi_p5", "ndmi_p50", "ndmi_p95", "savi_p50", "LC08_045029_20180726_B1", "LC08_045029_20180726_B3", "LC08_045029_20180726_B4", "LC08_045029_20180726_B5", "LC08_045029_20180726_B7", "LC08_045029_20180726_B10", "ndmi_stdDev_100m", "ndvi_p5_100m", "ndvi_p50_100m", "ndvi_p95_100m", "ndmi_p5_100m", "ndmi_p50_100m", "ndmi_p95_100m", "savi_p50_100m", "LC08_045029_20180726_B1_100m", "LC08_045029_20180726_B3_100m", "LC08_045029_20180726_B4_100m", "LC08_045029_20180726_B5_100m", "LC08_045029_20180726_B7_100m", "LC08_045029_20180726_B10_100m", "tpi")
 
-newvars <- c("be10", "tri", "slope", "Nss", "Ess","ndmi_stdDev", "ndvi_p5", "ndvi_p50", "ndvi_p95", "ndmi_p5", "ndmi_p50", "ndmi_p95", "savi_p50", "LC08_045029_20180726_B1", "LC08_045029_20180726_B3", "LC08_045029_20180726_B4", "LC08_045029_20180726_B5", "LC08_045029_20180726_B7", "LC08_045029_20180726_B10", "ndmi_stdDev_100m", "ndvi_p5_100m", "ndvi_p50_100m", "ndvi_p95_100m", "ndmi_p5_100m", "ndmi_p50_100m", "ndmi_p95_100m", "savi_p50_100m", "LC08_045029_20180726_B1_100m", "LC08_045029_20180726_B3_100m", "LC08_045029_20180726_B4_100m", "LC08_045029_20180726_B5_100m", "LC08_045029_20180726_B7_100m", "LC08_045029_20180726_B10_100m", "tpi")
 
-
-# vars <- c("be10", "tri", "slope", "Nss", "Ess","ndmi_stdDev", "ndvi_p5", "ndvi_p50", "ndvi_p95", "ndmi_p5", "ndmi_p50", "ndmi_p95", "savi_p50", "LC08_045029_20180726_B1", "LC08_045029_20180726_B3", "LC08_045029_20180726_B4", "LC08_045029_20180726_B5", "LC08_045029_20180726_B7", "LC08_045029_20180726_B10", "ndmi_stdDev_100m", "ndvi_p5_100m", "ndvi_p50_100m", "ndvi_p95_100m", "ndmi_p5_100m", "ndmi_p50_100m", "ndmi_p95_100m", "savi_p50_100m", "LC08_045029_20180726_B1_100m", "LC08_045029_20180726_B3_100m", "LC08_045029_20180726_B4_100m", "LC08_045029_20180726_B5_100m", "LC08_045029_20180726_B7_100m", "LC08_045029_20180726_B10_100m", "tpi", "ht", "ht.r250", "ht.r1k", "cov2_4.r250", "cov2_4.r1k", "cov4_16", "cov4_16.r250", "cov4_16.r1k", "mTopo", "cut.r1k.pt", "insideHJA", "lg_DistStream", "lg_DistRoad", "lg_YrsDisturb", "l_p25", "l_rumple")
+varsName <- "vars3"
+vars <- c("be10", "slope", "Nss", "Ess","ndmi_stdDev", "ndvi_p5", "ndvi_p50", "ndvi_p95", "ndmi_p5", "ndmi_p50", "ndmi_p95", "savi_p50", "LC08_045029_20180726_B1", "LC08_045029_20180726_B3", "LC08_045029_20180726_B4", "LC08_045029_20180726_B5", "LC08_045029_20180726_B7", "LC08_045029_20180726_B10", "ndmi_stdDev_100m", "ndvi_p5_100m", "ndvi_p50_100m", "ndvi_p95_100m", "ndmi_p5_100m", "ndmi_p50_100m", "ndmi_p95_100m", "savi_p50_100m", "LC08_045029_20180726_B1_100m", "LC08_045029_20180726_B3_100m", "LC08_045029_20180726_B4_100m", "LC08_045029_20180726_B5_100m", "LC08_045029_20180726_B7_100m", "LC08_045029_20180726_B10_100m", "tpi", "ht", "ht.r250", "ht.r1k", "cov2_4.r250", "cov2_4.r1k", "cov4_16", "cov4_16.r250", "cov4_16.r1k", "mTopo", "cut.r1k.pt", "insideHJA", "lg_DistStream", "lg_DistRoad", "lg_YrsDisturb", "l_p25", "l_rumple")
 
 
 ### 2. Make testing and training k folds #####
@@ -215,15 +219,15 @@ hidden <- list(c(50L,50L,10L), c(25L,25L,10L))
 
 ## get best tune run
 # use these for now -- best so far.
-res <- read.csv(file.path(resFolder, "manual_tuning_sjsdm_5CV_M1S1_mean_AUC_pa_min_5_nSteps_1000.csv"))
+# res <- read.csv(file.path(resFolder, "manual_tuning_sjsdm_5CV_M1S1_mean_AUC_pa_min_5_nSteps_1000.csv"))
 
-# res <- read.csv(file.path(resFolder,paste0("manual_tuning_sjsdm_", k, "CV_M1S1_mean_AUC_", 
-#                            abund, 
-#                            "_min_",
-#                            minocc,
-#                            "_nSteps_",
-#                            noSteps,
-#                            ".csv")))
+res <- read.csv(file.path(resFolder,paste0("manual_tuning_sjsdm_", varsName, "_", k, "CV_M1S1_meanEVAL_", 
+                                  abund, 
+                                  "_min",
+                                  minocc,
+                                  "_nSteps",
+                                  noSteps,
+                                ".csv")))
 
 head(res)
 res.best <- res[which.max(res$AUC.test_mean),,drop = T]
@@ -273,8 +277,8 @@ sp.res.test <- vector(length = k, mode = "list")
 for(i in 1:k){
   
   # select X data
-  env.train <- env.vars[fold.id != i, newvars]
-  env.test <- env.vars[fold.id == i, newvars]
+  env.train <- env.vars[fold.id != i, vars]
+  env.test <- env.vars[fold.id == i, vars]
   
   # select spatial data
   XY.train <- env.vars[fold.id != i, c("UTM_E", "UTM_N")]
@@ -288,10 +292,11 @@ for(i in 1:k){
   factV <- colnames(env.train)[sapply(env.train, is.factor)]
   
   # scale X and spatial data for each fold
-  # .. env data
+  # .. env data - without factors
   scale.env.train.all = dplyr::select(env.train, -any_of(factV)) %>% scale()
   # str(scale.env.train.all)
   
+  # put factors back in 
   scale.env.train <- data.frame(scale.env.train.all, env.train[,factV, drop = F])
   
   # data frame of means and sd for scaling
@@ -300,7 +305,8 @@ for(i in 1:k){
   scale.env.test = as.data.frame(do.call(rbind,apply(dplyr::select(env.test, -any_of(factV)), 1, function(x){(x-dd.env.scaler['env.mean',])/dd.env.scaler['env.sd',]} ) )) %>%
     tibble::add_column(env.test[,factV, drop = F])
   
-   
+  #dim(scale.env.train)
+  #dim(scale.env.test)
   
   # .. spatial data
   XY.train.scale <- scale(XY.train)
@@ -354,7 +360,7 @@ for(i in 1:k){
   
   ## SAve each model
   saveRDS(model.train,
-          file.path(resFolder,paste0("s-jSDM_final_model_", k, "CV_", 
+          file.path(resFolder,paste0("s-jSDM_final_model_", varsName, "_", k, "CV_", 
                                      i, "_", abund, ".rds")))
   
   # Do testing and save results in data frame
@@ -499,6 +505,7 @@ sp.mn.test <- lapply(names, function(z){
 })
 
 names(sp.mn.test) <- names
+sp.mn.test
 
 
 sp.mn.train <- lapply(names, function(z){
@@ -509,6 +516,7 @@ sp.mn.train <- lapply(names, function(z){
 
 names(sp.mn.train) <- names
 
+sapply(sp.mn.test, mean)
 
 
 

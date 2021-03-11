@@ -188,7 +188,7 @@ otuenv %>%
 
 # Total M1_total M2_total shared M1_only M2_only
 # <int>    <int>    <int>  <int>   <int>   <int>
-#   1   225      222       82     79     143       3
+#  225      222       82     79     143       3
 ## get predictors and coordiantes, sitenames
 
 
