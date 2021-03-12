@@ -205,6 +205,9 @@ ggplot(pred_resid.nsp, aes(x = predicted, y = residual))+
   facet_wrap(~OTU)
 
 
+hist(resids.nsp.mean)
+
+
 ### Plots 
 # pdf(file.path(resFolder, "eval_metrics_pairs_test.pdf"))
 # plot(sp.res.test[[1]])
