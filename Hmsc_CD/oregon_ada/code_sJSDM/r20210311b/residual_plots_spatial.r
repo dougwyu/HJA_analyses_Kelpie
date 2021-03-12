@@ -56,40 +56,27 @@ head(xy)
 
 # can do as stack... but difficult to subset...  as ggplot gets the full range of values to scale 
 #  even in subset
-# be <- stack(hllshd, be30)
-# coords <- xyFromCell(be, seq_len(ncell(be)))
-# be.df <- utils::stack(as.data.frame(getValues(be)))
-# be.df <- cbind(coords, be.df)
-# head(be.df)
-# 
-# unique(be.df$ind)
-# 
-# ggplot(be.df) + 
-#   geom_tile(aes(x, y, fill = values)) +
-#   facet_wrap(~ ind) +
-#   scale_fill_gradientn(colours = rev(terrain.colors(225))) +
-#   coord_equal()
-# 
-# 
-# ggplot() + 
-#   geom_tile(data = subset(be.df, ind = bE_30m_hlshd), aes(x, y, alpha = values)) +
-#   scale_alpha(range = c(0.25, 0.55), guide = "none")+
-#   coord_equal()
-# ggplot() + 
-#   geom_tile(data = subset(be.df, ind = bE_30m_hlshd), aes(x, y, fill = values)) +
-#   scale_fill_gradientn( colours = grey.colors(50, start = 0.3, end = 0.8))+
-#   coord_equal()
+## better as column for each raster in stack... 
 
-ggplot() + 
-  geom_tile(data = hllshd.df, aes(x, y, fill = values)) +
-  scale_fill_gradientn( colours = grey.colors(50, start = 0.3, end = 0.8))+
-  coord_equal()
+be <- stack(hllshd, be30)
+coords <- xyFromCell(be, seq_len(ncell(be)))
+be.df <- as.data.frame(values(be))
+be.df <- cbind(coords, be.df)
+head(be.df)
 
-ggplot() + 
-  geom_tile(data = hllshd.df, aes(x, y, alpha = values), fill= "grey20") +
+sapply(be.df, range, na.rm = T)
+
+ggplot(be.df) + 
+  geom_tile(aes(x, y, fill = bareEarth_m_30m)) +
+  scale_fill_gradientn(colours = rev(terrain.colors(255)), name = "Elevation")+
+  geom_tile(aes(x, y, alpha = bE_30m_hlshd), fill = "grey20") +
   scale_alpha(range = c(0.25, 0.65), guide = "none")+
   coord_equal()
 
+ggplot(be.df) + 
+  geom_tile(aes(x, y, alpha = bE_30m_hlshd), fill= "grey20") +
+  scale_alpha(range = c(0.25, 0.65), guide = "none")+
+  coord_equal()
 
 
 p1 <- ggplot() + 

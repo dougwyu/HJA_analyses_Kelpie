@@ -501,3 +501,63 @@ ggplot(cut.df) +
   scale_fill_gradientn(colours = rev(terrain.colors(225))) +
   coord_equal()
 
+
+#### Predictor plots
+
+hllshd <- raster(file.path(gis, "r_utm/bE_30m_hlshd.tif"))
+
+# prepare for ggplot geom_raster
+coords <- xyFromCell(hllshd, seq_len(ncell(hllshd)))
+hllshd.df <- utils::stack(as.data.frame(getValues(hllshd)))
+hllshd.df <- cbind(coords, hllshd.df)
+head(hllshd.df)
+
+
+# stck.sub <- annualStack[[c("ndmi_stdDev", "ndvi_p5", "ndvi_p50", "ndvi_p95")]]
+# ## stack sa long form, for facet
+# coords <- xyFromCell(stck.sub, seq_len(ncell(stck.sub)))
+# stck.df <- utils::stack(as.data.frame(getValues(stck.sub)))
+# stck.df <- cbind(coords, stck.df)
+# head(stck.df)
+
+
+stck.sub <- annualStack[[c("ndmi_stdDev", "ndvi_p5", "ndvi_p50", "ndvi_p95")]]
+# ## stack wide - not for facet
+coords <- xyFromCell(stck.sub, seq_len(ncell(stck.sub)))
+stck.df <- data.frame(values(stck.sub))
+stck.df <- cbind(coords, stck.df)
+head(stck.df)
+
+sapply(stck.df, range, na.rm=T)
+
+
+p1 <- ggplot(data = stck.df, aes(x = x, y = y, fill = ndmi_stdDev)) + 
+  geom_tile()+
+  scale_fill_viridis_c(option = "B", name = "NDMI annual std dev") +
+  #geom_tile(data = hllshd.df, aes(x, y, alpha = values), fill= "grey20") +
+  #scale_alpha(range = c(0.25, 0.65), guide = "none")+
+  coord_equal()
+  
+p2 <- ggplot(data = stck.df, aes(x = x, y = y, fill = ndvi_p5)) + 
+  geom_tile()+
+  scale_fill_viridis_c(option = "C", name = "5 percentile NDVI") +
+  #geom_tile(data = hllshd.df, aes(x, y, alpha = values), fill= "grey20") +
+  #scale_alpha(range = c(0.25, 0.65), guide = "none")+
+  coord_equal()
+
+p3 <- ggplot(data = stck.df, aes(x = x, y = y, fill = ndvi_p50)) + 
+  geom_tile()+
+  scale_fill_viridis_c(option = "B", name = "Median NDVI") +
+  #geom_tile(data = hllshd.df, aes(x, y, alpha = values), fill= "grey20") +
+  #scale_alpha(range = c(0.25, 0.65), guide = "none")+
+  coord_equal()
+
+p4 <- ggplot(data = stck.df, aes(x = x, y = y, fill = ndvi_p95)) + 
+  geom_tile()+
+  scale_fill_viridis_c(option = "C", name = "95 percentile NDVI") +
+  #geom_tile(data = hllshd.df, aes(x, y, alpha = values), fill= "grey20") +
+  #scale_alpha(range = c(0.25, 0.65), guide = "none")+
+  coord_equal()
+  
+plot_grid(p1, p2, p3, p4, ncol = 2)
+ggsave("local/plots/predictors_annual.png", width = 300, height = 300, units = "mm")
