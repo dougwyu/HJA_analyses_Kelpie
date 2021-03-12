@@ -233,10 +233,12 @@ rankSp$OTU <- factor(rankSp$OTU, levels = spF$OTU)
 
 rankSp
 
+
 rankSp %>%
   group_by(OTU, order, genus, epithet)%>%
   summarise(sumRank = sum(rank)) %>%
-  ggplot(aes(y = sort(sumRank), x = 1:length(sumRank), col = order))+
+  mutate(spp = paste(genus, epithet)) %>%
+  ggplot(aes(y = sort(sumRank), x = 1:length(sumRank), col = order)) + # 
   geom_point()
 
 
