@@ -182,6 +182,8 @@ plot(TPI250)
 plot(TPI500)
 plot(TPI1k)
 
+plot(be10)
+
 ## make SD categories from TPI 500
 sd <- cellStats(TPI500, "sd")
 mn <- cellStats(TPI500, "mean")
@@ -363,7 +365,7 @@ NAvalue(cld)
 cellStats(cld$LC08_045029_20180726_B2, range)
 
 plotRGB(cld, r = 4, g = 3, b = 2, stretch = "lin", colNA = "black")
-plot(cld$LC08_045030_20180726_nbr, colNA = "black")
+plot(cld$LC08_045029_20180726_nbr, colNA = "black")
 
 plot(std[[c("ndvi_stdDev", "savi_stdDev")]])
 plot(qnt[[c("ndvi_p50", "savi_p50")]])
@@ -395,7 +397,12 @@ head(annual.pts)
 head(annual.100m)
 colnames(annual.100m) <- paste0(colnames(annual.100m), "_100m")
 
-tpi <- extract(sd500_6c, xy.utm)
+## Add TPI to data set
+# tpi <- extract(sd500_6c, xy.utm)
+tpi_stck <- stack(TPI250, TPI500, TPI1k, sd500_6c)
+names(tpi_stck) <- c("TPI250", "TPI500", "TPI1k", "tpi")
+tpi <- extract(tpi_stck, xy.utm)
+
 sum(is.na(tpi))
 which(is.na(tpi))
 
@@ -513,12 +520,19 @@ hllshd.df <- cbind(coords, hllshd.df)
 head(hllshd.df)
 
 
-# stck.sub <- annualStack[[c("ndmi_stdDev", "ndvi_p5", "ndvi_p50", "ndvi_p95")]]
+stck.sub <- annualStack[[c("ndmi_stdDev", "ndvi_p5", "ndvi_p50", "ndvi_p95")]]
 # ## stack sa long form, for facet
-# coords <- xyFromCell(stck.sub, seq_len(ncell(stck.sub)))
-# stck.df <- utils::stack(as.data.frame(getValues(stck.sub)))
-# stck.df <- cbind(coords, stck.df)
-# head(stck.df)
+coords <- xyFromCell(stck.sub, seq_len(ncell(stck.sub)))
+stck.df <- utils::stack(as.data.frame(getValues(stck.sub)))
+stck.df <- cbind(coords, stck.df)
+head(stck.df)
+
+ggplot(data = stck.df, aes(x = x, y = y, fill = values)) + 
+  geom_tile()+
+  scale_fill_viridis_c(option = "B", name = "NDMI annual std dev") +
+  facet_wrap(~ind)+
+  coord_equal()
+ggsave("local/plots/predictors_annual_facet.png", width = 300, height = 300, units = "mm")
 
 
 stck.sub <- annualStack[[c("ndmi_stdDev", "ndvi_p5", "ndvi_p50", "ndvi_p95")]]

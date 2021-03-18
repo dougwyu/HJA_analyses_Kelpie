@@ -195,11 +195,11 @@ otu.qp.csv <- otu.qp.csv[indNA,]
 rm(indNA)
 
 
-# old vars
-# oldVars <- c("insideHJA", "elevation_f", "canopyHeight_f", "minT_annual", "precipitation_mm", "distToRoad_m", "distToStream_m", "YrsSinceDist", "B1_20180717", "B2_20180717", "B3_20180717", "B4_20180717", "B5_20180717", "B6_20180717", "B7_20180717", "B10_20180717", "B11_20180717", "NDVI_20180717", "EVI_20180717", "B_20180717", "G_20180717", "W_20180717", "l_Cover_2m_max", "l_Cover_2m_4m", "l_Cover_4m_16m", "l_p25", "l_p95", "l_rumple")
-# 
-# # new vars
-# newvars <- c("be10", "tri", "slope", "Nss", "Ess", "ht", "ht.r250", "ht.r500", "ht.r1k", "cov2_4", "cov2_4.r250", "cov2_4.r500", "cov2_4.r1k", "cov4_16", "cov4_16.r250", "cov4_16.r500", "cov4_16.r1k", "be500", "mTopo", "cut.r1k.pt", "insideHJA", "minT_annual", "maxT_annual", "precipitation_mm", "lg_DistStream", "lg_DistRoad", "lg_YrsDisturb", "B1_20180717", "B2_20180717", "B3_20180717", "B4_20180717", "B5_20180717", "B6_20180717", "B7_20180717", "B10_20180717", "B11_20180717", "NDVI_20180717", "EVI_20180717", "B_20180717", "G_20180717", "W_20180717", "l_p25", "l_rumple")
+# varsName <- "vars1" # old vars
+# vars <- c("insideHJA", "elevation_f", "canopyHeight_f", "minT_annual", "precipitation_mm", "distToRoad_m", "distToStream_m", "YrsSinceDist", "B1_20180717", "B2_20180717", "B3_20180717", "B4_20180717", "B5_20180717", "B6_20180717", "B7_20180717", "B10_20180717", "B11_20180717", "NDVI_20180717", "EVI_20180717", "B_20180717", "G_20180717", "W_20180717", "l_Cover_2m_max", "l_Cover_2m_4m", "l_Cover_4m_16m", "l_p25", "l_p95", "l_rumple")
+ 
+# varsName <- "vars2" ## newVars
+# vars <- c("be10", "tri", "slope", "Nss", "Ess", "ht", "ht.r250", "ht.r500", "ht.r1k", "cov2_4", "cov2_4.r250", "cov2_4.r500", "cov2_4.r1k", "cov4_16", "cov4_16.r250", "cov4_16.r500", "cov4_16.r1k", "be500", "mTopo", "cut.r1k.pt", "insideHJA", "minT_annual", "maxT_annual", "precipitation_mm", "lg_DistStream", "lg_DistRoad", "lg_YrsDisturb", "B1_20180717", "B2_20180717", "B3_20180717", "B4_20180717", "B5_20180717", "B6_20180717", "B7_20180717", "B10_20180717", "B11_20180717", "NDVI_20180717", "EVI_20180717", "B_20180717", "G_20180717", "W_20180717", "l_p25", "l_rumple")
 
 varsName <- "vars3"
 vars <- c("be10", "slope", "Nss", "Ess","ndmi_stdDev", "ndvi_p5", "ndvi_p50", "ndvi_p95", "ndmi_p5", "ndmi_p50", "ndmi_p95", "savi_p50", "LC08_045029_20180726_B1", "LC08_045029_20180726_B3", "LC08_045029_20180726_B4", "LC08_045029_20180726_B5", "LC08_045029_20180726_B7", "LC08_045029_20180726_B10", "ndmi_stdDev_100m", "ndvi_p5_100m", "ndvi_p50_100m", "ndvi_p95_100m", "ndmi_p5_100m", "ndmi_p50_100m", "ndmi_p95_100m", "savi_p50_100m", "LC08_045029_20180726_B1_100m", "LC08_045029_20180726_B3_100m", "LC08_045029_20180726_B4_100m", "LC08_045029_20180726_B5_100m", "LC08_045029_20180726_B7_100m", "LC08_045029_20180726_B10_100m", "tpi", "ht", "ht.r250", "ht.r1k", "cov2_4.r250", "cov2_4.r1k", "cov4_16", "cov4_16.r250", "cov4_16.r1k", "mTopo", "cut.r1k.pt", "insideHJA", "lg_DistStream", "lg_DistRoad", "lg_YrsDisturb", "l_p25", "l_rumple")
