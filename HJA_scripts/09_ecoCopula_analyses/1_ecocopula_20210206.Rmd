@@ -111,7 +111,7 @@ otu.ab.csv <- otuenv %>% select(lysis_ratio, contains("__")) %>%
   mutate(across(contains("__"), ~ .x / lysis_ratio)) %>% 
   select(-lysis_ratio) %>% 
   round()
-otu.ab.csv <- otu.ab.csv[ , specnumber(otu.ab.csv, MARGIN = 2) >= minocc] 
+otu.ab.csv <- otu.ab.csv[ ,specnumber(otu.ab.csv, MARGIN = 2) >= minocc] 
 
 # Before quasiprobability transformation, check that all OTUs have at least one cell with 0 reads. Otherwise, the lowest read value will be QP-scaled to 0
 OTUs_mins <- otu.ab.csv %>% 

@@ -7,7 +7,7 @@ output: html_document
 
 The output of 1.1_idxstats_tabulate.Rmd is a sampleXOTU table from a kelpie run and the associated environmental covariates. 
 
-However, there are two corrections of the OTU read numbers still to be done: correcting for the proportion of the total lysis buffer (lysis_ratio) that was used from each sample and correcting for the number of COI DNA spike in reads (COISpike_sum). These two corrections are needed to remove row noise and thus to recover within-species abundance information. 
+However, there are two corrections of the OTU read numbers still to be done: correcting for the proportion of the total lysis buffer (lysis_ratio) that was used from each sample and correcting for the weighted mean COI DNA spike-in reads (COISpike_wt_mean). These two corrections are needed to remove row noise and thus to recover within-species abundance information. 
 
 Creates input tables for ecoCopula, HMSC, and sjSDM, removes some non-useful columns, saves to outputidxstatstabulatefolder/ 
 
