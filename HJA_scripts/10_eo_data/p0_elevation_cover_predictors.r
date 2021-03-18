@@ -400,7 +400,7 @@ colnames(annual.100m) <- paste0(colnames(annual.100m), "_100m")
 ## Add TPI to data set
 # tpi <- extract(sd500_6c, xy.utm)
 tpi_stck <- stack(TPI250, TPI500, TPI1k, sd500_6c)
-names(tpi_stck) <- c("TPI250", "TPI500", "TPI1k", "tpi")
+names(tpi_stck) <- c("tpi250", "tpi500", "tpi1k", "tpi")
 tpi <- extract(tpi_stck, xy.utm)
 
 sum(is.na(tpi))
@@ -418,12 +418,15 @@ plot(xy.utm[which(is.na(tpi)),], pch = 16, add = T)
 
 annual.df <- cbind(annual.pts, annual.100m, tpi)
 colnames(annual.df)
+head(annual.df)
 
 # Join with previous
 load("Hmsc_CD/oregon_ada/data/topo_data.rdata") # topo.df
 head(topo.df)
 
-ann.topo <- cbind(SiteName = topo.df$siteName, annual.df)
+ann.topo <- data.frame(SiteName = topo.df$siteName, annual.df)
+str(ann.topo)
+head(ann.topo)
 
 save(ann.topo, file = "Hmsc_CD/oregon_ada/data/ann_topo.df")
 
