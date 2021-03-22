@@ -33,7 +33,7 @@ getwd() # always run sub from oregon_ada
 
 library(dplyr)
 
-resFolder <-"code_sjSDM/r20210319a/results"
+resFolder <-"code_sjSDM/r20210319b/results"
 
 ## load model data 
 load(file.path(resFolder, "modelData.rdata"))

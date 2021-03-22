@@ -33,7 +33,7 @@ getwd() # always run sub from oregon_ada
 
 library(dplyr)
 
-resFolder <-"code_sjSDM/r20210319a/results"
+resFolder <-"code_sjSDM/r20210319b/results"
 if(!dir.exists(resFolder)) dir.create(resFolder, recursive = TRUE)
 
 ## Updated to new vars, also changes to elevation_m, canopy_height_m  to _f. 
@@ -48,7 +48,7 @@ iter <- 150L
 sampling <- 5000L
 
 ## Number of samples from tuning grid - random search
-noSteps <- 1500
+noSteps <- 2000
 
 # no of CV folds
 k <- 5

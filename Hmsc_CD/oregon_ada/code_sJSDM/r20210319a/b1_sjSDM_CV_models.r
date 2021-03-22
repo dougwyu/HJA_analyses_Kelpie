@@ -48,7 +48,7 @@ iter <- 150L
 sampling <- 5000L
 
 ## Number of samples from tuning grid - random search
-noSteps <- 1500
+noSteps <- 2000
 
 # no of CV folds
 k <- 5
