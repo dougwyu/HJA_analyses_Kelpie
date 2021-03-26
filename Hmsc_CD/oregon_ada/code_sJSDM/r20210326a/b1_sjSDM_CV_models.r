@@ -13,6 +13,8 @@
 
 ## Individual species AUCs are not saved.
 
+#  iter=170, nstep=800 (or 900. learning_rate = c(0.001, 0.002, 0.003) 
+
 
 #### Read data on Ada  #####
 
@@ -33,7 +35,7 @@ getwd() # always run sub from oregon_ada
 
 library(dplyr)
 
-resFolder <-"code_sjSDM/r20210319a/results"
+resFolder <-"code_sjSDM/r20210326a/results"
 if(!dir.exists(resFolder)) dir.create(resFolder, recursive = TRUE)
 
 ## Updated to new vars, also changes to elevation_m, canopy_height_m  to _f. 
@@ -44,11 +46,11 @@ abund <- "pa"
 spChoose <- "M1"
 
 device <- "gpu"
-iter <- 150L
+iter <- 170L
 sampling <- 5000L
 
 ## Number of samples from tuning grid - random search
-noSteps <- 2000
+noSteps <- 1000
 
 # no of CV folds
 k <- 5
@@ -67,7 +69,7 @@ noSteps * k
 # device <- "cpu"
 # iter <- 10L
 # sampling <- 100L
-# noSteps <- 5
+# noSteps <- 50
 # k <- 3
 
 ### 1. Get data from github #####
@@ -194,7 +196,6 @@ varsName <- "vars3"
 vars <- c("be10", "slope", "tri", "Nss", "Ess","ndmi_stdDev", "ndvi_p5", "ndvi_p50", "ndvi_p95", "ndmi_p5", "ndmi_p50", "ndmi_p95", "savi_p50", "LC08_045029_20180726_B1", "LC08_045029_20180726_B3", "LC08_045029_20180726_B4", "LC08_045029_20180726_B5", "LC08_045029_20180726_B7", "LC08_045029_20180726_B10", "ndmi_stdDev_100m", "ndvi_p5_100m", "ndvi_p50_100m", "ndvi_p95_100m", "ndmi_p5_100m", "ndmi_p50_100m", "ndmi_p95_100m", "savi_p50_100m", "LC08_045029_20180726_B1_100m", "LC08_045029_20180726_B3_100m", "LC08_045029_20180726_B4_100m", "LC08_045029_20180726_B5_100m", "LC08_045029_20180726_B7_100m", "LC08_045029_20180726_B10_100m", "tpi250",  "tpi500", "tpi1k" , "ht", "ht.r250", "ht.r1k", "cov2_4.r250", "cov2_4.r1k", "cov4_16", "cov4_16.r250", "cov4_16.r1k", "mTopo", "cut.r1k.pt", "insideHJA", "lg_DistStream", "lg_DistRoad", "lg_YrsDisturb", "l_p25", "l_rumple")
 
 
-
 ## two points not covered by tpi and tri
 indNA <- complete.cases(env.vars[,vars])
 sum(indNA)
@@ -208,8 +209,7 @@ colnames(env.vars)
 ## Save model data
 save(otu.pa.csv, otu.qp.csv, otuenv, env.vars,
      k, minocc, noSteps, vars, varsName, abund, device, iter, sampling,
-     file = file.path(resFolder, "modelData.rdata"))
-
+     file = file.path(resFolder, paste0("modelData_",abund,".rdata")))
 
 
 ### 2. Make testing and training k folds #####
@@ -237,10 +237,11 @@ hidden.ind = seq_along(hidden)
 acti.sp = 'relu'
 drop = seq(0.1,0.4, length.out=4) # .3
 sample.bio = seq(0,1,length.out=11)
+lr = c(0.001, 0.002, 0.003)
 
 ## Make grid of priority tune parameters, choose, from these in sampling, then add lower priority parameters
 tune.grid <- expand.grid(lambda.env = lambda.env, alpha.env= alpha.env, lambda.sp = lambda.sp,
-                         alpha.sp = alpha.sp, hidden.ind = hidden.ind,
+                         alpha.sp = alpha.sp, lr= lr, hidden.ind = hidden.ind,
                          drop= drop, acti.sp = acti.sp, stringsAsFactors = FALSE)
 head(tune.grid)
 
@@ -393,7 +394,7 @@ for(i in 1:k){ # start fold loop
                        lambda=tr$lambda.sp, 
                        alpha=tr$alpha.sp),
       
-      learning_rate = 0.003, # 0.003 recommended for high species number 0.002 better AUC... 
+      learning_rate = tr$lr, # part of tuning grid
       iter = iter, 
       family = family, 
       sampling = sampling, # 150L, 5000L
@@ -540,9 +541,10 @@ head(tune.results)
 tune.mean <- tune.results %>%
   group_by(across(c(-loglike_sjSDM, -loss, -k, -contains(c("train", "test"))))) %>%
   #summarise(across(contains(c("train", "test"))), list(mean))
-  summarise(across(contains(c("train", "test")), list(mean = mean))) 
+  summarise(across(contains(c("train", "test")), list(mean = mean)))%>%
+  arrange(desc(AUC.test_mean))
    
-data.frame(tune.mean)
+head(data.frame(tune.mean))
 
 
 write.table(tune.mean,

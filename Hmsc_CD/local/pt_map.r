@@ -37,6 +37,8 @@ datFile <- paste0("sample_by_species_table_", samtoolsfilter, "_minimap2_", mini
 
 fn <- file.path(gitHub, outputidxstatstabulatefolder, datFile)
 
+fn
+
 # what file am i using?
 basename(fn)
 

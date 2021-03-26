@@ -54,7 +54,7 @@ xy$geometry <- NULL
 head(xy)
 
 
-# can do as stack... but difficult to subset...  as ggplot gets the full range of values to scale 
+# can do as base::stack... but difficult to subset...  as ggplot gets the full range of values to scale 
 #  even in subset
 ## better as column for each raster in stack... 
 
