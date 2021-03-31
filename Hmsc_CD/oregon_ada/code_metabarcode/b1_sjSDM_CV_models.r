@@ -35,13 +35,13 @@ getwd() # always run sub from oregon_ada
 
 library(dplyr)
 
-resFolder <-"code_sjSDM/r20210326a/results"
+resFolder <-"code_sjSDM/r20210326b/results"
 if(!dir.exists(resFolder)) dir.create(resFolder, recursive = TRUE)
 
 ## Updated to new vars, also changes to elevation_m, canopy_height_m  to _f. 
 
 # # model settings:
-abund <- "pa"
+abund <- "qp"
 
 spChoose <- "M1"
 
@@ -240,18 +240,10 @@ sample.bio = seq(0,1,length.out=11)
 lr = c(0.001, 0.002, 0.003)
 
 ## Make grid of priority tune parameters, choose, from these in sampling, then add lower priority parameters
-tune.grid <- expand.grid(lambda.env = lambda.env, 
-                         alpha.env= alpha.env, 
-                         lambda.sp = lambda.sp,
-                         alpha.sp = alpha.sp,
-                         lr= lr, 
-                         hidden.ind = hidden.ind,
-                         drop= drop,
-                         acti.sp = acti.sp, 
-                         stringsAsFactors = FALSE)
+tune.grid <- expand.grid(lambda.env = lambda.env, alpha.env= alpha.env, lambda.sp = lambda.sp,
+                         alpha.sp = alpha.sp, lr= lr, hidden.ind = hidden.ind,
+                         drop= drop, acti.sp = acti.sp, stringsAsFactors = FALSE)
 head(tune.grid)
-
-6*6*5*5*3*2*4
 
 #  no models
 # 4*4*7*7*2*3 *11
