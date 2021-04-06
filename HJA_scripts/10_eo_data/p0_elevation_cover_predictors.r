@@ -92,6 +92,8 @@ cov2_4
 cov4_16
 ht
 
+plot(ht)
+
 hist(ht)
 hist(ht[ht<100])
 
@@ -100,9 +102,12 @@ sum(values(ht)>100, na.rm = T)
 
 ht[ht>100] <- NA
 hist(ht)
+plot(ht)
+
 hist(cov2_4)
 
 hist(be10)
+
 
 ## do focal stats, at 250m, 500m, 1000 / 2
 # make focal weigth matrix for radius of 250, 500, 1000
