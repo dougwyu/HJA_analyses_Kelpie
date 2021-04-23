@@ -37,16 +37,15 @@ freq(allBrck$cut_r)  # only layer with lots of NAs
 ## OJOO More efficient to make brick without this.
 indNA <- complete.cases(values(dropLayer(allBrck, "cut_r")))
 sum(indNA)
-
-# extNA <- sum(allBrck) > 0
-
+# rNA <- sum(dropLayer(allBrck, "cut_r")) > 0
 
 # Plot to check extent of all predictors with values:
-r <- raster(allBrck)
-r[] <- indNA
-plot(r)
-plot(xy.utm, add = T, pch = 16, col = "black")
+rNA <- raster(allBrck)
+rNA[] <- indNA
 
+plot(rNA)
+plot(xy.utm, add = T, pch = 16, col = "black")
+rm(rNA)
 
 ## make random selection of points to extract values
 coords <- coordinates(allBrck)
@@ -57,6 +56,8 @@ coords <- coords[sample(seq_len(nrow(coords)), size = 500), ]
 
 rndVars <- extract(allBrck, coords)
 head(rndVars)
+
+save(rndVars, file = file.path("Hmsc_CD/oregon_ada/data", "rndVars.rdata"))
 
 # remove insideHJA, and binary, and year since distrubt
 rndVars <- subset(rndVars, select = -c(insideHJA, cut_r, cut_msk, cut_40msk))
