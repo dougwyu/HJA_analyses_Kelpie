@@ -1,0 +1,15 @@
+#!/bin/bash
+#SBATCH --mail-type=ALL              #Mail events (NONE, BEGIN, END, FAIL, ALL) when to send email
+#SBATCH --mail-user=hsp20azu@uea.ac.uk           # send email to me about job
+#SBATCH -p compute-16-64                        #Which queue to use - this is the partition
+#SBATCH -t 12:00:00                       # Set time limit to 12 hours default is 24 hours, max is 7 days. 3 days 72 hours
+#SBATCH --ntasks=1 			# number of slots == number of CPU cores but memory is divided between each.... so 1Gb/3 per core
+#SBATCH --mem=4G
+#SBATCH --job-name=gis_process_canopy        #Job name
+#SBATCH -o code_GIS/R-gis-canopy_%J.out              #Standard output log  
+#SBATCH -e code_GIS/R-gis-canopy_%J.err               #Standard error log
+#set up environment
+module purge
+module add R/4.0.0
+#run the application
+R CMD BATCH code_GIS/create_canopy_cover2.r

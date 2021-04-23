@@ -379,6 +379,8 @@ plot(qnt[[c("ndvi_p5", "ndvi_p50", "ndvi_p95",
        "ndmi_p5", "ndmi_p50", "ndmi_p95",
        "savi_p5", "savi_p50", "savi_p95")]])
 
+
+
 ## Make subset stack
 
 annualStack <- raster::stack(std[[c("ndmi_stdDev")]],

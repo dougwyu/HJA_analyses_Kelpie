@@ -3,20 +3,20 @@
 ## ON LOCAL
 
 getwd()
+wd <- here::here()
+setwd(wd)
 dir()
 
-## Only testing local: 
-# setwd("J:/UEA/gitHRepos/HJA_analyses_Kelpie/Hmsc_CD/oregon_ada")
-# wd <- here::here()
-# wd
-# setwd(file.path(wd, "Hmsc_CD/oregon_ada"))
-# dir()
+getwd() #  "J:/UEA/gitHRepos/HJA_analyses_Kelpie"
+
 
 library(raster)
 library(sf)
 
 # wgs84 UTM 10N
 utm10N <- 32610
+# EPSG:26910  NAD83 / UTM zone 10N
+nadutm10 <- 26910
 
 # gis <- file.path(wd, "HJA_scripts/10_eo_data/raw_gis_data") 
 gis <- "J:/UEA/Oregon/gis"
@@ -64,6 +64,11 @@ load(file.path(gis, "r_utm/cut_stack.rdata"))
 cutStack
 names(cutStack)
 
+## temperaturue
+
+tmp <- raster("J:/UEA/Oregon/gis/marie/temp_precip/Average_Annual_Maximum_Temperature__1981_2010_.tif")
+tmp
+plot(tmp)
 
 ## Annual data
 std <- brick(file.path(gis, "r_utm/gee/stdDev.tif"))
@@ -106,7 +111,7 @@ as.vector(extent(tpi))
 
 origin(annualStack)
 
-origin(covStack)
+origin(coverStack)
 origin(terr30)
 origin(be30)
 origin(tpi)
@@ -114,11 +119,24 @@ origin(tpi)
 source("https://raw.githubusercontent.com/Cdevenish/R-Material/master/Functions/GIS/comExt.r")
 source("https://raw.githubusercontent.com/Cdevenish/R-Material/master/Functions/GIS/adjExt.r")
 
-ext <- comExt(annualStack, covStack, terr30, be30, tpi)
+ext <- comExt(annualStack, coverStack, terr30, be30, tpi, cutStack)
 ext
+# class      : Extent 
+# xmin       : 549990 
+# xmax       : 576030 
+# ymin       : 4888995 
+# ymax       : 4910025 
 
 ext <- adjExt(ext, d = 30, expand = FALSE)
 ext
+# class      : Extent 
+# xmin       : 549990 
+# xmax       : 576030 
+# ymin       : 4889010 
+# ymax       : 4910010 
+
+getwd()
+save(ext, file = "Hmsc_CD/oregon_ada/data/commonExtent.rdata")
 
 # interpolate to same extent, origin and resolution
 # make template raster
@@ -155,6 +173,18 @@ plot(HJA)
 # MTOPO
 
 # "lg_DistStream", "lg_DistRoad", "lg_YrsDisturb"
+strm <- st_read(file.path(gis, "s_nad_utm/rivers_large_oregonexplorer.shp"))
+rds <- st_read(file.path(gis, "s_nad_utm/roads_bioarea.shp"))
+
+strm.utm <- st_transform(strm, crs = utm10N)
+rds.utm <- st_transform(rds, crs = utm10N)
+
+strm.utm
+rds.utm
+
+plot(hja.utm, max.plot = 1)
+plot(strm.utm, add = T)
+plot(rds.utm, add = T, col = "red", lwd = 2)
 
 
 allStack <- stack(annStack_rs, be30_rs, tpi_rs, terr30_rs, coverStack_rs, cutStack_rs, lidarStack_rs, HJA)
@@ -164,7 +194,7 @@ names(allStack)
 ## CHANGE RESOLUTION HERE/./// or above in resample
 
 # get coords
-xyFromCell()
+XY <- coordinates(allStack)
 
 
 # get xy data (could subset first by vars, but better to save all as matrix for now)
@@ -184,6 +214,6 @@ table(allData[,"insideHJA"])
 
 summary(allData)
 
-save(allData, indNA, r, file = file.path("data", "predData.rdata"))
+save(allData, XY, indNA, r, file = file.path("data", "predData.rdata"))
 
 

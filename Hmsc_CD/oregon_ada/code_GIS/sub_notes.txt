@@ -1,0 +1,8 @@
+module add gdal/3.1.0
+module add geos/3.8.1
+module add proj/6.0.0
+module add R/4.0.0
+
+
+## SUB for stars, terra, sf.
+
