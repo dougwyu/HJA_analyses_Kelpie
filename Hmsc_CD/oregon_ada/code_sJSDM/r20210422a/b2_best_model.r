@@ -33,7 +33,7 @@ getwd() # always run sub from oregon_ada
 
 library(dplyr)
 
-resFolder <-"code_sjSDM/r20210406a/results"
+resFolder <-"code_sjSDM/r20210422a/results"
 abund <- "pa"
 
 ## load model data 
@@ -68,6 +68,11 @@ res <- read.csv(file.path(resFolder,paste0("manual_tuning_sjsdm_", varsName, "_"
                                   "_nSteps",
                                   noSteps,
                                 ".csv")))
+
+
+res[which.max(res$AUC.test_mean),,drop = T]
+res[which.min(res$auc.lt5.test_mean),,drop = T]
+
 
 head(res)
 res.best <- res[which.max(res$AUC.test_mean),,drop = T]
