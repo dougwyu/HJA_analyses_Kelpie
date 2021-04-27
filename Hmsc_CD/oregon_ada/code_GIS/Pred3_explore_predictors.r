@@ -9,6 +9,8 @@ getwd()
 library(raster)
 library(sf)
 
+library(dplyr)
+
 
 gis_in <- "J:/UEA/Oregon/gis/raw_gis_data"
 gis_out <- "J:/UEA/Oregon/gis/processed_gis_data"
@@ -58,6 +60,8 @@ rndVars <- extract(allBrck, coords)
 head(rndVars)
 
 save(rndVars, file = file.path("Hmsc_CD/oregon_ada/data", "rndVars.rdata"))
+
+load(file.path("Hmsc_CD/oregon_ada/data", "rndVars.rdata"))
 
 # remove insideHJA, and binary, and year since distrubt
 rndVars <- subset(rndVars, select = -c(insideHJA, cut_r, cut_msk, cut_40msk))
@@ -129,5 +133,28 @@ dev.off()
 shell.exec(file.path(getwd(), "Hmsc_CD/local/plots/var_corplot_selection.pdf"))
 
 
+## Do VIF
+
+# reduce variables with Variance INflation Factor, 
+source("https://raw.githubusercontent.com/Cdevenish/R-Material/master/Functions/Eco/viffer.r")
+
+head(rndVars)
+
+vif5 <- data.frame(rndVars) %>%
+      dplyr::select(where(is.numeric), -cut_r, -cut_msk, -cut_r, -aspect30) %>%
+      viffer(z = 5)
+
+vif5
+
+vars <- rownames(vif5)
+
+cat(paste(vars, collapse = '", "'))
+
+vars <- c("gt4_r30", "gt4_500", "cut_40msk", "cut_r1k", "cut_r250", "cut40_r1k", "cut40_r250", "tri30", "Nss30", "Ess30", "twi30", "tpi250", "tpi1k", "l_Cover_2m_4m", "l_Cover_4m_16m", "l_p25", "l_rumple", "DistStream", "DistRoad", "insideHJA", "ndmi_stdDev_r100", "nbr_stdDev_r250", "ndvi_p5_r100", "ndvi_p95_r500", "ndmi_p95_r100", "ndmi_p95_r500", "LC08_045029_20180726_B3", "LC08_045029_20180726_B5", "LC08_045029_20180726_B10", "minT_annual")
 
 
+pdf("Hmsc_CD/local/plots/var_vif5_corplots.pdf")
+corrplot(cor(rndVars[,vars]), method = "ellipse", type= "lower", is.corr = TRUE, 
+         diag = FALSE, col = cols(5), mar = c(1,3,6,2))
+
+dev.off()
