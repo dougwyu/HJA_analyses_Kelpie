@@ -33,7 +33,7 @@ getwd() # always run sub from oregon_ada
 
 library(dplyr)
 
-resFolder <-"code_sjSDM/r20210424a/results"
+resFolder <-"code_sjSDM/r20210426a/results"
 abund <- "pa"
 
 ## load model data 

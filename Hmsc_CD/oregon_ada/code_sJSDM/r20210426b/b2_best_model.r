@@ -33,8 +33,8 @@ getwd() # always run sub from oregon_ada
 
 library(dplyr)
 
-resFolder <-"code_sjSDM/r20210427a/results"
-abund <- "pa"
+resFolder <-"code_sjSDM/r20210426b/results"
+abund <- "qp"
 
 ## load model data 
 load(file.path(resFolder, paste0("modelData_",abund,".rdata")))
@@ -72,10 +72,7 @@ res <- read.csv(file.path(resFolder,paste0("manual_tuning_sjsdm_", varsName, "_"
 head(res)
 res.best <- res[which.max(res$AUC.test_mean),,drop = T]
 res.best
-# $AUC.test_mean
-# [1] 0.673541
-res[which.max(res$AUC.test_mean),,drop = T]
-res[which.min(res$auc.lt5.test_mean),,drop = T]
+
 
 
 # add in lambda.bio and alpha.bio from random samples of sample.bio, and add results columns

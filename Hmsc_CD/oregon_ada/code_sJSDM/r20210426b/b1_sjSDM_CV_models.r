@@ -35,13 +35,13 @@ getwd() # always run sub from oregon_ada
 
 library(dplyr)
 
-resFolder <-"code_sjSDM/r20210426a/results"
+resFolder <-"code_sjSDM/r20210426b/results"
 if(!dir.exists(resFolder)) dir.create(resFolder, recursive = TRUE)
 
 ## Updated to new vars, also changes to elevation_m, canopy_height_m  to _f. 
 
 # # model settings:
-abund <- "pa"
+abund <- "qp"
 
 spChoose <- "M1"
 

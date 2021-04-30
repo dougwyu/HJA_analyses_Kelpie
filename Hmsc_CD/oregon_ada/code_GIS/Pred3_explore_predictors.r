@@ -1,7 +1,7 @@
 
 ## Local
 # wd <- here::here()
-# wd
+# wd # "J:/UEA/gitHRepos/HJA_analyses_Kelpie"
 # setwd(wd)
 # dir()
 getwd()
@@ -146,15 +146,34 @@ vif5 <- data.frame(rndVars) %>%
 
 vif5
 
+vif8 <- data.frame(rndVars) %>%
+  dplyr::select(where(is.numeric), -cut_r, -cut_msk, -cut_r, -aspect30) %>%
+  viffer(z = 8)
+
 vars <- rownames(vif5)
 
 cat(paste(vars, collapse = '", "'))
 
-vars <- c("gt4_r30", "gt4_500", "cut_40msk", "cut_r1k", "cut_r250", "cut40_r1k", "cut40_r250", "tri30", "Nss30", "Ess30", "twi30", "tpi250", "tpi1k", "l_Cover_2m_4m", "l_Cover_4m_16m", "l_p25", "l_rumple", "DistStream", "DistRoad", "insideHJA", "ndmi_stdDev_r100", "nbr_stdDev_r250", "ndvi_p5_r100", "ndvi_p95_r500", "ndmi_p95_r100", "ndmi_p95_r500", "LC08_045029_20180726_B3", "LC08_045029_20180726_B5", "LC08_045029_20180726_B10", "minT_annual")
+vars7 <- c("gt4_r30", "gt4_500", "cut_40msk", "cut_r1k", "cut_r250", "cut40_r1k", "cut40_r250", "tri30", "Nss30", "Ess30", "twi30", "tpi250", "tpi1k", "l_Cover_2m_4m", "l_Cover_4m_16m", "l_p25", "l_rumple", "DistStream", "DistRoad", "insideHJA", "ndmi_stdDev_r100", "nbr_stdDev_r250", "ndvi_p5_r100", "ndvi_p95_r500", "ndmi_p95_r100", "ndmi_p95_r500", "LC08_045029_20180726_B3", "LC08_045029_20180726_B5", "LC08_045029_20180726_B10", "minT_annual")
 
 
 pdf("Hmsc_CD/local/plots/var_vif5_corplots.pdf")
-corrplot(cor(rndVars[,vars]), method = "ellipse", type= "lower", is.corr = TRUE, 
+corrplot(cor(rndVars[,vars7]), method = "ellipse", type= "lower", is.corr = TRUE, 
+         diag = FALSE, col = cols(5), mar = c(1,3,6,2))
+
+dev.off()
+
+## VIF vars Yuanheng
+vars8 <- c("Ess30", "DistRoad", "Nss30", "DistStream", "tri30", "LC08_045029_20180726_B5", "l_rumple", "cut_40msk", "insideHJA", "cut_msk", "cut40_r1k", "l_Cover_2m_4m", "l_Cover_4m_16m", "cut_r1k", "minT_annual", "ndmi_p95_r100", "ndvi_p50_r500", "cut40_r250", "nbr_stdDev_r250", "precipitation_mm", "gt4_250", "tpi250", "cut_r250", "LC08_045029_20180726_B1", "ndvi_p50_r100", "gt4_r30", "twi30", "ndvi_p5_r100", "tpi1k", "ndvi_p5_r500", "l_p25", "LC08_045029_20180726_B10")
+
+setdiff(vars7, vars8)
+setdiff(rownames(vif8), vars8)
+
+intersect(vars7, vars8)
+intersect(rownames(vif8), vars8)
+
+pdf("Hmsc_CD/local/plots/var_vifYL_corplots.pdf")
+corrplot(cor(rndVars[,vars8]), method = "ellipse", type= "lower", is.corr = TRUE, 
          diag = FALSE, col = cols(5), mar = c(1,3,6,2))
 
 dev.off()
