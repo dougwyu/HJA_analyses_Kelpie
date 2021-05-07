@@ -105,9 +105,15 @@ sort(table(spp.auc$order, useNA = "always"))
 top4 <- names(sort(table(spp.auc$order), decreasing = T)[1:4])
 top4
 
-plot(rStack[[spp.auc$order == "Lepidoptera"]])
+plot(rStack[[which(spp.auc$order == "Lepidoptera")]])
 
+png("../local/plots/coleoptera.png", width = 300, height = 300, units = "mm", res = 100)
+plot(rStack[[which(spp.auc$order == "Coleoptera")]])
+dev.off()
 
+png("../local/plots/Hymenoptera.png", width = 300, height = 300, units = "mm", res = 100)
+plot(rStack[[which(spp.auc$order == "Hymenoptera")]])
+dev.off()
 
 spRich_order <- stackApply(rStack.bin, spp.auc$order, fun = sum)
 names(spRich_order)
