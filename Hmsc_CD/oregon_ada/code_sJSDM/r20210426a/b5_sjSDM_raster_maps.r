@@ -105,6 +105,10 @@ sort(table(spp.auc$order, useNA = "always"))
 top4 <- names(sort(table(spp.auc$order), decreasing = T)[1:4])
 top4
 
+plot(rStack[[spp.auc$order == "Lepidoptera"]])
+
+
+
 spRich_order <- stackApply(rStack.bin, spp.auc$order, fun = sum)
 names(spRich_order)
 names(spRich_order) <- sub("index_", "", names(spRich_order))
@@ -192,6 +196,23 @@ p<- ggplot() +
   coord_sf(datum = sf::st_crs(32610), ylim = ylim, xlim = xlim)
 
 ggsave("../local/plots/spRich_map_HJA.png", p)  
+
+
+
+head(df1)
+## Sp summed in HJA
+p<- ggplot() + 
+  geom_tile(data = df1, aes(x, y, fill = sp.sum)) +
+  scale_fill_gradientn(colours = rev(terrain.colors(225)), name = "summed probability") +
+  geom_tile(data = hsd.df, aes(x, y, alpha = hsd), fill = "grey20") +
+  scale_alpha(range = c(0.25, 0.65), guide = "none")+
+  geom_sf(data = hja.utm, alpha = 0, col = "blue", bg = NA, inherit.aes = FALSE)+
+  geom_sf(data= xy.utm, col = "darkred", size = 1, inherit.aes = FALSE)+
+  geom_sf(data = cut.40, bg = NA)+
+  coord_sf(datum = sf::st_crs(32610), ylim = ylim, xlim = xlim)
+
+ggsave("../local/plots/spSum_map_HJA.png", p) 
+
 
 
 
