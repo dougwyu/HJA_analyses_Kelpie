@@ -69,8 +69,8 @@ noSteps * k
 # device <- "cpu"
 # iter <- 10L
 # sampling <- 100L
-# noSteps <- 50
-# k <- 3
+# noSteps <- 2
+# k <- 2
 
 ### 1. Get data from github #####
 
@@ -295,7 +295,7 @@ if(abund == "pa") {
   family <- stats::binomial('probit') } else {
     if(abund ==  "qp") {
       Y <- otu.qp.csv
-      family <- stats::binomial('probit') # check other family?
+      family <- stats::poisson('log') # check other family?
     } else stop("check abund")
   } 
 
