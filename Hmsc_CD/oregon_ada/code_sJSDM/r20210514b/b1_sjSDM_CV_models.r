@@ -35,7 +35,7 @@ getwd() # always run sub from oregon_ada
 
 library(dplyr)
 
-resFolder <-"code_sjSDM/r20210513a/results"
+resFolder <-"code_sjSDM/r20210514b/results"
 if(!dir.exists(resFolder)) dir.create(resFolder, recursive = TRUE)
 
 ## Updated to new vars, also changes to elevation_m, canopy_height_m  to _f. 
@@ -116,6 +116,7 @@ otuenv <- read.csv(fn, stringsAsFactors = FALSE, na.strings = "NA")
 minocc <- 20 # set to high number (e.g. 20) for testing
 
 ## get Species columns by M1 and M2, with minocc calculated per trap
+## can choose below whether to include just species shared between M1 and M2
 spM <- otuenv %>% 
   dplyr::filter(period == "S1") %>%
   dplyr::select(SiteName, trap, contains("__")) %>%
@@ -127,7 +128,13 @@ spM <- otuenv %>%
   ungroup() %>%
   tidyr::pivot_wider(names_from = trap, values_from = nSites, values_fn = function(x) sum(x)>0) %>%
   filter(M1) %>% # CHOOOSE HERE FOR SINGLE. OR SHARED TRAP SPECIES GFROUP: filter(M1 & M2)
+  #tidyr::separate(col = OTU, into = c("ID", "empty", "class", "order", "family",
+  #                                        "genus", "epithet", "BOLD", "BOLDID", "size"),
+  #                remove = FALSE, sep = "_") %>%
+  #dplyr::filter(order == "Diptera")%>%
   dplyr::select(OTU)
+
+nrow(spM)
 
 # filter species here to those in sp.M1m2$OTU - already filtered for minocc
 otu.qp.csv <- otuenv %>% 
@@ -209,7 +216,7 @@ vars <- c("minT_annual", "slope30", "cut_r250", "be30", "Ess30", "l_rumple", "l_
 all(vars %in% colnames(env.vars))
 
 ## Save model data
-save(otu.pa.csv, otu.qp.csv, otuenv, env.vars,
+save(otu.pa.csv, otu.qp.csv, otuenv, env.vars,spChoose,
      k, minocc, noSteps, vars, varsName, abund, device, iter, sampling,
      file = file.path(resFolder, paste0("modelData_",abund,".rdata")))
 
@@ -529,7 +536,7 @@ for(i in 1:k){ # start fold loop
 
 #### 4. WRite results to csv ####
 write.table(tune.results,
-            file = file.path(resFolder,paste0("manual_tuning_sjsdm_", varsName, "_", k, "CV_M1S1_", 
+            file = file.path(resFolder,paste0("manual_tuning_sjsdm_", varsName, "_", k, "CV_", spChoose, "_",
                                               abund, 
                                               "_min",
                                               minocc,
@@ -551,7 +558,8 @@ head(data.frame(tune.mean))
 
 
 write.table(tune.mean,
-            file = file.path(resFolder,paste0("manual_tuning_sjsdm_", varsName, "_", k, "CV_M1S1_meanEVAL_", 
+            file = file.path(resFolder,paste0("manual_tuning_sjsdm_", varsName, "_", k, "CV_", spChoose, 
+                                              "_meanEVAL_", 
                                               abund, 
                                               "_min",
                                               minocc,

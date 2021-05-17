@@ -33,7 +33,7 @@ getwd() # always run sub from oregon_ada
 
 library(dplyr)
 
-resFolder <-"code_sjSDM/r20210426a/results"
+resFolder <-"code_sjSDM/r20210514a/results"
 abund <- "pa"
 
 ## load model data 
@@ -61,13 +61,15 @@ hidden <- list(c(50L,50L,10L), c(25L,25L,10L))
 # use these for now -- best so far.
 # res <- read.csv(file.path(resFolder, "manual_tuning_sjsdm_5CV_M1S1_mean_AUC_pa_min_5_nSteps_1000.csv"))
 
-res <- read.csv(file.path(resFolder,paste0("manual_tuning_sjsdm_", varsName, "_", k, "CV_M1S1_meanEVAL_", 
-                                  abund, 
-                                  "_min",
-                                  minocc,
-                                  "_nSteps",
-                                  noSteps,
-                                ".csv")))
+res <- read.csv(file.path(resFolder,paste0("manual_tuning_sjsdm_", varsName, "_", k, "CV_", spChoose, 
+                                           "_meanEVAL_", 
+                                           abund, 
+                                           "_min",
+                                           minocc,
+                                           "_nSteps",
+                                           noSteps,
+                                           ".csv")))
+
 
 head(res)
 res.best <- res[which.max(res$AUC.test_mean),,drop = T]
@@ -102,7 +104,7 @@ if(abund == "pa") {
   family <- stats::binomial('probit') } else {
     if(abund ==  "qp") {
       Y <- otu.qp.csv
-      family <- stats::binomial('probit')
+      family <- stats::poisson('log')
     } else stop("check abund")
   } 
 
@@ -200,7 +202,7 @@ for(i in 1:k){
   
   ## SAve each model
   saveRDS(model.train,
-          file.path(resFolder,paste0("s-jSDM_final_model_", varsName, "_", k, "CV_", 
+          file.path(resFolder,paste0("s-jSDM_final_model_", varsName, "_", k, "CV_", spChoose, "_",
                                      i, "_", abund, ".rds")))
   
   # Do testing and save results in data frame
