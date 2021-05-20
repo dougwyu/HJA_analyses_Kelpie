@@ -37,9 +37,6 @@ plot(st_geometry(xy.utm))
 plot(hja.utm, add = T, col = NA)
 plot(aoi.pred.sf, add =T, col = NA)
 
-## Load rasters
-# load("Hmsc_CD/oregon_ada/data/gis/templateRaster.rdata") ## r, indNA
-
 # load as brick
 allBrck <- brick(file.path(gis_out, "r_utm/allStack.tif"))
 # get names and name groups
@@ -49,8 +46,8 @@ allBrck
 names(allBrck)
 
 plot(allBrck$insideHJA)
-plot(allBrck$cut_msk)
-plot(allBrck$cut_40msk)
+# plot(allBrck$cut_msk)
+# plot(allBrck$cut_40msk)
 
 plot(hja.utm, add = T)
 plot(aoi.pred.sf, add =T)
@@ -69,41 +66,58 @@ plot(allBrck[[c("lg_DistRoad", "DistRoad")]])
 plot(allBrck[[c("lg_cover2m_max", "l_Cover_2m_max", "lg_cover2m_4m", "l_Cover_2m_4m")]])
 
 # get names for excel description
-write.csv(names(allBrck), "clipboard", row.names = F)
+# write.csv(names(allBrck), "clipboard", row.names = F)
 
 origin(allBrck)
 
 ##### CROP #####
-## crop to reduced aoi.pred
+## crop to reduced aoi.pred - get extent of the convex hull around sample points and HJA
 aoi.pred.ext <- adjExt(st_bbox(aoi.pred.sf), outF = "Extent", d = 30) ####
+# make raster template from above extent
 r.aoi.pred <- raster(aoi.pred.ext, crs = utm10N, res = 30)
 
 origin(r.aoi.pred)
 
-# mask it
+# mask it with aoi (points and HJA)
 r.aoi.pred[] <- 1
 r.aoi.pred <- raster::mask(r.aoi.pred, st_as_sf(aoi.pred.sf))
-plot(r.aoi.pred)
+plot(r.aoi.pred, colNA = "grey")
 
 plot(hja.utm, add = T, col = NA)
-plot(aoi.pred.sf, add =T)
+plot(aoi.pred.sf, add =T, border = "blue")
 plot(xy.utm, add = T, pch = 16, col = "black")
 
 ## crop raster brick
-allBrck <- crop(allBrck, r.aoi.pred, filename = file.path(gis_out, "r_utm/allStack_aoi.tif"), overwrite = TRUE)
+allBrck <- crop(allBrck, r.aoi.pred)
+
 origin(allBrck)
 allBrck
 r.aoi.pred
 
 names(allBrck)
-names(allBrck) <- c(allNames, "lg_DistStream", "lg_DistRoad","lg_cover2m_max","lg_cover2m_4m", "lg_cover4m_16m")
+brNames <- names(allBrck)
+# names(allBrck) <- c(allNames, "lg_DistStream", "lg_DistRoad","lg_cover2m_max","lg_cover2m_4m", "lg_cover4m_16m")
+
+plot(allBrck$gt4_r30)
 
 indNA <- complete.cases(values(dropLayer(allBrck, "cut_r")))
-r <- raster(allBrck)
-r[] <- indNA
- 
+sum(!indNA)
+
+r.msk <- r.aoi.pred
+r.msk[!indNA] <- NA
+
+plot(stack(r.aoi.pred, r.msk), colNA = "black")
+
+## Mask allBrick
+allBrck <- mask(allBrck, r.msk)
+plot(allBrck$gt4_r30)
+
+# save raster as single tif
+writeRaster(allBrck, filename = file.path(gis_out, "r_utm/allStack_aoi.tif"), overwrite = TRUE)
+
 # plot(r, colNA = "black")
-save(r, indNA, r.aoi.pred, aoi.pred.sf, file = "Hmsc_CD/oregon_ada/data/gis/templateRaster.rdata")
+save(r.msk, indNA, r.aoi.pred, aoi.pred.sf, file = "Hmsc_CD/oregon_ada/data/gis/templateRaster.rdata")
+save(r.msk, indNA, r.aoi.pred, aoi.pred.sf, file = "J:/UEA/Oregon/gis/processed_gis_data/templateRaster.rdata")
 
 ## Scale whole data set - apart from categorical predictors
 allBrck.sc <- scale(dropLayer(allBrck, c("insideHJA", "cut_r" , "cut_msk", "cut_40msk")))
@@ -122,14 +136,17 @@ allBrck.sc <- addLayer(allBrck.sc, catRasters)
 names(allBrck.sc)
 
 ## save scaled rasters
-save(r, r.aoi.pred, indNA, allBrck.sc, file = "Hmsc_CD/oregon_ada/data/gis/predRaster_sc.rdata")
+# save(r.msk, r.aoi.pred, indNA, allBrck.sc, file = "Hmsc_CD/oregon_ada/data/gis/predRaster_sc.rdata")
 # load("Hmsc_CD/oregon_ada/data/gis/predRaster_sc.rdata")
+save(r.msk, r.aoi.pred, indNA, allBrck.sc, file = "J:/UEA/Oregon/gis/processed_gis_data/r_oversize/predRaster_sc.rdata")
 
 # save scaled raster
 writeRaster(allBrck.sc, filename = file.path(gis_out, "r_utm/AllStack_aoi_sc.tif"), overwrite = TRUE)
 
+#### MAKE NEW DATA #####
+
 ## data frame of coordinates
-newXY <- coordinates(r)
+newXY <- coordinates(r.msk)
 
 newXY.sc <- scale(newXY)
 str(newXY.sc)
@@ -162,7 +179,7 @@ colnames(newXY.sc) <- c("UTM_E", "UTM_N")
 
 newXY.sc <- newXY.sc[indNA,]
 dim(newXY.sc)
-
+sum(!complete.cases(newXY.sc))
 
 ## extract site env vars from scaled data set
 allVars.sc <- data.frame(SiteName = xy.utm$SiteName, raster::extract(allBrck.sc, xy.utm))
@@ -179,10 +196,19 @@ length(indNA) == ncell(allBrck.sc)
 ### remove NAs, for faster prediction and less storage - add back in for raster creation
 newData.sc <- newData.sc[indNA, ] # only complete cases
 
+nrow(newData.sc) + sum(!indNA) == ncell(allBrck)
+
+sum(!complete.cases(newData.sc))
+
 ## change categorical to predictor values to match model
 newData.sc[, "insideHJA"] <- ifelse(newData.sc[, "insideHJA"] == 0, "no", "yes")
-table(newData.sc[,"insideHJA"])
+table(newData.sc[,"insideHJA"], useNA = "always")
 
 summary(newData.sc)
 
-save(newData.sc, xy.sites.sc, newXY.sc, allVars.sc, file = "Hmsc_CD/oregon_ada/data/newData_scaled.rdata")
+#save(newData.sc, xy.sites.sc, newXY.sc, allVars.sc, file = "Hmsc_CD/oregon_ada/data/newData_scaled.rdata")
+save(newData.sc, xy.sites.sc, newXY.sc, allVars.sc, 
+     file = "J:/UEA/Oregon/gis/processed_gis_data/r_oversize/newData_scaled.rdata")
+
+
+

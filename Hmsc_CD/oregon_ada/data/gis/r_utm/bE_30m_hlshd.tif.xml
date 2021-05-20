@@ -1,0 +1,2 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<metadata xml:lang="en"><Esri><CreaDate>20210305</CreaDate><CreaTime>10343300</CreaTime><ArcGISFormat>1.0</ArcGISFormat><SyncOnce>TRUE</SyncOnce><DataProperties><lineage><Process ToolSource="c:\program files (x86)\arcgis\desktop10.6\ArcToolbox\Toolboxes\Spatial Analyst Tools.tbx\HillShade" Date="20210305" Time="103433">HillShade bareEarth_m_30m.tif J:\UEA\Oregon\gis\r_utm\bE_30m_hlshd.tif 315 45 NO_SHADOWS 1</Process></lineage></DataProperties></Esri></metadata>
