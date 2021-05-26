@@ -2,9 +2,12 @@
 # Yuanheng Li, May 22, 2020
 # last modified: 20201207
 
+pacman::p_load('RColorBrewer', 'vcd')
+
 # variation partition plot with diff colors
 vp.plot <- function(data, x1, x2, ind, textM, textL) {
-    mycolor <- brewer.pal(count(unique(data[, ind]))[[1]], 'Paired')
+    mycolor <- brewer.pal(length(unique(data[, ind])), 'Paired')
+    # count(unique(data[, ind]))[[1]]
     ternaryplot(data[, x1:x2], 
                 pch = 20, 
                 col = mycolor,
@@ -18,7 +21,7 @@ vp.plot <- function(data, x1, x2, ind, textM, textL) {
     grid_legend("topright", 
                 pch=20, 
                 col=mycolor, 
-                labels = unique(data[, ind][[1]]),
+                labels = unique(data[, ind]),
                 title = textL
                 )
     }
@@ -223,6 +226,7 @@ cov.circle.env = function (version.text, evnames, otu.text, result, effect_comb,
 	#formula = ~mean.NDVI.scale+mean.EVI.scale+ mean.green.scale + mean.bright.scale + mean.wet.scale
 	
 	colourCount = length(unique(evnames))
+	set.seed(22)
 	cols = sample(rainbow(colourCount))
 	
 	coords = data.frame(cbind(xx, yy, angles))
@@ -247,7 +251,7 @@ cov.circle.env = function (version.text, evnames, otu.text, result, effect_comb,
 	  angleName = (from+to)/2
 	  if(angleName > 180) {reverse = TRUE} else {reverse = FALSE}
 	  ###environment variable text
-	  curve_text(angleName, label = evnames[i],reverse = reverse,lineSeq = 5.5, middle = TRUE, extend = 1.1, col = cols[i])
+	  curve_text(angleName, label = evnames[i],reverse = reverse,lineSeq = 5.55, middle = TRUE, extend = .9, col = cols[i])
 	  ###environment variable bar
 #	 if(i == 8) polygon(x-0.1, y, xpd = NA,col = cols[i])
 	#  else if(i == 5) polygon(x, y+0.55, xpd = NA,col = cols[i])
@@ -261,12 +265,12 @@ cov.circle.env = function (version.text, evnames, otu.text, result, effect_comb,
 	  text(srt = 0, 
 			 x = (3.6+1.5)*cos(deg2rad(sub[1,3]+4)), 
 			 y =  (3.6+1.5)*sin(deg2rad(sub[1,3]+4)), 
-			 xpd = NA, labels = round(min(sub_eff[,3]), 2), col = cols[i], cex = 0.8)
+			 xpd = NA, labels = round(min(sub_eff[,3]), 2), col = cols[i], cex = 0.7)
 	  
 	   text(srt = 0, 
 			 x = (3.6+1.5)*cos(deg2rad(sub[nrow(sub),3]-4)), 
 			 y =  (3.6+1.5)*sin(deg2rad(sub[nrow(sub),3]-4)), 
-			 xpd = NA, labels = round(max(sub_eff[,3]), 2), col = cols[i], cex = 0.8)
+			 xpd = NA, labels = round(max(sub_eff[,3]), 2), col = cols[i], cex = 0.7)
 	}
 		
 	###legend of bar
@@ -288,6 +292,7 @@ cov.circle.env = function (version.text, evnames, otu.text, result, effect_comb,
 	}
 	text(x=-5.3, y=-5.3, labels = paste(otu.text), pos = 4, xpd = NA)
 	
+	#legend('bottomright', col=cols, legend=evnames,pch=15, bty='n')
 	
 }
 	
