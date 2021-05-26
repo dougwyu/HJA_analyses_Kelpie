@@ -45,11 +45,12 @@ kelpierundate = 20200927
 primer = "BF3BR2"
 	
 trap <- "M1"; period = "S1"
-date.model.run = 20210221   # according to tuning result
-abund = 'pa'		# 'qp','pa'  !!! change accordingly
-formula.env = 'newVars'		# 'envDNN.newVars', 'changed.envDNN'
+date.model.run = 20210322   # '20210221' '20210310' 20210322
+abund = 'qp'		# 'qp','pa'  !!! change accordingly
+formula.env = 'vars3'		# 'newVars', 'vars2', 'oldVars' , 'vars3'
+preocc = ''		# '' 'm1m2'
 minocc = 6
-cv = '10CV'
+cv = '5CV'		# '10CV'
 	
 outputidxstatstabulatefolder = glue("outputs_minimap2_{minimaprundate}_{samtoolsfilter}_{samtoolsqual}_kelpie{kelpierundate}_{primer}_vsearch97")
 outputpath = glue('../../Kelpie_maps/{outputidxstatstabulatefolder}')
@@ -65,12 +66,13 @@ sjsdmVfolder = glue('sjsdm-{sjsdmV}')
 ```{r load-direct-data}
 # ... read data ...
 abund; formula.env; minocc; cv
-nstep=1000
+nstep = 2000		# 2000 , 1000
 datapath=glue('../12_sjsdm_general_model_outputs')
+#nnn = mean_EVAL
 	
 # ...... from rdata ........
-load(here(datapath,'source', glue('forada_data_{period}_m1m2_min{minocc}_{date.model.run}_{formula.env}.rdata')))
-tuning=read.table(here(outputpath, 'sjsdm_general_outputs', sjsdmVfolder, 'DNN_tune',glue('{formula.env}_{date.model.run}'),'best', glue('best_manual_tuning_sjsdm_{cv}_{trap}{period}_mean_AUC_{abund}_min_{minocc}_nSteps_{nstep}.csv')), header=T, sep=',') 
+load(here(datapath,'source', glue('forada_data_{period}_m1m2_min{minocc}{preocc}_{date.model.run}_{formula.env}.rdata')))
+tuning=read.table(here(outputpath, 'sjsdm_general_outputs', sjsdmVfolder, 'DNN_tune',glue('{formula.env}_{date.model.run}'),'best', glue('best_manual_tuning_sjsdm_{cv}_{trap}{period}_mean_AUC_{abund}_min_{minocc}{preocc}_nSteps_{nstep}.csv')), header=T, sep=',') 
 	
 str(tuning)
 	
@@ -104,33 +106,80 @@ hidden = list(c(50L,50L,10L), c(25L,25L,10L))
 i=1; metric='AUC.test_mean'
 if (cv=='5CV' & formula.env=='newVars' & minocc==6) {i=4; metric='plr.test_mean'}
 if (cv=='10CV' & abund=='qp' & formula.env=='newVars' & minocc==6) {i=4; metric='plr.test_mean'}
-metric; names(tuning)
+if (cv=='5CV' & abund=='qp' & formula.env=='vars2' & minocc==6 & preocc=='m1m2') {i=3; metric='plr.test_mean'}
+if (cv=='5CV' & abund=='pa' & formula.env=='vars3' & minocc==6 & preocc=='') {i=3; metric='plr.test_mean'}
+metric; i; select(tuning, metric)
 	
-model.train = readRDS(here(outputpath,'sjsdm_general_outputs',sjsdmVfolder, 'sjsdm-model-RDS',glue('{formula.env}_{date.model.run}'), glue('s-jSDM_tuned.model_{period}_{trap}_{abund}_{cv}_min{minocc}_{formula.env}_lambdaE{lambda.env[i]}_{alpha.env[i]}_{lambda.sp[i]}_{lambda.bio[i]}_{drop[i]}_{date.model.run}.RDS')) )
+model.train = readRDS(here(outputpath,'sjsdm_general_outputs',sjsdmVfolder, 'sjsdm-model-RDS',glue('{formula.env}_{date.model.run}'), glue('s-jSDM_tuned.model_{period}_{trap}_{abund}_{cv}_min{minocc}{preocc}_{formula.env}_lambdaE{lambda.env[i]}_{alpha.env[i]}_{lambda.sp[i]}_{lambda.bio[i]}_{drop[i]}_{date.model.run}.RDS')) )
 	
 plot(model.train$history)
 	
 
 ```
 
-
-```{r demo-metrics} 
+```{r flashlight-coord} 
 # flashlight package
+old=Sys.time(); newt = old
 # for (i in 1:100 ) {
 # for (i in 101:200 ) {
 # for (i in 201:ncol(otu.train) ) {
 for (i in 1:ncol(otu.train) ) {
+	old=Sys.time()
+	
 	print(i)
 	custom_predict <- function(model1,new_data) {
-		newdd = select(new_data, -'otu.train...i.')
-		apply(abind::abind(lapply(1:3, function(i) predict(model1, newdata=newdd, SP=XY.train)) , along = -1L), 2:3, mean)[,i]
+	newdd = select(new_data, -'otu.train...i.', -'UTM_E',-'UTM_N')
+	spdd = select(new_data, 'UTM_E','UTM_N')
+#		print(c(dim(newdd),dim(spdd)))
+	apply(abind::abind(lapply(1:3, function(i) predict(model1, newdata=newdd, SP=spdd)) , along = -1L), 2:3, mean)[,i]
 }
 	
-	fl = flashlight::flashlight(model = model.train, data=data.frame(scale.env.train,otu.train[,i]), y = "otu.train...i.", label = "oregon", predict_function = custom_predict)
+	fl = flashlight::flashlight(model = model.train, data=data.frame(scale.env.train,XY.train, otu.train[,i]), y = "otu.train...i.", label = "oregon", predict_function = custom_predict)
 	
 	imp <- flashlight::light_importance(fl, m_repetitions = 3,type = "permutation")
-	save(imp, file=here(outputpath,'prediction_outputs','sjsdm-model-RDS',sjsdmVfolder,glue('{formula.env}_{date.model.run}'),'flashlight', glue( 'fl_min{minocc}_{abund}_{cv}_{formula.env}_spp{i}.rdata' ) ) )
+	save(imp, file=here(outputpath,'prediction_outputs','sjsdm-model-RDS',sjsdmVfolder,glue('{formula.env}_{date.model.run}'),'flashlight','coord', glue( 'fl_min{minocc}{preocc}_{abund}_{cv}_{formula.env}_spp{i}.rdata' ) ) )
 	
+	vv = imp$data$variable[sapply(1:10, function(i) which(abs(imp$data$value)==sort(abs(imp$data$value),decreasing=T)[i]) ) ]
+#	int <- flashlight::light_interaction(fl, pairwise=F, type='H', v=vv, grid_size = round(nrow(otu.train)*.8), n_max = nrow(otu.train), seed = 42)
+	int <- flashlight::light_interaction(fl, pairwise=F, type='H', v=vv, grid_size = round(nrow(otu.train)*.5), n_max = round(nrow(otu.train)*.9), seed = 42)
+	newt = Sys.time() - old
+	print(c(i,newt),digit=3)
+	
+	save(int, file=here(outputpath,'prediction_outputs','sjsdm-model-RDS',sjsdmVfolder,glue('{formula.env}_{date.model.run}'),'flashlight', 'interaction2','coord',glue( 'fl-overall-int_min{minocc}{preocc}_{abund}_{cv}_{formula.env}_spp{i}.rdata' ) ) )
+	}
+	
+
+```
+
+```{r flashlight} 
+# flashlight package
+old=Sys.time(); newt = old
+# for (i in 1:100 ) {
+# for (i in 101:200 ) {
+# for (i in 201:ncol(otu.train) ) {
+for (i in 1:ncol(otu.train) ) {
+	old=Sys.time()
+	
+	print(i)
+	custom_predict <- function(model1,new_data) {
+		newdd = select(new_data, -'otu.train...i.', -'UTM_E',-'UTM_N')
+		spdd = select(new_data, 'UTM_E','UTM_N')
+#		print(c(dim(newdd),dim(spdd)))
+		apply(abind::abind(lapply(1:3, function(i) predict(model1, newdata=newdd, SP=spdd)) , along = -1L), 2:3, mean)[,i]
+}
+	
+	fl = flashlight::flashlight(model = model.train, data=data.frame(scale.env.train,XY.train, otu.train[,i]), y = "otu.train...i.", label = "", predict_function = custom_predict)
+	
+	imp <- flashlight::light_importance(fl, m_repetitions = 3,type = "permutation", v=names(scale.env.train))
+	save(imp, file=here(outputpath,'prediction_outputs','sjsdm-model-RDS',sjsdmVfolder,glue('{formula.env}_{date.model.run}'),'flashlight', glue( 'fl_min{minocc}{preocc}_{abund}_{cv}_{formula.env}_spp{i}.rdata' ) ) )
+	
+	vv = imp$data$variable[sapply(1:10, function(i) which(abs(imp$data$value)==sort(abs(imp$data$value),decreasing=T)[i]) ) ]
+	int <- flashlight::light_interaction(fl, pairwise=F, type='H', v=vv, grid_size = round(nrow(otu.train)*.5), n_max = round(nrow(otu.train)*.9), seed = 42)
+	save(int, file=here(outputpath,'prediction_outputs','sjsdm-model-RDS',sjsdmVfolder,glue('{formula.env}_{date.model.run}'),'flashlight', 'interaction2',glue( 'fl-overall-int_min{minocc}{preocc}_{abund}_{cv}_{formula.env}_spp{i}.rdata' ) ) )
+	
+	newt = Sys.time() - old
+	print(c(i,newt),digit=3)
+	rm(imp, int)
 #	load(here(outputpath,'prediction_outputs','sjsdm-model-RDS',sjsdmVfolder,glue('{formula.env}_{date.model.run}'),'flashlight', glue( 'fl_min{minocc}_{abund}_{formula.env}_spp{i}.rdata' ) ))
 	
 #	plot(imp, fill = "darkred")
@@ -153,17 +202,19 @@ for (i in 1:ncol(otu.train) ) {
 }
 	
 	fl = flashlight::flashlight(model = model.train, data=data.frame(scale.env.train,XY.train, otu.train[,i]), y = "otu.train...i.", label = "oregon", predict_function = custom_predict)
-	load( here(outputpath,'prediction_outputs','sjsdm-model-RDS',sjsdmVfolder,glue('{formula.env}_{date.model.run}'),'flashlight', glue( 'fl_min{minocc}_{abund}_{cv}_{formula.env}_spp{i}.rdata' ) ) )
+	load( here(outputpath,'prediction_outputs','sjsdm-model-RDS',sjsdmVfolder,glue('{formula.env}_{date.model.run}'),'flashlight', glue( 'fl_min{minocc}{preocc}_{abund}_{cv}_{formula.env}_spp{i}.rdata' ) ) )
 	
 	vv = imp$data$variable[sapply(1:10, function(i) which(abs(imp$data$value)==sort(abs(imp$data$value),decreasing=T)[i]) ) ]
-	int <- flashlight::light_interaction(fl, pairwise=F, type='H', v=vv, grid_size = 30, n_max = 50, seed = 42)
+	int <- flashlight::light_interaction(fl, pairwise=F, type='H', v=vv, grid_size = round(nrow(otu.train)*.5), n_max = round(nrow(otu.train)*.9),seed = 42)
+	? normalize = F, 
+#	grid_size = 30, n_max = 50,
 	newt = Sys.time() - old
 	print(c(i,newt),digit=3)
 	
 #	plot(light_ice(fl,v="B5_20180717"))
 #	plot(int)
-	save(int, file=here(outputpath,'prediction_outputs','sjsdm-model-RDS',sjsdmVfolder,glue('{formula.env}_{date.model.run}'),'flashlight', 'interaction',glue( 'fl-overall-int_min{minocc}_{abund}_{cv}_{formula.env}_spp{i}.rdata' ) ) )
-	
+	save(int, file=here(outputpath,'prediction_outputs','sjsdm-model-RDS',sjsdmVfolder,glue('{formula.env}_{date.model.run}'),'flashlight', 'interaction2',glue( 'fl-overall-int_min{minocc}{preocc}_{abund}_{cv}_{formula.env}_spp{i}.rdata' ) ) )
+	rm(int)
 }
 	
 
@@ -188,10 +239,10 @@ for (j in 1:3) {
 	pp=ggplot()
 	ind = which(names(otu.train)==spp.list$otu[j])
 	if (mm == 'vint') {
-		load(here(outputpath,'prediction_outputs','sjsdm-model-RDS',sjsdmVfolder,glue('{formula.env}_{date.model.run}'),'flashlight', 'interaction',glue( 'fl-overall-int_min{minocc}_{abund}_{cv}_{formula.env}_spp{ind}.rdata' ) ) )
+		load(here(outputpath,'prediction_outputs','sjsdm-model-RDS',sjsdmVfolder,glue('{formula.env}_{date.model.run}'),'flashlight', 'interaction2',glue( 'fl-overall-int_min{minocc}{preocc}_{abund}_{cv}_{formula.env}_spp{ind}.rdata' ) ) )
 		pp = plot(int, fill = "darkred")}
 	if (mm == 'vind') {
-		load(here(outputpath,'prediction_outputs','sjsdm-model-RDS',sjsdmVfolder,glue('{formula.env}_{date.model.run}'),'flashlight', glue( 'fl_min{minocc}_{abund}_{cv}_{formula.env}_spp{ind}.rdata' ) ))
+		load(here(outputpath,'prediction_outputs','sjsdm-model-RDS',sjsdmVfolder,glue('{formula.env}_{date.model.run}'),'flashlight', glue( 'fl_min{minocc}{preocc}_{abund}_{cv}_{formula.env}_spp{ind}.rdata' ) ))
 		pp = plot(imp, fill = "darkred")}
 	
 	name = toString(strsplit(strsplit(as.character(spp.list$otu[j]),'__')[[1]][2],'_')[[1]][2:6])
@@ -199,8 +250,8 @@ for (j in 1:3) {
     theme(plot.title = element_text(size = 9))
 }
 	 
-# pdf(here(outputpath,'prediction_outputs', 'sjsdm-graph', sjsdmVfolder, 'xAI', glue('flashlight-train_{formula.env}_{abund}_{cv}_{period}_{trap}_min{minocc}_{date.model.run}.pdf')), width=12, height=5)
-# pdf(here(outputpath,'prediction_outputs', 'sjsdm-graph', sjsdmVfolder, 'xAI', glue('fl-overall-int_{formula.env}_{abund}_{cv}_{period}_{trap}_min{minocc}_{date.model.run}.pdf')), width=12, height=5)
+# pdf(here(outputpath,'prediction_outputs', 'sjsdm-graph', sjsdmVfolder, 'xAI', glue('{formula.env}'),glue('flashlight-train_{formula.env}_{abund}_{cv}_{period}_{trap}_min{minocc}{preocc}_{date.model.run}.pdf')), width=12, height=7)
+# pdf(here(outputpath,'prediction_outputs', 'sjsdm-graph', sjsdmVfolder, 'xAI', glue('{formula.env}'),glue('fl-overall-int_{formula.env}_{abund}_{cv}_{period}_{trap}_min{minocc}{preocc}_{date.model.run}.pdf')), width=12, height=5)
 	
 grid.arrange(plot.list[[1]],plot.list[[2]],plot.list[[3]], nrow=1)
 	
@@ -210,9 +261,10 @@ dev.off()
 
 
 ```{r data-allspp-imp}
-mm = c('vint','vind'); name='a'; i=1; mm=mm[i]; mm
+wxy = ''		# '' , 'coord'
+mm = c('vint','vind'); name='a'; i=2; mm=mm[i]; mm
 	
-varx = data.frame(vardd = names(scale.env.train), ind = 1:ncol(scale.env.train))
+varx = data.frame(vardd = c(names(scale.env.train),names(XY.train)), ind = 1:(ncol(scale.env.train)+ncol(XY.train)))
 impdd = data.frame(out=character(), var.abs=character(), varx.abs=numeric(), value.abs=numeric(), var.pos=character(),varx.pos=numeric(), value.pos=numeric())
 	
 for (i in 1:ncol(otu.train)) {
@@ -220,17 +272,30 @@ for (i in 1:ncol(otu.train)) {
 #	tryCatch({
 	xpos='a'; xabs='a'; idd='a'
 	if (mm == 'vint') {
-		load(here(outputpath,'prediction_outputs','sjsdm-model-RDS',sjsdmVfolder,glue('{formula.env}_{date.model.run}'),'flashlight', 'interaction',glue( 'fl-overall-int_min{minocc}_{abund}_{cv}_{formula.env}_spp{i}.rdata' ) ) )
+		load(here(outputpath,'prediction_outputs','sjsdm-model-RDS',sjsdmVfolder,glue('{formula.env}_{date.model.run}'),'flashlight', 'interaction2',glue( 'fl-overall-int_min{minocc}{preocc}_{abund}_{cv}_{formula.env}_spp{i}.rdata' ) ) )
 		loadd = int; rm(int)
-		xabs = most_important(loadd, 1); xpos = most_important(loadd, 2)[2]
+		
+		xabs = most_important(loadd, 1); n1=1
+		if (wxy=='' & startsWith(xabs, 'UTM_')) { while (startsWith(xabs, 'UTM_')) {n1=n1+1; xabs=most_important(loadd, n1)[n1]; print(xabs)} }
+		n1=n1+1; xpos = most_important(loadd, n1)[n1]
+		if (wxy=='' & startsWith(xpos, 'UTM_')) { while (startsWith(xpos, 'UTM_')) {n1=n1+1; xpos=most_important(loadd, n1)[n1]; print(xpos)} }
+		
 		idd = data.frame(otu=names(otu.train)[i], var.abs=xabs, varx.abs=varx$ind[varx$vardd==xabs], value.abs=loadd$data$value[loadd$data$variable==xabs], var.pos=xpos,varx.pos=varx$ind[varx$vardd==xpos], value.pos=loadd$data$value[loadd$data$variable==xpos])
-		name = glue( 'overall-int-var-fl_min{minocc}_{abund}_{cv}_{formula.env}.csv' )}
+		name = glue( 'overall-int-var{wxy}-fl_min{minocc}{preocc}_{abund}_{cv}_{formula.env}.csv' )
+		}
 	if (mm == 'vind') {
-		load(here(outputpath,'prediction_outputs','sjsdm-model-RDS',sjsdmVfolder,glue('{formula.env}_{date.model.run}'),'flashlight', glue( 'fl_min{minocc}_{abund}_{cv}_{formula.env}_spp{i}.rdata' ) ))
+		load(here(outputpath,'prediction_outputs','sjsdm-model-RDS',sjsdmVfolder,glue('{formula.env}_{date.model.run}'),'flashlight', glue( 'fl_min{minocc}{preocc}_{abund}_{cv}_{formula.env}_spp{i}.rdata' ) ))
 		loadd = imp; rm(imp)
-		xabs = which(abs(loadd$data$value)==max(abs(loadd$data$value))); xpos = which(loadd$data$value==max(oadd$data$value))
-		idd = data.frame(otu=names(otu.train)[i], var.abs=imp$data$variable[xabs], varx.abs=varx$ind[varx$vardd==imp$data$variable[xabs]], value.abs=imp$data$value[xabs], var.pos=imp$data$variable[xpos],varx.pos=varx$ind[varx$vardd==imp$data$variable[xpos]], value.pos=imp$data$value[xpos])
-		name = glue( 'imp-var-fl_min{minocc}_{abund}_{cv}_{formula.env}.csv' )}
+		
+		n1=1; xabs = which(abs(loadd$data$value)==max(abs(loadd$data$value))); vabs = loadd$data$variable[xabs]
+		
+		if (wxy=='' & startsWith(vabs, 'UTM_')) { while (startsWith(vabs, 'UTM_')) {n1=n1+1; xabs=which(abs(loadd$data$value)==sort(abs(loadd$data$value),decreasing=T)[n1]); vabs = loadd$data$variable[xabs]; print(vabs) } }
+		n1=1; xpos = which(loadd$data$value==max(loadd$data$value)); vpos = loadd$data$variable[xpos]
+		if (wxy=='' & startsWith(vpos, 'UTM_')) { while (startsWith(vpos, 'UTM_')) {n1=n1+1; xpos=which(loadd$data$value==sort(loadd$data$value,decreasing=T)[n1]); vpos = loadd$data$variable[xpos]; print(vpos) } }
+		
+		idd = data.frame(otu=names(otu.train)[i], var.abs=loadd$data$variable[xabs], varx.abs=varx$ind[varx$vardd==loadd$data$variable[xabs]], value.abs=loadd$data$value[xabs], var.pos=loadd$data$variable[xpos],varx.pos=varx$ind[varx$vardd==loadd$data$variable[xpos]], value.pos=loadd$data$value[xpos])
+		name = glue( 'imp-var{wxy}-fl_min{minocc}{preocc}_{abund}_{cv}_{formula.env}.csv' )
+		}
 	
 	impdd = rbind(impdd, idd)
 	rm(idd)
@@ -239,27 +304,24 @@ for (i in 1:ncol(otu.train)) {
 	write.table(impdd, file=here(outputpath,'prediction_outputs','sjsdm-model-RDS',sjsdmVfolder,glue('{formula.env}_{date.model.run}'),'flashlight','sum-flash', name ), row.names=F,sep=',')
 #	}, error=function(e){cat("ERROR :",conditionMessage(e), "\n")})
 }
+	
 str(impdd)
+	
+name = glue( 'imp-var{wxy}-fl_min{minocc}{preocc}_{abund}_{cv}_{formula.env}.csv' )
+if (mm == 'vint') { name = glue( 'overall-int-var{wxy}-fl_min{minocc}{preocc}_{abund}_{cv}_{formula.env}.csv' ) }
+name
 	
 impdd = read.table(here(outputpath,'prediction_outputs','sjsdm-model-RDS',sjsdmVfolder,glue('{formula.env}_{date.model.run}'),'flashlight','sum-flash', name), header=T,sep=',')
 	
 
 ```
-#> model.old=sjSDM(Y = s.otu.train,
-#+   env = linear(data=scale.env.train, formula = ~.,
-#+   lambda = lambda.env, alpha = alpha.env),
-#+    biotic = bioticStruct(lambda=lambda.env, alpha=alpha.env, on_diag=F, inverse = FALSE),
-#+ spatial = linear(data=XY.train, ~0+UTM_E*UTM_N,lambda = lambda.sp , alpha = alpha.sp),
-#+ learning_rate = 0.003, # 0.003 recommended for high species number 
-#+   step_size = NULL, iter =1,family=stats::binomial('probit'), sampling =1)
-#model = model.old
-#result = list( beta = coef(model), sigma = getCov(model),loss=NULL,history=model$history, p=NULL, logLik=logLik(model))
+
 
 ```{r plot-circular}
-impdd$otu == names(otu.train)
+table(impdd$otu == names(otu.train)); wxy; mm
 # variables index & value which has biggest coefficient
 effect_comb = data.frame(max_effects=impdd$varx.abs, V2=impdd$value.abs)
-if (nrow(effect_comb)<ncol(otu.train)) {}
+if (nrow(effect_comb)<ncol(otu.train)) { print('caution') }
 str(effect_comb)
 	
 effect_comb2 = data.frame(max_effects=impdd$varx.pos, V2=impdd$value.pos)
@@ -270,20 +332,222 @@ version.text = ''
 names(scale.env.train)
 	
 evnames = c("be10",'HJA',"tri","slope","Nss","Ess","ht","ht.250","ht.500","ht.1k","2_4","2_4.250","2_4.500","2_4.1k","4_16","4_16.250", "4_16.500","4_16.1k","be500","mTopo","cut1k",'minT', 'maxT','preci','stream', 'road','disturb','B1','B2','B3','B4','B5','B6','B7','B10','B11','NDVI','EVI','B','G','W','p25','rumple')
-if (formula.env=='oldVars') {evnames = c('HJA','ele','canopy','minT','preci','road','stream','disturb','B1','B2','B3','B4','B5','B6','B7','B10','B11','NDVI','EVI','B','G','W','2m','2_4m','4_16m','p25','p95','rumple')}
+if (formula.env=='oldVars') {
+	evnames = c('HJA','ele','canopy','minT','preci','road','stream','disturb','B1','B2','B3','B4','B5','B6','B7','B10','B11','NDVI','EVI','B','G','W','2m','2_4m','4_16m','p25','p95','rumple')}
+if (formula.env=='vars2') {
+	evnames = c("be10","slope","Nss","Ess","ht","ht.250","ht.500","ht.1k","2_4","2_4.250","2_4.500","2_4.1k","4_16","4_16.250", "4_16.500","4_16.1k","be500","mTopo","cut1k",'minT', 'maxT','preci','stream', 'road','disturb','B1','B2','B3','B4','B5','B6','B7','B10','B11','NDVI','EVI','B','G','W','p25','rumple','HJA')}
+if (formula.env=='vars3') {
+	evnames = c("be10", "slope","tri", "Nss", "Ess",'ndmi.std',"ndviP5", "ndviP50", "ndviP95", "ndmiP5", "ndmiP50", "ndmiP95","saviP50",'lcB1','lcB3','lcB4','lcB5','lcB7','lcB10','ndmi.std100m',"ndviP5.100m","ndviP50.100m","ndviP95.100m","ndmiP5.100m","ndmiP50.100m","ndmiP95.100m","saviP50.100m",'lcB1.100m','lcB3.100m','lcB4.100m','lcB5.100m','lcB7.100m','lcB10.100m',"tpi250",  "tpi500", "tpi1k" , "ht", "ht.250", "ht.1k", "2_4.250", "2_4.1k", "4_16", "4_16.250", "4_16.1k", "mTopo","cut1k",'stream', 'road','disturb','p25','rumple','HJA' )
+	}
+	
+if (wxy=='coord') { evnames=append(evnames, c('UTM_E','UTM_N')) }; evnames
 	
 
-# pdf(here(outputpath,'prediction_outputs', 'sjsdm-graph', sjsdmVfolder, 'xAI', glue('var-imp-pos-flashlight-train_{formula.env}_{abund}_{cv}_{period}_{trap}_min{minocc}_{date.model.run}.pdf')), height=8, width=8)
+# pdf(here(outputpath,'prediction_outputs', 'sjsdm-graph', sjsdmVfolder, 'xAI',glue('{formula.env}'), glue('var{wxy}-imp-pos-flashlight-train_{formula.env}_{abund}_{cv}_{period}_{trap}_min{minocc}_{date.model.run}.pdf')), height=8, width=8)
 	
 cov.circle.env(version.text, evnames, otu.text, effect_comb=effect_comb2, otu.tbl=otu.train) 
 	
-# pdf(here(outputpath,'prediction_outputs', 'sjsdm-graph', sjsdmVfolder, 'xAI', glue('var-imp-overall-int-flashlight-train_{formula.env}_{abund}_{cv}_{period}_{trap}_min{minocc}_{date.model.run}.pdf')), height=8, width=8)
-# pdf(here(outputpath,'prediction_outputs', 'sjsdm-graph', sjsdmVfolder, 'xAI', glue('var-imp-abs-flashlight-train_{formula.env}_{abund}_{cv}_{period}_{trap}_min{minocc}_{date.model.run}.pdf')), height=8, width=8)
+# pdf(here(outputpath,'prediction_outputs', 'sjsdm-graph', sjsdmVfolder, 'xAI', glue('{formula.env}'),glue('var{wxy}-imp-overall-int-flashlight-train_{formula.env}_{abund}_{cv}_{period}_{trap}_min{minocc}_{date.model.run}.pdf')), height=8, width=8)
+# pdf(here(outputpath,'prediction_outputs', 'sjsdm-graph', sjsdmVfolder, 'xAI', glue('{formula.env}'),glue('var{wxy}-imp-abs-flashlight-train_{formula.env}_{abund}_{cv}_{period}_{trap}_min{minocc}_{date.model.run}.pdf')), height=8, width=8)
 	
 cov.circle.env(version.text, evnames, otu.text, effect_comb=effect_comb, otu.tbl=otu.train)
 	
 dev.off()
 	
+
+```
+
+
+```{r extract-max-vars}
+wxy; mm; ddlist=list(); numvar=10
+# wxy = ''; mm = 'vind'
+	
+for (i in 1:2) {
+	aaa = c('vind','vint'); mm=aaa[i]
+	if (mm=='vind') {numvar=25}; if (mm=='vint') {numvar=10}
+	name = glue( 'imp-var{wxy}-fl_min{minocc}{preocc}_{abund}_{cv}_{formula.env}.csv' )
+	if (mm == 'vint') { name = glue( 'overall-int2-var{wxy}-fl_min{minocc}{preocc}_{abund}_{cv}_{formula.env}.csv' ) }
+	print(c(numvar, name)) 
+	
+	impdd = read.table(here(outputpath,'prediction_outputs','sjsdm-model-RDS',sjsdmVfolder,glue('{formula.env}_{date.model.run}'),'flashlight','sum-flash', name), header=T,sep=',')
+	
+	effect_comb = data.frame(max_effects=impdd$varx.abs, value=impdd$value.abs, var=impdd$var.abs, otu=impdd$otu)
+	if (nrow(effect_comb)<ncol(otu.train)) { print('caution') }
+#	str(effect_comb)
+	
+	dd = left_join(effect_comb, (effect_comb %>% count(max_effects)), by=c('max_effects'='max_effects')) %>% add_column(., type=mm)
+	aaa = effect_comb %>% count(max_effects); aaa = aaa[order(aaa$n, decreasing=T),]; aaa = aaa$max_effects[1:numvar]
+	aaa = unlist(sapply(1:numvar, function(x) {which(dd$max_effects==aaa[x])})); dd = dd[aaa,]
+	dd$var2 = evnames[dd$max_effects]
+	print(c(mm, i, length(unique(dd$max_effects)))); ddlist[[i]]=dd
+	
+} 
+	
+str(ddlist)
+unique(ddlist[[1]]$var); unique(ddlist[[2]]$var)
+ddlist[[3]] = unique(c(as.vector(unique(ddlist[[1]]$var)), as.vector(unique(ddlist[[2]]$var)))); ddlist[[3]] 
+save(ddlist, file=here(outputpath,'prediction_outputs','sjsdm-model-RDS',sjsdmVfolder,glue('{formula.env}_{date.model.run}'),'flashlight','sum-flash', glue('data-var{wxy}-imp-sum_{formula.env}_{abund}_{cv}_{period}_{trap}_min{minocc}_{date.model.run}')))
+	
+g1=ggplot(ddlist[[1]], aes(x=var2)) + geom_bar(stat="count") + scale_x_discrete(limits=unique(ddlist[[1]]$var2)) + xlab('individual') + theme(axis.text=element_text(size=6.5))
+g2=ggplot(ddlist[[2]], aes(x=var2)) + geom_bar(stat="count") + scale_x_discrete(limits=unique(ddlist[[2]]$var2)) + xlab('interaction')
+# , y=n  stat="identity"
+	
+# pdf(here(outputpath,'prediction_outputs', 'sjsdm-graph', sjsdmVfolder, 'xAI', glue('{formula.env}'),glue('var{wxy}-imp-sum_{formula.env}_{abund}_{cv}_{period}_{trap}_min{minocc}_{date.model.run}.pdf')), height=8, width=10)
+grid.arrange(g1,g2, nrow=2)			# , widths=c(.44,.56)
+	
+dev.off()
+	
+
+```
+
+```{r extract-3-maxV}
+evnames
+wxy = ''		# '' , 'coord'
+mm = c('vint','vind'); name='a'; i=2; mm=mm[i]; mm
+	
+varx = data.frame(vardd = c(names(scale.env.train),names(XY.train)), ind = 1:(ncol(scale.env.train)+ncol(XY.train)))
+impdd = data.frame(out=character(), var.abs=character(), varx.abs=numeric(), value.abs=numeric(), order=numeric())
+	
+for (i in 1:ncol(otu.train)) {
+	print(i)
+#	tryCatch({
+	xpos='a'; xabs='a'; idd='a'
+	if (mm == 'vint') {
+		load(here(outputpath,'prediction_outputs','sjsdm-model-RDS',sjsdmVfolder,glue('{formula.env}_{date.model.run}'),'flashlight', 'interaction2',glue( 'fl-overall-int_min{minocc}{preocc}_{abund}_{cv}_{formula.env}_spp{i}.rdata' ) ) )
+		loadd = int; rm(int)
+		
+		xabs = most_important(loadd, 1); n1=1
+		if (wxy=='' & startsWith(xabs, 'UTM_')) { while (startsWith(xabs, 'UTM_')) {n1=n1+1; xabs=most_important(loadd, n1)[n1]; print(xabs)} }
+		n1=n1+1; xpos = most_important(loadd, n1)[n1]
+		if (wxy=='' & startsWith(xpos, 'UTM_')) { while (startsWith(xpos, 'UTM_')) {n1=n1+1; xpos=most_important(loadd, n1)[n1]; print(xpos)} }
+		
+		idd = data.frame(otu=names(otu.train)[i], var.abs=xabs, varx.abs=varx$ind[varx$vardd==xabs], value.abs=loadd$data$value[loadd$data$variable==xabs], var.pos=xpos,varx.pos=varx$ind[varx$vardd==xpos], value.pos=loadd$data$value[loadd$data$variable==xpos])
+		name = glue( 'overall-int-var{wxy}-fl_min{minocc}{preocc}_{abund}_{cv}_{formula.env}.csv' )
+		}
+	if (mm == 'vind') {
+		load(here(outputpath,'prediction_outputs','sjsdm-model-RDS',sjsdmVfolder,glue('{formula.env}_{date.model.run}'),'flashlight', glue( 'fl_min{minocc}{preocc}_{abund}_{cv}_{formula.env}_spp{i}.rdata' ) ))
+		loadd = imp; rm(imp)
+		
+		values=sort(abs(loadd$data$value),decreasing=T)[1:5]
+		vars = vector(); n1=1 
+		idd=data.frame()
+		for (j in 1:5) {
+			xabs = which(abs(loadd$data$value)==values[j]); vabs = loadd$data$variable[xabs]
+			idd=rbind(idd, data.frame(otu=names(otu.train)[i], var.abs=vabs, varx.abs=varx$ind[varx$vardd==vabs], value.abs=loadd$data$value[xabs], order=j))
+			vars[j]=vabs
+		}
+		utm = startsWith(vars, 'UTM_')
+		ccc=vector()
+		for (j in 1:5) {
+			if (utm[j]) { print(idd$var.abs[j]); ; ccc=append(ccc,j) }
+		}
+		if (length(ccc)>0) {idd=idd[-as.numeric(ccc),]}; rm(ccc)
+		if (nrow(idd)!=3) { idd = idd[1:3,] }
+#		most_important(loadd, 2)
+		
+		name = glue( 'imp-var{wxy}3-fl_min{minocc}{preocc}_{abund}_{cv}_{formula.env}.csv' )
+	}
+	
+	impdd = rbind(impdd, idd)
+	rm(idd)
+	
+	write.table(impdd, file=here(outputpath,'prediction_outputs','sjsdm-model-RDS',sjsdmVfolder,glue('{formula.env}_{date.model.run}'),'flashlight','sum-flash', name ), row.names=F,sep=',')
+#	}, error=function(e){cat("ERROR :",conditionMessage(e), "\n")})
+}
+str(impdd)
+	
+wxy; mm; ddlist=list(); numvar=10
+	
+for (i in 1:3) {
+	mm='vind'
+	if (mm=='vind') {numvar=10}; if (mm=='vint') {numvar=10}
+	name = glue( 'imp-var{wxy}3-fl_min{minocc}{preocc}_{abund}_{cv}_{formula.env}.csv' )
+	if (mm == 'vint') { name = glue( 'overall-int2-var{wxy}-fl_min{minocc}{preocc}_{abund}_{cv}_{formula.env}.csv' ) }
+	print(c(numvar, name)) 
+	
+	impdd = read.table(here(outputpath,'prediction_outputs','sjsdm-model-RDS',sjsdmVfolder,glue('{formula.env}_{date.model.run}'),'flashlight','sum-flash', name), header=T,sep=',')
+	
+	impdd=subset(impdd, order==i)
+	effect_comb = data.frame(max_effects=impdd$varx.abs, value=impdd$value.abs, var=impdd$var.abs, otu=impdd$otu, order=impdd$order)
+	if (nrow(effect_comb)<ncol(otu.train)) { print('caution') }
+#	str(effect_comb)
+	
+	dd = left_join(effect_comb, (effect_comb %>% count(max_effects)), by=c('max_effects'='max_effects')) %>% add_column(., type=mm)
+	aaa = effect_comb %>% count(max_effects); aaa = aaa[order(aaa$n, decreasing=T),]; aaa = aaa$max_effects[1:numvar]
+	aaa = unlist(sapply(1:numvar, function(x) {which(dd$max_effects==aaa[x])})); dd = dd[aaa,]
+	dd$var2 = evnames[dd$max_effects]
+	print(c(mm, i, length(unique(dd$max_effects)))); ddlist[[i]]=dd
+	ddlist[[i]] = dd
+	rm(dd,impdd,effect_comb,aaa)
+} 
+	
+str(ddlist)
+unique(ddlist[[1]]$var); unique(ddlist[[2]]$var); unique(ddlist[[3]]$var)
+ddlist[[4]] = unique(c(as.vector(unique(ddlist[[1]]$var)), as.vector(unique(ddlist[[2]]$var)), as.vector(unique(ddlist[[3]]$var)))); ddlist[[4]]
+save(ddlist, file=here(outputpath,'prediction_outputs','sjsdm-model-RDS',sjsdmVfolder,glue('{formula.env}_{date.model.run}'),'flashlight','sum-flash', glue('data-var{wxy}3-imp-sum_{formula.env}_{abund}_{cv}_{period}_{trap}_min{minocc}_{date.model.run}')))
+	
+dd = rbind(select(ddlist[[1]], var2, type, order, otu), select(ddlist[[2]], var2, type, order, otu), select(ddlist[[3]], var2, type, order, otu)); dd$order=as.character(dd$order); str(dd)
+	
+load( here(outputpath,'prediction_outputs','sjsdm-model-RDS',sjsdmVfolder,glue('{formula.env}_{date.model.run}'),'flashlight','sum-flash', glue('data-var{wxy}-imp-sum_{formula.env}_{abund}_{cv}_{period}_{trap}_min{minocc}_{date.model.run}')) )
+dint = select(ddlist[[2]], var2, type, otu) %>% add_column(order=ddlist[[2]]$type, .before='otu')
+dd = rbind(dd, dint)
+	
+g1=ggplot(dd[dd$order=='vint',], aes(x=var2)) + geom_bar(stat='count') + scale_x_discrete(limits=unique(dd$var2[dd$order=='vint'])) + xlab('interaction') #+ theme(axis.text=element_text(size=6.5))
+	
+g2 = ggplot(dd[dd$order!='vint',], aes(x=var2, fill=order)) + geom_bar(position="dodge") + xlab('individual') + scale_x_discrete(limits=unique(dd$var2[dd$order!='vint'])) + theme(axis.text=element_text(size=6), legend.position=c(.9,.8)) 
+# , y=n  stat="identity" 
+	
+a = dd %>% count(var2); a = a[order(a$n,decreasing=T),] 
+g3 = ggplot(dd, aes(x=var2, colour=order)) + geom_bar(stat="count") + xlab('individual') + theme(axis.text=element_text(size=6), legend.position=c(.9,.8)) + scale_x_discrete(limits=a$var2)
+	
+# pdf(here(outputpath,'prediction_outputs', 'sjsdm-graph', sjsdmVfolder, 'xAI', glue('{formula.env}'),glue('var{wxy}3-imp-sum_{formula.env}_{abund}_{cv}_{period}_{trap}_min{minocc}_{date.model.run}.pdf')), height=12, width=10)
+grid.arrange(g2,g1,g3, nrow=3)			# , widths=c(.44,.56)
+	
+dev.off()
+	
+
+```
+
+
+```{r table-max-vars}
+dind=data.frame(); dint=data.frame(); dsum=data.frame()
+for (i in c('qp','pa')) {
+	jabund=i
+	load( here(outputpath,'prediction_outputs','sjsdm-model-RDS',sjsdmVfolder,glue('{formula.env}_{date.model.run}'),'flashlight','sum-flash', glue('data-var{wxy}-imp-sum_{formula.env}_{jabund}_{cv}_{period}_{trap}_min{minocc}_{date.model.run}')) )
+	dind=rbind(dind,ddlist[[1]] %>% add_column(dd=i))
+	dint=rbind(dint,ddlist[[2]] %>% add_column(dd=i))
+	dsum=rbind(dsum,data.frame(ddlist[[3]]) %>% add_column(dd=i, minocc=minocc, CV=cv, Svars=formula.env) %>% rename(var=1))
+}
+str(dind); str(dint); dsum
+	
+write.table(dsum, file=here(outputpath,'prediction_outputs', 'sjsdm-graph', sjsdmVfolder, 'xAI', glue('{formula.env}'),'selected-var.csv'), row.names=F, sep=',')
+	
+g1 = ggplot(dind, aes(x=var2, colour=dd)) + geom_bar(stat="count") + scale_x_discrete(limits=unique(dind$var2)) + xlab('individual') + theme(axis.text=element_text(size=6.2))
+g2 = ggplot(dint, aes(x=var2, colour=dd)) + geom_bar(stat="count") + scale_x_discrete(limits=unique(dint$var2)) + xlab('interaction') + theme(axis.text=element_text(size=8))
+	
+# pdf(here(outputpath,'prediction_outputs', 'sjsdm-graph', sjsdmVfolder, 'xAI', glue('{formula.env}'),glue('var{wxy}-imp-sum_{formula.env}_{cv}_{period}_{trap}_min{minocc}_{date.model.run}.pdf')), height=8, width=14)
+grid.arrange(g1,g2, nrow=2)			# , widths=c(.44,.56)
+	
+dev.off()
+	
+names(ddlist)
+formula.env = c('oldVars','newVars','vars2')
+abund=c('pa','qp');i=2;abund=abund[i]
+date.model.run = c('20210221','20210310'); i=2; date.model.run = date.model.run[i]; 
+	
+evnames = c("be10",'HJA',"tri","slope","Nss","Ess","ht","ht.250","ht.500","ht.1k","2_4","2_4.250","2_4.500","2_4.1k","4_16","4_16.250", "4_16.500","4_16.1k","be500","mTopo","cut1k",'minT', 'maxT','preci','stream', 'road','disturb','B1','B2','B3','B4','B5','B6','B7','B10','B11','NDVI','EVI','B','G','W','p25','rumple')
+if (formula.env=='oldVars') {
+	evnames = c('HJA','ele','canopy','minT','preci','road','stream','disturb','B1','B2','B3','B4','B5','B6','B7','B10','B11','NDVI','EVI','B','G','W','2m','2_4m','4_16m','p25','p95','rumple')}
+if (formula.env=='vars2') {
+	evnames = c("be10","slope","Nss","Ess","ht","ht.250","ht.500","ht.1k","2_4","2_4.250","2_4.500","2_4.1k","4_16","4_16.250", "4_16.500","4_16.1k","be500","mTopo","cut1k",'minT', 'maxT','preci','stream', 'road','disturb','B1','B2','B3','B4','B5','B6','B7','B10','B11','NDVI','EVI','B','G','W','p25','rumple','HJA')}
+	
+load(here(outputpath,'prediction_outputs','sjsdm-model-RDS',sjsdmVfolder,glue('{formula.env}_{date.model.run}'),'flashlight','sum-flash', glue('data-var{wxy}-imp-sum_{formula.env}_{abund}_{cv}_{period}_{trap}_min{minocc}_{date.model.run}')))
+	
+c(abund, cv, minocc, formula.env)
+evnames
+ddlist[[3]]
+	
+
 
 ```
 
