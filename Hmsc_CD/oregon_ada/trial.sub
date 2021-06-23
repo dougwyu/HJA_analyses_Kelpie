@@ -1,0 +1,16 @@
+#!/bin/bash
+#SBATCH -p gpu-rtx6000-2       #Which queue to use
+#SBATCH --qos=gpu						# QOS to be allowed to use GPU servers
+#SBATCH --gres=gpu:1				          	# Number of GPUs (per node)  # gpu:1 is the default. match n_gpu=2 in sjsdm_cv()
+#SBATCH --mem 128G           					# memory needed?
+#SBATCH --ntasks=2 					        # number of slots == number of CPU cores (match n_cpu) in sjSDM_cv
+#SBATCH -t 24:00:00 				        	# 48 hrs # time (DD-HH:MM)
+#SBATCH --job-name=trial_out   					# job name
+#SBATCH -o trial_out_%J.out			    	# log out file
+#SBATCH -e trial_out_%J.err			    	# error file out
+#SBATCH --mail-user=hsp20azu@uea.ac.uk 	#sends email to me
+#SBATCH --mail-type=ALL					        #Mail events (NONE, BEGIN, END, FAIL, ALL)
+
+module purge
+module add R/4.0.0
+Rscript trial.r

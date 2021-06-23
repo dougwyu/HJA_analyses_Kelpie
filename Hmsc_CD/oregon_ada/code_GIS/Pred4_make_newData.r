@@ -33,6 +33,8 @@ hja.utm <- st_transform(hja_bound, crs = utm10N)
 ## convex hull 
 aoi.pred.sf <- st_buffer(st_union(st_convex_hull(st_union(xy.utm)), st_convex_hull(hja.utm)), dist = 1500)
 
+st_write(aoi.pred.sf, "J:/UEA/Oregon/gis/s_utm/aoi_pred_sf.shp")
+
 plot(st_geometry(xy.utm))
 plot(hja.utm, add = T, col = NA)
 plot(aoi.pred.sf, add =T, col = NA)

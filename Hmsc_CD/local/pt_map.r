@@ -3,6 +3,7 @@
 getwd()
 wd <- here::here()
 setwd(wd)
+wd
 dir()
 
 source("https://raw.githubusercontent.com/Cdevenish/R-Material/master/Functions/w.xls.r")
@@ -56,6 +57,8 @@ rm(datFile, gitHub, kelpierundate, minimaprundate, outputidxstatstabulatefolder,
 ## check S1, S2, M1 and M2 distribution of sample locations
 pts.chk <- otuenv %>%
   select(c(UTM_N, UTM_E, SiteName, period, trap))
+
+pts.chk
 
 # Check all sitenames have unique coordinates:  
 uniqueSites <- unique(pts.chk[, c("UTM_N", "UTM_E", "SiteName")])
@@ -232,6 +235,9 @@ st_write(rch.sf, "J:/UEA/Oregon/gis/s_nad_utm/sp_rich_pts.shp", delete_layer = T
 rch.wgs <- st_transform(rch.sf, crs = 4326)
 st_write(rch.wgs, "J:/UEA/Oregon/gis/s_wgs/sp_rich_all_pts.kml", delete_layer =T)
 
+#transform to UTM
+rch.utm <- st_transform(rch.sf, crs = utm10N)
+st_write(rch.utm, "J:/UEA/Oregon/gis/s_utm/sp_rich_S1_m1m2.shp", delete_layer =T)
 
 # remove OTUs, XY, and normalised NDVI and EVI
 # average, optionally log, select, and scale env covariates
@@ -274,6 +280,10 @@ hja_bound
 
 hja.wgs <- st_transform(hja_bound, crs = 4326)
 # st_write(hja.wgs, "J:/UEA/Oregon/gis/s_wgs/hja.kml")
+# st_write(hja.wgs, "J:/UEA/Oregon/gis/s_wgs/hja.shp")
+# 
+# hja_utm <- st_transform(hja.wgs, crs = utm10N)
+# st_write(hja_utm, "J:/UEA/Oregon/gis/s_utm/hja.shp")
 
 ## Make a bounding box for study area on GEE
 plot(st_geometry(pts.sf))
@@ -397,3 +407,9 @@ symbols(1.1,1.1, circle = 1, bg = rgb(0,0,0,1), add = T)
 
 symbols(1,1, circle = 1, bg = rgb(0,0,0,0.5))
 symbols(1.1,1.1, circle = 1, bg = rgb(0,0,0,0.5), add = T)
+
+## get US states for ref map
+usa1.wgs <- raster::getData("GADM", country= "USA", path= "J:/UEA/Oregon/gis/s_wgs", level = 1)
+
+usa1.sf <- st_as_sf(usa1.wgs)
+st_write(usa1.sf, dsn = "J:/UEA/Oregon/gis/s_wgs", layer = "gadm_usa.shp", driver = "ESRI Shapefile")
