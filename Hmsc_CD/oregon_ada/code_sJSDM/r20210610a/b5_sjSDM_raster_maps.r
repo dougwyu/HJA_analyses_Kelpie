@@ -33,7 +33,7 @@ gis_out <- gis_in <- "data/gis"
 # gis_out <- "J:/UEA/Oregon/gis/processed_gis_data"
 # gis_in <- "J:/UEA/Oregon/gis/raw_gis_data"
 
-baseFolder <- "code_sjSDM/r20210518a"
+baseFolder <- "code_sjSDM/r20210610a"
 
 resFolder <- file.path(baseFolder, "results")
 plotsFolder <- file.path(baseFolder, "plots")
@@ -58,8 +58,8 @@ head(sp.mn.test$auc)
 auc.filt <- 0.65
 sum(sp.mn.test$auc > auc.filt)
 
-## extract species over AUC filter
-str(pred.sp, max.level = 1)
+# ## extract species over AUC filter
+# str(pred.sp, max.level = 1)
 
 # incidence 
 incidence <- colSums(otu.pa.csv)/nrow(otu.pa.csv)
@@ -87,11 +87,6 @@ sum(grepl("NA_NA", spp$best.name))
 head(spp, 30)
 
 sum(is.na(spp$family))
-
-
-
-
-
 
 load(file.path(resFolder, paste0("sjSDM_predictions_", "M1S1_", "min", minocc, "_", varsName, "_", abund, ".rdata"))) # pred.mn, pred.sd, 
 
@@ -127,6 +122,7 @@ rList <- lapply(data.frame(pred.in), function(x) {
 
 rStack <- stack(rList)
 names(rStack) <- spp.in$best.name
+rStack
 
 ## add auc incidence names to stack
 names(rStack) <- paste0(spp.in$best.name, " ", "auc=", round(spp.in$auc, 2), " ",  "prev=", round(spp.in$incidence,2))
@@ -182,28 +178,35 @@ top4
 
 # plot(rStack[[which(spp.auc$order == "Lepidoptera")]])
 
+source("code_GIS/plotStack.r")
 
 pdf(file.path(plotsFolder, "coleoptera.pdf"), width = 7, height = 7)
-plotStack(rStack[[which(spp.auc$order == "Coleoptera")]], addfun = addAll)
+plotStack(rStack[[which(spp.in$order == "Coleoptera")]], addfun = addAll)
 dev.off()
 
-
 pdf(file.path(plotsFolder, "Hymenoptera.pdf"), width = 7, height = 7)
-plotStack(rStack[[which(spp.auc$order == "Hymenoptera")]], addfun = addAll)
+plotStack(rStack[[which(spp.in$order == "Hymenoptera")]], addfun = addAll)
 dev.off()
 
 pdf(file.path(plotsFolder, "Lepidoptera.pdf"), width = 7, height = 7)
-plotStack(rStack[[which(spp.auc$order == "Lepidoptera")]], addfun = addAll)
+plotStack(rStack[[which(spp.in$order == "Lepidoptera")]], addfun = addAll)
 dev.off()
 
 pdf(file.path(plotsFolder, "Diptera.pdf"), width = 7, height = 7)
-plotStack(rStack[[which(spp.auc$order == "Diptera")]])
+plotStack(rStack[[which(spp.in$order == "Diptera")]])
 dev.off()
 
+rStack.bin
 
-spRich_order <- stackApply(rStack.bin, spp.auc$order, fun = sum)
+spRich_order <- stackApply(rStack.bin, spp.in$order, fun = sum)
 names(spRich_order)
 names(spRich_order) <- sub("index_", "", names(spRich_order))
+
+
+pdf(file.path(plotsFolder, "Sp_rich_order.pdf"), width = 7, height = 7)
+plotStack(spRich_order, by = 4, nc = 2, nr= 2)
+dev.off()
+
 
 # plot(spRich_order[[top4]])
 
@@ -273,7 +276,7 @@ head(hsd.df)
 # ggsave(file.path(plotsFolder, "spRich_map.pdf"), p)
 
 ## Sp richness in HJA
-p<- ggplot() + 
+p1 <- ggplot() + 
   geom_tile(data = df1, aes(x, y, fill = sp.richness)) +
   scale_fill_gradientn(colours = rev(terrain.colors(225)), name = "sp richness") +
   geom_tile(data = hsd.df, aes(x, y, alpha = hsd), fill = "grey20") +
@@ -283,12 +286,12 @@ p<- ggplot() +
   geom_sf(data = cut.40, bg = NA)+
   coord_sf(datum = sf::st_crs(32610), ylim = ylim, xlim = xlim)
 
-ggsave(file.path(plotsFolder, "spRich_map_HJA.png"), p)
+ggsave(file.path(plotsFolder, "spRich_map_HJA.png"), p1)
 
 
 head(df1)
 ## Sp summed in HJA
-p<- ggplot() + 
+p2 <- ggplot() + 
   geom_tile(data = df1, aes(x, y, fill = sp.sum)) +
   scale_fill_gradientn(colours = rev(terrain.colors(225)), name = "summed probability") +
   geom_tile(data = hsd.df, aes(x, y, alpha = hsd), fill = "grey20") +
@@ -298,12 +301,12 @@ p<- ggplot() +
   geom_sf(data = cut.40, bg = NA)+
   coord_sf(datum = sf::st_crs(32610), ylim = ylim, xlim = xlim)
 
-ggsave(file.path(plotsFolder, "spSum_map_HJA.png"), p)
+ggsave(file.path(plotsFolder, "spSum_map_HJA.png"), p2)
 
 
 ## Sp richness by order
 
-p<- ggplot(subset(df2, Order %in% top4), aes(x, y)) + 
+p3 <- ggplot(subset(df2, Order %in% top4), aes(x, y)) + 
   geom_tile(aes(fill = Sp_rich)) +
   scale_fill_gradientn(colours = rev(terrain.colors(225)), name = "sp richness") +
   geom_tile(data = hsd.df, aes(x, y, alpha = hsd), fill = "grey20", inherit.aes = FALSE) +
@@ -314,6 +317,6 @@ p<- ggplot(subset(df2, Order %in% top4), aes(x, y)) +
   coord_sf(datum = sf::st_crs(32610), ylim = ylim, xlim = xlim)+
   facet_wrap(~Order)
 
-ggsave(file.path(plotsFolder, "spRich_map_x_Order.png"), p, width = 7, height = 7)
+ggsave(file.path(plotsFolder, "spRich_map_x_Order.png"), p3, width = 7, height = 7)
 
 
