@@ -35,9 +35,10 @@ aoi.pred.sf <- st_buffer(st_union(st_convex_hull(st_union(xy.utm)), st_convex_hu
 
 st_write(aoi.pred.sf, "J:/UEA/Oregon/gis/s_utm/aoi_pred_sf.shp")
 
-plot(st_geometry(xy.utm))
+plot(aoi.pred.sf, add =F, col = NA)
+plot(st_geometry(xy.utm),add =T)
 plot(hja.utm, add = T, col = NA)
-plot(aoi.pred.sf, add =T, col = NA)
+
 
 # load as brick
 allBrck <- brick(file.path(gis_out, "r_utm/allStack.tif"))
@@ -51,9 +52,24 @@ plot(allBrck$insideHJA)
 # plot(allBrck$cut_msk)
 # plot(allBrck$cut_40msk)
 
-plot(hja.utm, add = T)
-plot(aoi.pred.sf, add =T)
+plot(allBrck$be30)
+plot(hja.utm, add = T, col = NA)
+plot(aoi.pred.sf, add =T, col = NA)
 plot(xy.utm, add = T, pch = 16, col = "black")
+
+## Try difference buffer distances
+
+aoi.pred.lst <- lapply(c(500, 1000, 1500), function(i){
+  st_buffer(st_union(st_convex_hull(st_union(xy.utm)), st_convex_hull(hja.utm)), dist = i)
+})
+
+## add to map
+plot(allBrck$be30)
+plot(st_geometry(hja.utm), add = T, col = NA)
+plot(st_geometry(xy.utm), add = T, pch = 16, col = "black")
+sapply(seq_along(aoi.pred.lst), function(x) plot(aoi.pred.lst[[x]], add = T, col = NA, border = x))
+
+
 
 ## Add transformed raster here
 allBrck$lg_DistStream <- log(allBrck$DistStream + 0.001)
