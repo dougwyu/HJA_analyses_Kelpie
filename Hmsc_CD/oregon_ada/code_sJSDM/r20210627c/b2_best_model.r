@@ -32,7 +32,7 @@ getwd() # always run sub from oregon_ada
 
 library(dplyr)
 
-resFolder <-"code_sjSDM/r20210627a/results"
+resFolder <-"code_sjSDM/r20210627c/results"
 abund <- "pa"
 
 ## load model data 
@@ -43,7 +43,7 @@ load(file.path(resFolder, paste0("modelData_",abund,".rdata")))
 
 ### 2. Make validation full model and test on test data
 
-set.seed(100)
+set.seed(101)
 
 # set variables from best tune
 # formula.env = 'envDNN'

@@ -27,7 +27,7 @@ options(echo=TRUE) # if you want see commands in output file
 Sys.setenv(RETICULATE_PYTHON="/gpfs/scratch/hsp20azu/sjSDM_env/bin/python")
 library(sjSDM)
 packageVersion("sjSDM")
-# [1] ‘0.1.3.9000’
+# [1] 0.1.3.9000
 getwd() # always run sub from oregon_ada
 
 library(dplyr)
@@ -71,22 +71,17 @@ res.best
 ## Testing results table
 
 # add in lambda.bio and alpha.bio from random samples of sample.bio, and add results columns
-eval.results <- data.frame(loglike_sjSDM = NA, 
-                           loss= NA, 
-                           AUC.train = NA, 
-                           AUC.test = NA,
-                           ll.train = NA,
-                           ll.test = NA,
-                           nagel.train = NA,
-                           nagel.test = NA,
-                           plr.train = NA,
-                           plr.test = NA,
-                           tjur.train = NA,
-                           tjur.test = NA,
-                           cor.train = NA,
-                           cor.test = NA,
-                           auc.lt5.train = NA,
-                           auc.lt5.test= NA)
+n <- 2
+eval.results <- data.frame(type = rep(NA, n),
+                           loglike_sjSDM = rep(NA, n),
+                           loss=rep(NA, n),
+                           AUC = rep(NA, n),
+                           ll = rep(NA, n),
+                           nagel= rep(NA, n),
+                           plr = rep(NA, n),
+                           tjur =rep(NA, n),
+                           cor = rep(NA, n),
+                           auc.lt5= rep(NA, n))
 
 # clean up
 
@@ -181,172 +176,126 @@ model.train <- sjSDM(
   
 ## Save model
 saveRDS(model.train,
-          file.path(resFolder,paste0("s-jSDM_final_model_", varsName, "_", spChoose, "_",
-                                     i, "_", abund, ".rds")))
+          file.path(resFolder,paste0("s-jSDM_final_model_",varsName, "_",spChoose, "_",abund, ".rds")))
   
-# Do testing and save results in data frame
-eval.results$loglike_sjSDM <- logLik(model.train)
-eval.results$loss <- model.train$history[length(model.train$history)]
+# Do testing and save results in data frame (2nd row is training)
+eval.results[2,]$loglike_sjSDM <- logLik(model.train)
+eval.results[2,]$loss <- model.train$history[length(model.train$history)]
   
 
-  ## Model evaluation - AUC, LL, r2
+## Model evaluation - AUC, LL, r2
 for (pred in 1:2) {
+  
+  # pred = 1
+  # 1 -> 'test'
+  newdd = scale.env.test ; newsp = XY.test.scale; otudd = s.otu.test
+  
+  ## pred = 2 # training
+  if (pred==2) { newdd = NULL; newsp = NULL; otudd = s.otu.train}
+  # Error in reticulate::py_is_null_xptr(fa) : 
+  #   Cannot convert object to an environment: [type=double; target=ENVSXP].
+  # if (pred==2) { newdd = scale.env.train; newsp = XY.train.scale; otudd = s.otu.train}
+  
+  # predict for all species = sites X columns
+  pred.dd = apply(abind::abind(lapply(1:3, function(i) {
+    predict(model.train, newdata=newdd, SP=newsp)}
+  ),along = -1L), 2:3, mean)
+  
+  attr(pred.dd, 'dimnames') = NULL
+  
+  # convert observed to pa (if qp)
+  otudd.pa = (otudd>0)*1
+  # sum(colSums(otudd.pa)==0)
+  
+  # AUC for all species - if not present, then NA
+  auc <- sapply(1:dim(otudd)[2], function(i) {
     
-    # pred = 1
-    # 1 -> 'test'
-    newdd = scale.env.test ; newsp = XY.test.scale; otudd = s.otu.test
+    tryCatch({
+      as.numeric(pROC::roc(otudd.pa[,i], pred.dd[,i], direction = "<", quiet=T)$auc)},
+      error = function(err){ return(NA)}
+    )
+  })
+  
+  ## Extra evaluation metrics
+  # ll, nagel & plr for spp 
+  rsq = data.frame(ll=rep(.1, length.out=ncol(pred.dd)), 
+                   nagel=rep(.1, length.out=ncol(pred.dd)), 
+                   plr=rep(.1, length.out=ncol(pred.dd)),
+                   tjur = rep(NA, length.out=ncol(pred.dd)),
+                   cor = rep(NA, length.out=ncol(pred.dd)))
+  
+  # m = 59
+  for (m in 1:ncol(pred.dd)) { 
     
-    ## pred = 2 # training
-    if (pred==2) { newdd = NULL; newsp = NULL; otudd = s.otu.train}
-    # Error in reticulate::py_is_null_xptr(fa) : 
-    #   Cannot convert object to an environment: [type=double; target=ENVSXP].
-    # if (pred==2) { newdd = scale.env.train; newsp = XY.train.scale; otudd = s.otu.train}
+    p = pred.dd[,m]; y = otudd.pa[,m]
     
-    # predict for all species = sites X columns
-    pred.dd = apply(abind::abind(lapply(1:3, function(i) {
-      predict(model.train, newdata=newdd, SP=newsp)}
-    ),along = -1L), 2:3, mean)
+    loglikP = sum( log( p*y + (1-p)*(1-y) ) )
+    loglikN = sum( log( mean(p)*y + (1-mean(p))*(1-y) ) )
     
-    attr(pred.dd, 'dimnames') = NULL
+    rsq$nagel[m] = (1-exp(2/length(p)*(loglikN-loglikP))) / (1-exp(2/length(p)*loglikN))
+    rsq$ll[m] = loglikP
     
-    # convert observed to pa (if qp)
-    otudd.pa = (otudd>0)*1
-    # sum(colSums(otudd.pa)==0)
+    tppp = sum(p*y)
+    fppp = sum(p*(1-y))
+    fapp = sum((1-p)*y) ### Weird behavious if fa object is here... check in sjSDM code... 
+    tapp = sum((1-p)*(1-y))
     
-    # AUC for all species - if not present, then NA
-    auc <- sapply(1:dim(otudd)[2], function(i) {
-      
-      tryCatch({
-        as.numeric(pROC::roc(otudd.pa[,i], pred.dd[,i], direction = "<", quiet=T)$auc)},
-        error = function(err){ return(NA)}
-      )
-    })
+    rsq$plr[m] = tppp/(tppp+fapp)/fppp*(fppp+tapp) # get NaN if species missing at all sites. OK> 
     
-    ## Extra evaluation metrics
-    # ll, nagel & plr for spp 
-    rsq = data.frame(ll=rep(.1, length.out=ncol(pred.dd)), 
-                     nagel=rep(.1, length.out=ncol(pred.dd)), 
-                     plr=rep(.1, length.out=ncol(pred.dd)),
-                     tjur = rep(NA, length.out=ncol(pred.dd)),
-                     cor = rep(NA, length.out=ncol(pred.dd)))
+    tjur <- base::diff(tapply(p, y, mean, na.rm = T))
+    rsq$tjur[m] <- ifelse(length(tjur) > 0, tjur, NA)
+    rsq$cor[m] = suppressWarnings(cor(p, y)) # just when speceis missing in test data
     
-    # m = 59
-    for (m in 1:ncol(pred.dd)) { 
-      
-      p = pred.dd[,m]; y = otudd.pa[,m]
-      
-      loglikP = sum( log( p*y + (1-p)*(1-y) ) )
-      loglikN = sum( log( mean(p)*y + (1-mean(p))*(1-y) ) )
-      
-      rsq$nagel[m] = (1-exp(2/length(p)*(loglikN-loglikP))) / (1-exp(2/length(p)*loglikN))
-      rsq$ll[m] = loglikP
-      
-      tppp = sum(p*y)
-      fppp = sum(p*(1-y))
-      fapp = sum((1-p)*y) ### Weird behavious if fa object is here... check in sjSDM code... 
-      tapp = sum((1-p)*(1-y))
-      
-      rsq$plr[m] = tppp/(tppp+fapp)/fppp*(fppp+tapp) # get NaN if species missing at all sites. OK> 
-      
-      tjur <- base::diff(tapply(p, y, mean, na.rm = T))
-      rsq$tjur[m] <- ifelse(length(tjur) > 0, tjur, NA)
-      rsq$cor[m] = suppressWarnings(cor(p, y)) # just when speceis missing in test data
-      
-    }
-    
-    
-    # Tjur <- tryCatch(expr = mapply(function(x,y) {
-    #   tj <- base::diff(tapply(x, y, mean, na.rm = T)) # difference of average predicted values at 1 and 0
-    #   if(!length(tj) > 0) tj <- NA
-    #   return(tj)
-    # }, asplit(pred.dd,2), asplit(otudd.pa,2)), error = function(err){ return(NA)})
-    # 
-    
-    ## add to data frame
-
-    if (pred==2) {
-      eval.results$AUC.train = mean(auc, na.rm = TRUE)
-      eval.results$ll.train = mean(rsq$ll, na.rm = T)
-      eval.results$nagel.train = mean(rsq$nagel, na.rm = T)
-      eval.results$plr.train  = mean(rsq$plr, na.rm = T)
-      eval.results$tjur.train  = mean(rsq$tjur, na.rm = T)
-      eval.results$cor.train  = mean(rsq$cor, na.rm = T)
-      eval.results$auc.lt5.train = sum(auc < 0.5, na.rm = T)
-    }
-    
-    if (pred==1) {
-      eval.results$AUC.test = mean(auc, na.rm = TRUE)
-      eval.results$ll.test= mean(rsq$ll, na.rm = T)
-      eval.results$nagel.test= mean(rsq$nagel, na.rm = T)
-      eval.results$plr.test = mean(rsq$plr, na.rm = T)
-      eval.results$tjur.test = mean(rsq$tjur, na.rm = T)
-      eval.results$cor.test = mean(rsq$cor, na.rm = T)
-      eval.results$auc.lt5.test = sum(auc < 0.5, na.rm = T)
-    }
-    
-    ## species results
-    
-    if (pred==1) {
-      rsq$auc <- auc
-      sp.res.test <- rsq
-    }
-    
-    if (pred==2) {
-      rsq$auc <- auc
-      sp.res.train <- rsq
-    }
-    
-    
+  }
+  
+  
+  # Tjur <- tryCatch(expr = mapply(function(x,y) {
+  #   tj <- base::diff(tapply(x, y, mean, na.rm = T)) # difference of average predicted values at 1 and 0
+  #   if(!length(tj) > 0) tj <- NA
+  #   return(tj)
+  # }, asplit(pred.dd,2), asplit(otudd.pa,2)), error = function(err){ return(NA)})
+  # 
+  
+  ## add to data frame
+  eval.results[pred,]$type = c("test", "training")[pred]
+  eval.results[pred,]$AUC = mean(auc, na.rm = TRUE)
+  eval.results[pred,]$ll = mean(rsq$ll, na.rm = T)
+  eval.results[pred,]$nagel = mean(rsq$nagel, na.rm = T)
+  eval.results[pred,]$plr = mean(rsq$plr, na.rm = T)
+  eval.results[pred,]$tjur = mean(rsq$tjur, na.rm = T)
+  eval.results[pred,]$cor = mean(rsq$cor, na.rm = T)
+  eval.results[pred,]$auc.lt5 = sum(auc < 0.5, na.rm = T)
+  
+  ## species results
+  
+  if (pred==1) {
+    rsq$auc <- auc
+    sp.res.test <- rsq
+  }
+  
+  if (pred==2) {
+    rsq$auc <- auc
+    sp.res.train <- rsq
+  }
+  
+  
 } # end of evaluation loop
   
 save(eval.results, sp.res.test, sp.res.train, file = file.path(resFolder, "sp_test_results.rdata"))
 
+eval.results
 
+# sp.res.test
+# sp.res.train
 
-# apply(eval.results, 2, mean)
-# 
-# ### 5. Average AUC by tune runs ####
-# # eval.mean <- eval.results %>%
-# #   group_by(across(c(-loglike_sjSDM, -loss, -k, -contains(c("train", "test"))))) %>%
-# #   #summarise(across(contains(c("train", "test"))), list(mean))
-# #   summarise(across(contains(c("train", "test")), list(mean = mean))) 
-# 
-# 
 # ## species means
-# # str(sp.res.test, max.level = 2)
-# 
-# names <- colnames(sp.res.test[[1]])
-# 
-# sp.mn.test <- lapply(names, function(z){
-#   
-#   rowMeans(do.call(cbind, lapply(sp.res.test, function(x) x[[z]])), na.rm = T)
-#   
-# })
-# 
-# names(sp.mn.test) <- names
-# sp.mn.test
-# 
-# 
-# sp.mn.train <- lapply(names, function(z){
-#   
-#   rowMeans(do.call(cbind, lapply(sp.res.train, function(x) x[[z]])), na.rm = T)
-#   
-# })
-# 
-# names(sp.mn.train) <- names
-# 
-# sapply(sp.mn.test, mean)
-# 
-# 
-# 
-# save(eval.results, sp.mn.train, sp.mn.test, sp.res.test, sp.res.train, file = file.path(resFolder, "sp_results.rdata"))
-# 
-# 
+# str(sp.res.test, max.level = 2)
+
 # ### Plots 
-# pdf(file.path(resFolder, "eval_metrics_pairs_test.pdf"))
-# plot(sp.res.test[[1]])
-# mtext("test")
-# dev.off()
+pdf(file.path(resFolder, "eval_metrics_pairs_test.pdf"))
+plot(sp.res.test)
+mtext("test")
+dev.off()
 # 
 # # pdf(file.path(resFolder,"eval_metrics_pairs_train.pdf"))
 # # plot(sp.res.train[[1]])
@@ -354,8 +303,8 @@ save(eval.results, sp.res.test, sp.res.train, file = file.path(resFolder, "sp_te
 # # dev.off()
 # 
 # 
-# pdf(file.path(resFolder, "eval_metrics_auc_test_train.pdf"))
-# plot(sp.mn.train$auc, sp.mn.test$auc, xlim = c(0,1), ylim = c(0,1), xlab = "AUC train", ylab = "AUC test")
-# abline(0,1)
-# dev.off()
+pdf(file.path(resFolder, "eval_metrics_auc_test_train.pdf"))
+plot(sp.res.train$auc, sp.res.test$auc, xlim = c(0,1), ylim = c(0,1), xlab = "AUC train", ylab = "AUC test")
+abline(0,1)
+dev.off()
 # 
