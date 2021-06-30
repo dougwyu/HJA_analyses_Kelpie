@@ -9,9 +9,9 @@
 #   #SBATCH --mem 128G           					# memory needed?
 #   #SBATCH --ntasks=2 					        # number of slots == number of CPU cores (match n_cpu) in sjSDM_cv
 #SBATCH -t 72:00:00 				        	# 48 hrs # time (DD-HH:MM)
-#SBATCH --job-name=sjsdm_v9apred   					# job name
-#SBATCH -o code_sjSDM/r20210627a/sjsdm_v9apred_%J.out			    	# log out file
-#SBATCH -e code_sjSDM/r20210627a/sjsdm_v9apred_%J.err			    	# error file out
+#SBATCH --job-name=sjsdm_v8pred_m6_pa   					# job name
+#SBATCH -o code_sjSDM/r20210610a/sjsdm_v8pred_m6_pa_%J.out			    	# log out file
+#SBATCH -e code_sjSDM/r20210610a/sjsdm_v8pred_m6_pa_%J.err			    	# error file out
 #SBATCH --mail-user=hsp20azu@uea.ac.uk 	#sends email to me
 #SBATCH --mail-type=ALL					        #Mail events (NONE, BEGIN, END, FAIL, ALL)
 
@@ -31,4 +31,4 @@ module purge
 module add python/anaconda/2019.10/3.7
 source /gpfs/scratch/hsp20azu/sjSDM_env/bin/activate
 module add R/4.0.0
-Rscript code_sjSDM/r20210627a/b4_sjSDM_prediction.r
+Rscript code_sjSDM/r20210610a/b4_sjSDM_prediction.r

@@ -18,11 +18,13 @@ utm10N <- 32610
 gis_in <- "J:/UEA/Oregon/gis/raw_gis_data"
 gis_out <- "J:/UEA/Oregon/gis/processed_gis_data"
 
+# gis_in <- "D:/CD/UEA/Oregon/gis/raw_gis_data"
+# gis_out <- "D:/CD/UEA/Oregon/gis/processed_gis_data"
 
 ## create a reduced prediction area - convex hull around (all points + HJA) + buffer
 ## Load sample site points
 load(file.path(gis_out, "sample_sites.rdata"))
-xy.utm
+xy.utm; xy.all.utm
 
 ## bring in HJA boundary
 # https://data-osugisci.opendata.arcgis.com/datasets/74312b6130cb4e9b8c454ae1195f6482_9/data
@@ -31,9 +33,9 @@ hja_bound <- subset(hja, FP_NAME == "H.J. Andrew Experimental Forest")
 hja.utm <- st_transform(hja_bound, crs = utm10N)
 
 ## convex hull 
-aoi.pred.sf <- st_buffer(st_union(st_convex_hull(st_union(xy.utm)), st_convex_hull(hja.utm)), dist = 1500)
+aoi.pred.sf <- st_buffer(st_union(st_convex_hull(st_union(xy.utm)), st_convex_hull(hja.utm)), dist = 500)
 
-st_write(aoi.pred.sf, "J:/UEA/Oregon/gis/s_utm/aoi_pred_sf.shp")
+st_write(aoi.pred.sf, "J:/UEA/Oregon/gis/s_utm/aoi_pred_sf_500.shp", delete_layer = T)
 
 plot(aoi.pred.sf, add =F, col = NA)
 plot(st_geometry(xy.utm),add =T)
@@ -58,17 +60,18 @@ plot(aoi.pred.sf, add =T, col = NA)
 plot(xy.utm, add = T, pch = 16, col = "black")
 
 ## Try difference buffer distances
+# aoi.pred.lst <- lapply(c(500, 1000, 1500), function(i){
+#   st_buffer(st_union(st_convex_hull(st_union(xy.utm)), st_convex_hull(hja.utm)), dist = i)
+# })
+# 
+# ## add to map
+# plot(allBrck$be30)
+# plot(st_geometry(hja.utm), add = T, col = NA)
+# plot(st_geometry(xy.utm), add = T, pch = 16, col = "black")
+# sapply(seq_along(aoi.pred.lst), function(x) plot(aoi.pred.lst[[x]], add = T, col = NA, border = x))
 
-aoi.pred.lst <- lapply(c(500, 1000, 1500), function(i){
-  st_buffer(st_union(st_convex_hull(st_union(xy.utm)), st_convex_hull(hja.utm)), dist = i)
-})
-
-## add to map
-plot(allBrck$be30)
-plot(st_geometry(hja.utm), add = T, col = NA)
-plot(st_geometry(xy.utm), add = T, pch = 16, col = "black")
-sapply(seq_along(aoi.pred.lst), function(x) plot(aoi.pred.lst[[x]], add = T, col = NA, border = x))
-
+### bring in manually edited prediction area outline to replace above
+aoi.pred.sf_edit <- st_read(file.path(gis_out, "s_utm/aoi_pred_sf_edit.shp"))
 
 
 ## Add transformed raster here
@@ -90,7 +93,7 @@ origin(allBrck)
 
 ##### CROP #####
 ## crop to reduced aoi.pred - get extent of the convex hull around sample points and HJA
-aoi.pred.ext <- adjExt(st_bbox(aoi.pred.sf), outF = "Extent", d = 30) ####
+aoi.pred.ext <- adjExt(st_bbox(aoi.pred.sf_edit), outF = "Extent", d = 30) ####
 # make raster template from above extent
 r.aoi.pred <- raster(aoi.pred.ext, crs = utm10N, res = 30)
 
@@ -98,11 +101,12 @@ origin(r.aoi.pred)
 
 # mask it with aoi (points and HJA)
 r.aoi.pred[] <- 1
-r.aoi.pred <- raster::mask(r.aoi.pred, st_as_sf(aoi.pred.sf))
+r.aoi.pred <- raster::mask(r.aoi.pred, st_as_sf(aoi.pred.sf_edit))
 plot(r.aoi.pred, colNA = "grey")
 
 plot(hja.utm, add = T, col = NA)
 plot(aoi.pred.sf, add =T, border = "blue")
+plot(aoi.pred.sf_edit, add =T, col = NA)
 plot(xy.utm, add = T, pch = 16, col = "black")
 
 ## crop raster brick
@@ -121,10 +125,14 @@ plot(allBrck$gt4_r30)
 indNA <- complete.cases(values(dropLayer(allBrck, "cut_r")))
 sum(!indNA)
 
+## add NAs
 r.msk <- r.aoi.pred
 r.msk[!indNA] <- NA
 
 plot(stack(r.aoi.pred, r.msk), colNA = "black")
+
+## Get index of complete cases including those from new aoi edit
+indNA <- !is.na(values(r.msk))
 
 ## Mask allBrick
 allBrck <- mask(allBrck, r.msk)
@@ -163,6 +171,10 @@ writeRaster(allBrck.sc, filename = file.path(gis_out, "r_utm/AllStack_aoi_sc.tif
 
 #### MAKE NEW DATA #####
 
+
+gis_out <- "J:/UEA/Oregon/gis/processed_gis_data"
+load("J:/UEA/Oregon/gis/processed_gis_data/r_oversize/predRaster_sc.rdata") # r.msk, r.aoi.pred, indNA, allBrck.sc
+
 ## data frame of coordinates
 newXY <- coordinates(r.msk)
 
@@ -172,9 +184,10 @@ str(newXY.sc)
 ## Load sample points
 ## Load sample site points
 load(file.path(gis_out, "sample_sites.rdata"))
-xy.utm
+xy.utm # and xy.all.utm - all sites
+xy.all.utm
 
-xy.sites <- st_coordinates(xy.utm)
+xy.sites <- st_coordinates(xy.all.utm) ## OJO some of the coordinates are repeated (different site names)
 head(xy.sites)
 
 # scale sample site coords with same parameters as complete data set
@@ -187,8 +200,8 @@ xy.sites.sc <- cbind(
 )
 
 # Join sitenames and change names
-xy.sites.sc <- data.frame(xy.sites.sc, SiteName = xy.utm$SiteName)
-colnames(xy.sites.sc) <- c("UTM_E", "UTM_N", "SiteName")
+xy.sites.sc <- data.frame(xy.sites.sc, xy.all.utm[, c("SiteName", "trap", "period")])
+colnames(xy.sites.sc) <- c("UTM_E", "UTM_N", "SiteName", "trap", "period")
 head(xy.sites.sc)
 
 # fix colnames and NAs
@@ -200,7 +213,7 @@ dim(newXY.sc)
 sum(!complete.cases(newXY.sc))
 
 ## extract site env vars from scaled data set
-allVars.sc <- data.frame(SiteName = xy.utm$SiteName, raster::extract(allBrck.sc, xy.utm))
+allVars.sc <- data.frame(xy.all.utm[, c("SiteName", "trap", "period")], raster::extract(allBrck.sc, xy.all.utm))
 head(allVars.sc)
 
 ## Get new data as data.frame:

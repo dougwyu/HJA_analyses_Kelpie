@@ -13,7 +13,7 @@
 
 ## Only testing local: 
 # setwd("J:/UEA/gitHRepos/HJA_analyses_Kelpie/Hmsc_CD/oregon_ada")
-# setwd("D:/CD/UEA/gitHRepos/HJA_analyses_Kelpie/Hmsc_CD/oregon_ada")
+# setwd("D:/CD/UEA/gitHRepos/HJA_analyses_Kelpie/Hmsc_CD/oregon_ada)
 # wd <- here::here()
 # wd
 # setwd(file.path(wd, "Hmsc_CD/oregon_ada"))
@@ -29,7 +29,7 @@ getwd() # always run sub from oregon_ada
 
 library(dplyr)
 
-resFolder <-"code_sjSDM/r20210627a/results"
+resFolder <-"code_sjSDM/r20210610a/results"
 abund <- "pa"
 
 dir(resFolder)
@@ -44,7 +44,7 @@ load("data/newData_scaled.rdata")
 # newData.sc, xy.sites.sc, allVars.sc
 
 ## too big for github - data is on ADA and locally:
-## load("D:/CD/UEA/Oregon/gis/processed_gis_data/r_oversize/newData_scaled.rdata")
+## load("J:/UEA/Oregon/gis/processed_gis_data/r_oversize/newData_scaled.rdata")
 
 ## update device - can't load new data onto GPU - too large?? to many copies??
 device <- "cpu"
@@ -82,16 +82,11 @@ if(abund == "pa") {
   } 
 
 
-## Need to run model again on cpu -- predict doesn't work with gpu model - too large - new data
-
-
 # select X data - form globally scaled data (with newData), no validation - this is final best model
-## Also filter S1 as in tuning model above (in env.vars data set)
-# scale.env <- allVars.sc %>%
-#   filter(SiteName %in% train.Names, period == "S1") %>% ## is the validation set (75% - select.percent)
-#   dplyr::select(all_of(vars))
-
-scale.env <- allVars.sc[allVars.sc$SiteName %in% train.Names & allVars.sc$period == "S1",vars]
+## Also filter for M1 S1 as in tuning model above (in env.vars data set)
+scale.env <- allVars.sc %>%
+  filter(SiteName %in% env.vars$SiteName) %>%
+  dplyr::select(all_of(vars))
 
 head(scale.env)
 
@@ -103,12 +98,10 @@ newData.sc <- newData.sc %>%
 
 
 # spatial data - just sites in model data, as above
-# scale.XY <- xy.sites.sc %>%
-#   filter(SiteName %in% train.Names, period == "S1") %>%
-#   dplyr::select(c("UTM_E", "UTM_N"))%>%
-#   as.matrix()
-
-scale.XY <- as.matrix(xy.sites.sc[xy.sites.sc$SiteName %in% train.Names & xy.sites.sc$period == "S1", c("UTM_E", "UTM_N")])
+scale.XY <- xy.sites.sc %>%
+  filter(SiteName %in% env.vars$SiteName) %>%
+  dplyr::select(c("UTM_E", "UTM_N"))%>%
+  as.matrix()
 
 # do model - spatial
 modFull_sp <- sjSDM(

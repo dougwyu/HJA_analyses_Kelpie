@@ -7,6 +7,8 @@ wd <- here::here()
 setwd(wd)
 dir()
 
+setwd("J:/UEA/gitHRepos/HJA_analyses_Kelpie")
+
 
 library(sf)
 
@@ -41,20 +43,26 @@ datFile <- paste0("sample_by_species_table_", samtoolsfilter, "_minimap2_", mini
 otuenv <- read.csv(file.path(gitHub, outputidxstatstabulatefolder, datFile))
 
 otuenv[1:6,1:10]
-coords <- unique(otuenv[,c("SiteName", "UTM_E", "UTM_N")])
+coords <- unique(otuenv[,c("SiteName","UTM_E", "UTM_N")])
 xy.sf <- st_as_sf(coords, coords = c("UTM_E", "UTM_N"), crs = nadutm10)
+
+coords_allSites <- unique(otuenv[,c("SiteName","trap", "period", "UTM_E", "UTM_N")])
+xy.allSites.sf <- st_as_sf(coords_allSites, coords = c("UTM_E", "UTM_N"), crs = nadutm10)
 
 rm(gitHub, otuenv, outputidxstatstabulatefolder, datFile, primer, 
    kelpierundate, minimaprundate, samtoolsfilter, samtoolsqual, coords)
 
 # transform to wgs utm to match rasters
 xy.utm <- st_transform(xy.sf, crs = utm10N)
-rm(xy.sf)
+xy.all.utm <- st_transform(xy.allSites.sf, crs = utm10N)
+rm(xy.sf, xy.allSites.sf)
 
 length(unique(xy.utm$SiteName))
+length(unique(xy.all.utm$SiteName))
 
 # write
 st_write(xy.utm, file.path(gis_out, "s_utm/sample_sites_utm10.shp"), delete_layer = T)
 st_write(xy.utm, file.path(gis_out, "s_utm/sample_sites_utm10.kml"), delete_layer = T)
-save(xy.utm, file = file.path(gis_out, "sample_sites.rdata"))
 
+save(xy.utm, xy.all.utm, file = file.path(gis_out, "sample_sites.rdata"))
+save(xy.utm, xy.all.utm, file = file.path("J:/UEA/Oregon/gis/processed_gis_data", "sample_sites.rdata"))
