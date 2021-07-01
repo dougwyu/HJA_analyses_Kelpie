@@ -33,7 +33,7 @@ gis_out <- gis_in <- "data/gis"
 # gis_out <- "J:/UEA/Oregon/gis/processed_gis_data"
 # gis_in <- "J:/UEA/Oregon/gis/raw_gis_data"
 
-baseFolder <- "code_sjSDM/r20210610a"
+baseFolder <- "code_sjSDM/r20210627a"
 
 resFolder <- file.path(baseFolder, "results")
 plotsFolder <- file.path(baseFolder, "plots")
@@ -47,16 +47,17 @@ rm(env.vars, k, noSteps, vars, device, iter, sampling, otuenv)
 
 
 ## load species AUC resutls for filtering
-load(file.path(resFolder, "sp_results.rdata")) # sp.mn.test
-rm(eval.results, sp.mn.train, sp.res.test, sp.res.train)
+load(file.path(resFolder, "sp_test_results.rdata")) # eval.results, sp.res.test, sp.res.train
 
 ## Mean AUC per species (and other eval metrics)
-str(sp.mn.test, max.level = 1)
-head(sp.mn.test$auc)
+str(sp.res.test, max.level = 1)
+head(sp.res.test$auc)
+
+sum(is.na(sp.res.test$auc))
 
 ## Filter species by auc
 auc.filt <- 0.65
-sum(sp.mn.test$auc > auc.filt)
+sum(sp.res.test$auc > auc.filt, na.rm = T)
 
 # ## extract species over AUC filter
 # str(pred.sp, max.level = 1)
@@ -77,7 +78,7 @@ spp <- data.frame(species = colnames(get(paste0("otu.", abund, ".csv")))) %>%
                                TRUE ~ paste(genus, epithet, sep = "_")
                                )) %>%
   dplyr::select(-empty)%>%
-  mutate(auc = sp.mn.test$auc,
+  mutate(auc = sp.res.test$auc,
          incidence = incidence)
 
 head(spp)
@@ -99,11 +100,11 @@ dim(pred.mn)
 # load raster templates - reduced areas
 load(file.path(gis_out, "templateRaster.rdata")) ## r, indNA aoi.pred.sf, r.aoi.pred - reduced area for plotting
 
-pred.in <- pred.mn[,sp.mn.test$auc > auc.filt]
+pred.in <- pred.mn[,sp.res.test$auc > auc.filt & !is.na(sp.res.test$auc)]
 dim(pred.in)
 
 ## get species names too
-spp.in <- spp[sp.mn.test$auc > auc.filt, ]
+spp.in <- spp[sp.res.test$auc > auc.filt & !is.na(sp.res.test$auc), ]
 head(spp.in)
 
 ## make rasters
@@ -229,7 +230,8 @@ cut.sf <- st_read(file.path(gis_in, "shape/disturbance.shp"))
 cut.utm <- st_transform(cut.sf, crs = utm10N)
 # plot(cut.utm)
 
-cut.40 <- subset(cut.utm, YrsSinceDi > 40)
+## Less than 40 years since disturbance
+cut.40 <- subset(cut.utm, YrsSinceDi < 40)
 
 # plot(r.aoi.pred)
 # plot(hja.utm, add = T, col = NA)
