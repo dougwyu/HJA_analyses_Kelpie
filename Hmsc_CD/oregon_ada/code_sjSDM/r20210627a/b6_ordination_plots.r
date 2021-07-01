@@ -37,6 +37,7 @@ dir(file.path(gis_out, "r_oversize"))
 
 ## Load ordination results
 load(file.path(resFolder, "ord_tsne_res.rdata")) # 
+load(file.path(resFolder, "ord_tsne_res_30.rdata")) # 
 ## load(file.path(resFolder, "ord_pca_res.rdata")) #  too large for github
 load(file.path(gis_out, "r_oversize", "ord_pca_res.rdata")) #  too large for github
 
@@ -57,6 +58,10 @@ makeR <- function(r, siteScores, NAs) {
 
 rtsne1 <- makeR(r, tsne$Y[,1], NAs)
 rtsne2 <- makeR(r, tsne$Y[,2], NAs)
+
+rtsne1_5c <- makeR(r, tsne$Y[,1], NAs)
+rtsne2_5c <- makeR(r, tsne$Y[,2], NAs)
+
 pcaR1 <- makeR(r, vegan::scores(pca, 1, "sites"), NAs)
 pcaR2 <- makeR(r, vegan::scores(pca, 2, "sites"), NAs)
 
@@ -68,3 +73,7 @@ plot(stck)
 dev.off()
 
 
+stck <- raster::stack(rtsne1, rtsne2, rtsne1_5c, rtsne2_5c)
+pdf(file.path(plotsFolder, "ordination_plots_tsne.pdf"), width = 8, height = 8)
+plot(stck)
+dev.off()

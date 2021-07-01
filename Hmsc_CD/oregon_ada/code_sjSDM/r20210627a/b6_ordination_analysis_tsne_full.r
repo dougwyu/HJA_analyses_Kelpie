@@ -152,6 +152,12 @@ for(k in 1:N_perm) {
 rda <- vegan::rda(Xmat, scale=TRUE)
 expl_var <- vegan::eigenvals(rda)/sum(vegan::eigenvals(rda)) *100
 
+pval <- apply(t(expl_var_perm) >= expl_var,1,sum) / N_perm
+
+
+pdf(file.path(plotsFolder, "N_dim_choice.pdf"), width = 8, height = 5)
+par(mfrow = c(2,1))
+
 plot(expl_var[1:50]~seq(1:50), ylab="EXPLAINED VARIANCE",
      col="darkgreen", type='o', xlab="PRINCIPAL COMPONENTS")
 lines(colMeans(expl_var_perm)[1:50]~seq(1:50),col="red")
@@ -159,10 +165,10 @@ lines(colMeans(expl_var_perm)[1:50]~seq(1:50),col="red")
 legend("topright", c("Explained by PCS", "Explained by chance"),
        fill=c("darkgreen","red"), inset=0.02)
 
-pval <- apply(t(expl_var_perm) >= expl_var,1,sum) / N_perm
-
 plot(pval[1:50]~seq(1:50),col="darkred",type='o',
      xlab="PRINCIPAL COMPONENTS",ylab="PVALUE")
+dev.off()
+
 
 dims <- head(which(pval>=0.05),1)-1
 
@@ -230,7 +236,7 @@ rSites2 <- makeR(r, tsne$Y[,2], NAs)
 # dev.off()
 
 
-save(tsne, r, NAs, file = file.path(resFolder, "ord_res.rdata"))
+save(tsne, r, rSites1, rSites2, NAs, file = file.path(resFolder, "ord_tsne_res_partial.rdata"))
 
 # 
 # save(r, f, indNA2, file = file.path(resFolder, "rast_template_data.rdata"))
