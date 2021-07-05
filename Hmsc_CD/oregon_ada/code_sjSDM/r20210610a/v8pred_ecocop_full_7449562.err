@@ -1,0 +1,2 @@
+/tmp/slurmd/job7449562/slurm_script: line 35: 27484 Killed                  Rscript code_sjSDM/r20210610a/b6_ecocopula_analysis.r
+slurmstepd: error: Detected 1 oom-kill event(s) in step 7449562.batch cgroup. Some of your processes may have been killed by the cgroup out-of-memory handler.
