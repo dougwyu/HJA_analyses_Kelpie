@@ -1,4 +1,0 @@
-Warning message:
-In mvabund::manyglm(pred.prob ~ 1, family = binomial(link = "cloglog")) :
-  Non-integer data are fitted to the binomial(link=cloglog) model.
-/tmp/slurmd/job7450020/slurm_script: line 35: 89955 Segmentation fault      Rscript code_sjSDM/r20210610a/b6_ecocopula_analysis.r
