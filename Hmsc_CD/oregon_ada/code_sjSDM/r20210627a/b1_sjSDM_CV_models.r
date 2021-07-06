@@ -202,6 +202,8 @@ otu.folds <- otuenv %>%
 table(otu.folds$fold.id)
 table(otu.folds[,c("fold.id", "SiteName")])
 
+fold.id <- otu.folds$fold.id
+
 rm(out, by, cv.chk, splits, site.chk)
 
 ###  filter species here to those in sp.M1m2$OTU - already filtered for minocc
