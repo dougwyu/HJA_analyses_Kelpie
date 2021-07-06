@@ -97,7 +97,7 @@ rStack
 
 # f <- 3
 f <- 5
-# f <- 10
+f <- 10
 # f <- 50
 
 rStack.agg <- raster::aggregate(rStack, f)
@@ -185,12 +185,11 @@ ord.stck <- stack(rSites1, rSites2,pcaR1, pcaR2)
 names(ord.stck) <- c("tsne1", "tsne2", "pca1", "pca2")
 
 
-pdf(file.path(plotsFolder, "ord_plots.pdf"))
+pdf(file.path(plotsFolder, paste0("ord_plots", "_f_", f, ".pdf")))
 plot(ord.stck)
 dev.off()
 
-
-save(ord.stck, pca, tsne, r, f, NAs, file = file.path(resFolder, "ord_res.rdata"))
+# save(ord.stck, pca, tsne, r, f, NAs, file = file.path(resFolder, "ord_res.rdata"))
 
 # 
 # save(r, f, indNA2, file = file.path(resFolder, "rast_template_data.rdata"))

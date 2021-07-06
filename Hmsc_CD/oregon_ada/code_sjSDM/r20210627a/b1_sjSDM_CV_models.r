@@ -34,6 +34,8 @@ getwd() # always run sub from oregon_ada
 
 library(dplyr)
 
+set.seed(501)
+
 resFolder <-"code_sjSDM/r20210627a/results"
 if(!dir.exists(resFolder)) dir.create(resFolder, recursive = TRUE)
 
@@ -132,78 +134,80 @@ spM <- otuenv %>%
   ungroup() %>%
   tidyr::pivot_wider(names_from = trap, values_from = nSites, values_fn = function(x) sum(x)>0) %>%
   #filter(M1) %>% # CHOOOSE HERE FOR SINGLE. OR SHARED TRAP SPECIES GFROUP: filter(M1 & M2)
-  tidyr::separate(col = OTU, into = c("ID", "empty", "class", "order", "family",
-                                          "genus", "epithet", "BOLD", "BOLDID", "size"),
-                  remove = FALSE, sep = "_") %>%
-  #dplyr::filter(order == "Diptera")%>%
+  # tidyr::separate(col = OTU, into = c("ID", "empty", "class", "order", "family",
+  #                                         "genus", "epithet", "BOLD", "BOLDID", "size"),
+  #                 remove = FALSE, sep = "_") %>%
+  # dplyr::filter(order == "Diptera")%>%
   dplyr::select(OTU)
 
+spM
 nrow(spM)
 
-#### YL code --- Choose training and test data  ###
-# ..... data belong to same sample are assigned to either train/test
-# ... 75% of data as training ...
-# random selection
+## Split Training/Validation  and hold out testing set #####
 
-alldata1 = otuenv %>% 
-  filter(period == "S1") %>% #& trap == trap[1]
-  select(c(UTM_N, UTM_E, SiteName, trap))
+## Combine M1 and M2 data and split so that sites with both M1 and M2 samples are always in same split
 
-head(alldata1)
-dim(alldata1)
-unique(alldata1$period)
+# get list of sites with presence of M1 and M2 samples as columns
+site.chk <- otuenv %>%
+  filter(period == "S1") %>%
+  select(c(UTM_N, UTM_E, SiteName, trap)) %>%
+  tidyr::pivot_wider(names_from = trap, values_from = trap, values_fn = length)%>%
+  mutate(numTrap = rowSums(select(., M1, M2), na.rm = TRUE))
+site.chk
 
-num.point = nrow(alldata1)
-num.sample = length(unique(alldata1$SiteName))
+## shuffle order of sites (seed is set globall at start - so can be changed for different runs)
+site.chk <- site.chk[sample(1:nrow(site.chk)),]
 
-ran.tt = data.frame(table(alldata1$SiteName) )
+# sum numTraps until percent training is reached 
+## (group numbers can be out by 1 due to summing 1s or 2s - could use the loop to correct)
+select.percent <- .75
+num.train <- round(sum(site.chk$numTrap)*select.percent) # training split is total no of samples * select %
+sum(site.chk$numTrap) - num.train
 
-colnames(ran.tt) = c('SiteName', 'NumTrap')
+# num.test = num.point - num.train
+site.chk$cumsum <- cumsum(site.chk$numTrap)
+train.Names <- site.chk$SiteName[which(site.chk$cumsum <= num.train)]
+test.Names <- site.chk$SiteName[which(site.chk$cumsum > num.train)]
 
-select.percent = .75
-set.seed(88)
+# check
+length(train.Names); length(test.Names)
+sum(site.chk$numTrap[site.chk$SiteName %in% train.Names]); sum(site.chk$numTrap[site.chk$SiteName %in% test.Names])
+rm(num.train)
 
-sel = 0 
-num.train = round(num.point*select.percent)
-num.test = num.point - num.train
 
-while ( sel != num.test ) {
-  x1 = (num.train-table(ran.tt$NumTrap)[[1]])/2
-  x2 = num.train - table(ran.tt$NumTrap)[[2]]*2
-  
-  table(ran.tt$NumTrap)
-  num1 = base::sample(x1:x2, 1)
-  Sseq = base::sample(ran.tt$SiteName, num1)
-  # sample.test
-  sel = sum(ran.tt$NumTrap[ran.tt$SiteName %in% Sseq])
-}
+### Create splits for training data into k folds for tuning #####
 
-Sseq
+# make fold ids - same as above to split training/test
+cv.chk <- site.chk %>%
+  filter(SiteName %in% train.Names)
 
-# add train/test assignment
-alldata1$assign = "train"
-alldata1$assign[ alldata1$SiteName %in% Sseq ] = 'test'
+## shuffle order of sites (seed is set globally)
+cv.chk <- cv.chk[sample(1:nrow(cv.chk)),]
 
-# plot(alldata1[,c("UTM_N", "UTM_E")], asp = 1, col = as.factor(alldata1$assign), pch  =16)
-head(alldata1)
-tab <- table(alldata1[, c("SiteName", "assign")])
-colSums(tab)
-colSums(tab > 0)
+# sum numTraps until percent training is reached
+out <- sum(cv.chk$numTrap)
+by <- out%/%k
+splits <- seq(1, (out+by - out%%by), by = by)
 
-train.Names <- alldata1$SiteName[alldata1$assign == "train"]
-test.Names <- alldata1$SiteName[alldata1$assign == "test"]
+# num.test = num.point - num.train
+cv.chk$cumsum <- cumsum(cv.chk$numTrap)
+cv.chk$fold.id <- as.numeric(cut(cv.chk$cumsum, breaks = splits, include.lowest = T, labels = 1:k, right = F))
+head(cv.chk)
 
-rm(alldata1, tab, num.point, num.sample,Sseq, sel, x1, x2, ran.tt,num.train, num.test, num1)
+otu.folds <- otuenv %>% 
+  dplyr::filter(period == "S1" & SiteName %in% train.Names) %>% ## filter for sites in trainig/validation data
+  left_join(cv.chk)
 
-#### #####
+## Check
+table(otu.folds$fold.id)
+table(otu.folds[,c("fold.id", "SiteName")])
+
+rm(out, by, cv.chk, splits, site.chk)
 
 ###  filter species here to those in sp.M1m2$OTU - already filtered for minocc
-
 ## training / validation data set
-otu.qp.csv <- otuenv %>% 
-  dplyr::filter(period == "S1" & SiteName %in% train.Names) %>% ## filter for sites in trainig/validation data
-  dplyr::select(spM$OTU) ## species filter for minocc or taxon
-
+otu.qp.csv <- select(otu.folds, spM$OTU)## species filter for minocc or taxon
+  
 # convert to presence/absence data
 otu.pa.csv <- otu.qp.csv
 otu.pa.csv[otu.pa.csv > 0] <- 1
@@ -265,7 +269,7 @@ dd = env.vars[,all.vars]
 varrem = 'a'; maxvif = 100
 names(dd)
 while  (maxvif>=8 ) {
-  if (varrem!='a') { dd = select(dd, -all_of(varrem)) }
+  if (varrem!='a') { dd = dplyr::select(dd, -all_of(varrem)) }
   
   vif = corvif(dd)
   order = order(vif$GVIF, decreasing=F)
@@ -335,14 +339,6 @@ save(otu.pa.csv, otu.qp.csv, otu.pa.csv.test, otu.qp.csv.test, otuenv, env.vars,
      k, minocc, noSteps, vars, varsName, abund, device, iter, sampling,
      file = file.path(resFolder, paste0("modelData_",abund,".rdata")))
 
-### 2. Make testing and training k folds #####
-
-# Make folds 
-set.seed(100)
-
-# make fold ids, length == to data set nrow, sample to randomise order
-fold.id <- sample(rep_len(1:k, length.out = nrow(otu.pa.csv)))
-table(fold.id)
 
 ### Create scaled data sets for each fold and run model
 # i = 1
