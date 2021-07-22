@@ -16,4 +16,4 @@ module add geos/3.8.1
 module add proj/6.0.0
 module add R/4.0.0
 #run the application
-R CMD BATCH code_GIS/gis_trial.r
+R CMD BATCH code_GIS/sf_trial.r

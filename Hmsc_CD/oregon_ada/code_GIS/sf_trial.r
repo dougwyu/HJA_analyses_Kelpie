@@ -6,7 +6,7 @@ library(raster)
 library(sf)
 
 pt1 = st_point(c(0,1))
-pt2 = st_point(c(1,1))
+pt2 = st_point(c(1,2))
 
 st_sfc(pt1, pt2)
 
@@ -15,3 +15,8 @@ d$geom = st_sfc(pt1, pt2)
 df = st_as_sf(d)
 
 print(df)
+
+#plot(st_geometry(df))
+raster(extent(df))
+r_df <- rasterize(df, raster(extent(df)), field = "a")
+#plot(r_df)
