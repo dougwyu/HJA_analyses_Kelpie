@@ -220,6 +220,7 @@ blckValsProb <- aggregate(rValsProb[,1:(ncol(rValsProb)-1)], list(rValsProb[,"ID
 blckValsCT <- aggregate(rValsCT[,1:(ncol(rValsCT)-1)], list(rValsCT[,"ID"]), sum, na.rm = F)
 
 save(blckVals, blckValsProb, blckValsCT, file = file.path(resFolder, "blckVals.rdata"))
+load(file.path(resFolder, "blckVals.rdata"))
 
 blckVals[2000:2010, 80:ncol(blckVals)]
 str(blckVals)
@@ -449,10 +450,17 @@ beta.r <- irrAB(x = x_in, tr = 25, type = "median", r = rBlock)
 
 beta.r.bin <- irrAB(x = x_in, pc = 0.90, type = "total", r = rBlock)
 beta.r.prob <- irrAB(x = x_in_prob, pc = 0.90, type = "total", r = rBlock)
+writeRaster(beta.r.prob, file = file.path(resFolder, "beta_r_prob.tif"))
 
 tmp_stck <- stack(beta.r.bin, beta.r.prob)
 names(tmp_stck) <- c("beta_binary_90pc", "beta_prob_90pc")
 plot(tmp_stck)
+
+beta.r.prob_ct <- irrAB(x = x_in_ct, pc = 0.90, type = "total", r = rBlock)
+plot(beta.r.prob_ct)
+writeRaster(beta.r.prob_ct, file = file.path(resFolder, "beta_r_prob_ct.tif"))
+
+
 
 ### Summarise by logging plots
 
