@@ -4,6 +4,7 @@
 wd <- here::here()
 wd # "J:/UEA/gitHRepos/HJA_analyses_Kelpie"
 setwd(wd)
+# setwd("J:/UEA/gitHRepos/HJA_analyses_Kelpie")
 # dir()
 getwd()
 
@@ -119,6 +120,8 @@ r.aoi.pred
 names(allBrck)
 brNames <- names(allBrck)
 # names(allBrck) <- c(allNames, "lg_DistStream", "lg_DistRoad","lg_cover2m_max","lg_cover2m_4m", "lg_cover4m_16m")
+# save allBrck names
+save(brNames, file = file.path(gis_out, "brNames.rdata"))
 
 plot(allBrck$gt4_r30)
 
@@ -131,7 +134,7 @@ r.msk[!indNA] <- NA
 
 plot(stack(r.aoi.pred, r.msk), colNA = "black")
 
-## Get index of complete cases including those from new aoi edit
+## UPdate index of complete cases including those from new aoi edit
 indNA <- !is.na(values(r.msk))
 
 ## Mask allBrick
@@ -170,6 +173,22 @@ save(r.msk, r.aoi.pred, indNA, allBrck.sc, file = "J:/UEA/Oregon/gis/processed_g
 writeRaster(allBrck.sc, filename = file.path(gis_out, "r_utm/AllStack_aoi_sc.tif"), overwrite = TRUE)
 
 #### MAKE NEW DATA #####
+
+# Get new data prior from unscaled version
+## extract site env vars from original data set
+allVars <- data.frame(xy.all.utm[, c("SiteName", "trap", "period")], raster::extract(allBrck, xy.all.utm))
+head(allVars)
+
+## Get new data as data.frame:
+allBrck
+newData <- data.frame(values(dropLayer(allBrck, "cut_r")))
+# remove NAs
+newData <- newData[indNA, ] # only complete cases
+## change categorical to predictor values to match model
+newData[, "insideHJA"] <- ifelse(newData[, "insideHJA"] == 0, "no", "yes")
+table(newData[,"insideHJA"], useNA = "always")
+
+save(allVars, newData, indNA, file = "J:/UEA/Oregon/gis/processed_gis_data/r_oversize/newData_unscaled.rdata")
 
 
 gis_out <- "J:/UEA/Oregon/gis/processed_gis_data"

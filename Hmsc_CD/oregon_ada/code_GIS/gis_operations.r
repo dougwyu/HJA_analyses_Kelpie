@@ -31,7 +31,15 @@ hja.utm <- st_transform(hja_bound, crs = utm10N)
 ## disturbance
 cut.sf <- st_read(file.path(gis_in, "shape/disturbance.shp"))
 cut.utm <- st_transform(cut.sf, crs = utm10N)
-# # plot(cut.utm)
+plot(st_geometry(cut.utm))
+plot(hja.utm, add = T, col = NA, border = "blue")
+
+median(st_area(cut.utm))
+sqrt(median(st_area(cut.utm)))
+hist(st_area(cut.utm))
+
+sd(st_area(cut.utm))
+
 hist(cut.sf$YrsSinceDi)
 table(cut.sf$YrsSinceDi, useNA = "always")
 
