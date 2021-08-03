@@ -43,3 +43,5 @@ HJA_scripts/10_eo_data/~$environmental_covariate_descriptions.xlsx
 *.rData
 *.RData
 
+HJA_scripts/03_fastqc_multiqc/~$multiqc_table1.xlsx
+HJA_scripts/08_reference_sequences_datasets/~$shotgun_samples_HJAndrews_Malaisetraps_20200108.xlsx
