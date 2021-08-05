@@ -60,6 +60,9 @@ load(file.path(gis_out, "allNames.rdata"))
 names(allBrck) <- allNames
 allBrck
 
+write.table(data.frame(band = seq_along(allNames), predictor= allNames), 
+            file = file.path(gis_out, "r_utm/allStack.txt"), row.names = F)
+
 rm(allNames, nameList)
 
 ## Load sample site points
