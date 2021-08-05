@@ -5,6 +5,7 @@ wd <- here::here()
 wd # "J:/UEA/gitHRepos/HJA_analyses_Kelpie"
 setwd(wd)
 # setwd("J:/UEA/gitHRepos/HJA_analyses_Kelpie")
+# setwd("D:/CD/UEA/gitHRepos/HJA_analyses_Kelpie")
 # dir()
 getwd()
 
@@ -16,11 +17,11 @@ source("https://raw.githubusercontent.com/Cdevenish/R-Material/master/Functions/
 
 utm10N <- 32610
 
-gis_in <- "J:/UEA/Oregon/gis/raw_gis_data"
-gis_out <- "J:/UEA/Oregon/gis/processed_gis_data"
+# gis_in <- "J:/UEA/Oregon/gis/raw_gis_data"
+# gis_out <- "J:/UEA/Oregon/gis/processed_gis_data"
 
-# gis_in <- "D:/CD/UEA/Oregon/gis/raw_gis_data"
-# gis_out <- "D:/CD/UEA/Oregon/gis/processed_gis_data"
+gis_in <- "D:/CD/UEA/Oregon/gis/raw_gis_data"
+gis_out <- "D:/CD/UEA/Oregon/gis/processed_gis_data"
 
 ## create a reduced prediction area - convex hull around (all points + HJA) + buffer
 ## Load sample site points
@@ -146,7 +147,8 @@ writeRaster(allBrck, filename = file.path(gis_out, "r_utm/allStack_aoi.tif"), ov
 
 # plot(r, colNA = "black")
 save(r.msk, indNA, r.aoi.pred, aoi.pred.sf, file = "Hmsc_CD/oregon_ada/data/gis/templateRaster.rdata")
-save(r.msk, indNA, r.aoi.pred, aoi.pred.sf, file = "J:/UEA/Oregon/gis/processed_gis_data/templateRaster.rdata")
+save(r.msk, indNA, r.aoi.pred, aoi.pred.sf, file = file.path(gis_out, "templateRaster.rdata"))
+# load(file.path(gis_out, "templateRaster.rdata"))
 
 ## Scale whole data set - apart from categorical predictors
 allBrck.sc <- scale(dropLayer(allBrck, c("insideHJA", "cut_r" , "cut_msk", "cut_40msk")))
@@ -167,7 +169,7 @@ names(allBrck.sc)
 ## save scaled rasters
 # save(r.msk, r.aoi.pred, indNA, allBrck.sc, file = "Hmsc_CD/oregon_ada/data/gis/predRaster_sc.rdata")
 # load("Hmsc_CD/oregon_ada/data/gis/predRaster_sc.rdata")
-save(r.msk, r.aoi.pred, indNA, allBrck.sc, file = "J:/UEA/Oregon/gis/processed_gis_data/r_oversize/predRaster_sc.rdata")
+save(r.msk, r.aoi.pred, indNA, allBrck.sc, file = file.path(gis_out, "r_oversize/predRaster_sc.rdata"))
 
 # save scaled raster
 writeRaster(allBrck.sc, filename = file.path(gis_out, "r_utm/AllStack_aoi_sc.tif"), overwrite = TRUE)
@@ -178,6 +180,7 @@ writeRaster(allBrck.sc, filename = file.path(gis_out, "r_utm/AllStack_aoi_sc.tif
 ## extract site env vars from original data set
 allVars <- data.frame(xy.all.utm[, c("SiteName", "trap", "period")], raster::extract(allBrck, xy.all.utm))
 head(allVars)
+# allVars$geometry <- NULL
 
 ## Get new data as data.frame:
 allBrck
@@ -188,11 +191,8 @@ newData <- newData[indNA, ] # only complete cases
 newData[, "insideHJA"] <- ifelse(newData[, "insideHJA"] == 0, "no", "yes")
 table(newData[,"insideHJA"], useNA = "always")
 
-save(allVars, newData, indNA, file = "J:/UEA/Oregon/gis/processed_gis_data/r_oversize/newData_unscaled.rdata")
-
-
-gis_out <- "J:/UEA/Oregon/gis/processed_gis_data"
-load("J:/UEA/Oregon/gis/processed_gis_data/r_oversize/predRaster_sc.rdata") # r.msk, r.aoi.pred, indNA, allBrck.sc
+save(allVars, newData, indNA, file = file.path(gis_out, "r_oversize/newData_unscaled.rdata"))
+# load(file.path(gis_out, "r_oversize/newData_unscaled.rdata")) # r.msk, r.aoi.pred, indNA, allBrck.sc
 
 ## data frame of coordinates
 newXY <- coordinates(r.msk)
@@ -258,7 +258,138 @@ summary(newData.sc)
 
 #save(newData.sc, xy.sites.sc, newXY.sc, allVars.sc, file = "Hmsc_CD/oregon_ada/data/newData_scaled.rdata")
 save(newData.sc, xy.sites.sc, newXY.sc, allVars.sc, 
-     file = "J:/UEA/Oregon/gis/processed_gis_data/r_oversize/newData_scaled.rdata")
+     file = file.path(gis_out, "r_oversize/newData_scaled.rdata"))
+# load(file.path(gis_out, "r_oversize/newData_scaled.rdata"))
+
+#### Make clamped data set #####
+
+varsOut <- c("SiteName", "trap", "period", "cut_r", "cut_msk", "cut_40msk", "insideHJA", # "geometry"
+              "aspect30","maxT_annual","meanT_annual","minT_annual","precipitation_mm")
+
+## get range of predictor values at sample sites
+sample_range <- allVars %>%
+  filter(period == "S1") %>%
+  select(!all_of(varsOut)) %>%
+  tidyr::pivot_longer(cols = everything(), names_to = "predictors", values_to = "value")%>%
+  group_by(predictors)%>%
+  summarise(min = min(value),
+            max = max(value))%>%
+  arrange(predictors)
+
+sample_range
+
+head(newData)
+
+newData_clamp <- newData %>%
+  select(!any_of(varsOut)) %>%
+  tidyr::pivot_longer(cols = everything(), names_to = "predictors", values_to = "value") %>%
+  left_join(y = sample_range)%>%
+  mutate(
+    value_clamp = case_when(
+    value < min ~ min,
+    value > max ~ max,
+    TRUE ~ value),
+    value_na = case_when(
+      value < min ~ NA_real_,
+      value > max ~ NA_real_,
+      TRUE ~ value
+    ))# %>% arrange(predictors)
 
 
+newData_clamp
 
+## Change to wide format
+newData_clamp_wide <- do.call(data.frame, 
+                        lapply(unique(newData_clamp$predictors), 
+                               function(x) newData_clamp[newData_clamp$predictors == x, "value_clamp"]))
+colnames(newData_clamp_wide) <- unique(newData_clamp$predictors)
+head(newData_clamp_wide)
+
+newData_clamp_wide$insideHJA <- newData$insideHJA
+
+save(newData_clamp_wide, indNA, file = file.path(gis_out, "r_oversize/newData_clamp.rdata"))
+rm(newData_clamp, newData_clamp_wide, sample_range); gc()
+#load(file.path(gis_out, "r_oversize/newData_clamp.rdata"))
+
+## Scaled version - clamp #### 
+sample_range <- allVars.sc %>%
+  filter(period == "S1") %>%
+  select(!all_of(varsOut)) %>%
+  tidyr::pivot_longer(cols = everything(), names_to = "predictors", values_to = "value")%>%
+  group_by(predictors)%>%
+  summarise(min = min(value),
+            max = max(value))%>%
+  arrange(predictors)
+
+sample_range
+
+head(newData.sc)
+
+newData_clamp.sc <- newData.sc %>%
+  select(!any_of(varsOut)) %>%
+  tidyr::pivot_longer(cols = everything(), names_to = "predictors", values_to = "value") %>%
+  left_join(y = sample_range)%>%
+  mutate(
+    value_clamp = case_when(
+      value < min ~ min,
+      value > max ~ max,
+      TRUE ~ value),
+    value_na = case_when(
+      value < min ~ NA_real_,
+      value > max ~ NA_real_,
+      TRUE ~ value
+    ))# %>% arrange(predictors)
+
+
+newData_clamp.sc
+
+## Change to wide format
+newData_clamp_wide.sc <- do.call(data.frame, 
+                              lapply(unique(newData_clamp.sc$predictors), 
+                                     function(x) newData_clamp.sc[newData_clamp.sc$predictors == x, "value_clamp"]))
+colnames(newData_clamp_wide.sc) <- unique(newData_clamp.sc$predictors)
+head(newData_clamp_wide.sc)
+newData_clamp_wide.sc$insideHJA <- newData.sc$insideHJA
+
+
+save(newData_clamp_wide.sc, xy.sites.sc, newXY.sc, allVars.sc, 
+     file = file.path(gis_out, "r_oversize/newData_scaled_clamp.rdata"))
+
+rm(newData_clamp.sc, newData_clamp_wide.sc, sample_range); gc()
+
+#### Make raster to show geogrpahical distribution of clamped predictors
+
+# Get NA values version in wide format
+newData_clamp_na_wide <- do.call(data.frame, 
+                                 lapply(unique(newData_clamp$predictors), 
+                                        function(x) newData_clamp[newData_clamp$predictors == x, "value_na"]))
+colnames(newData_clamp_na_wide) <- unique(newData_clamp$predictors)
+head(newData_clamp_na_wide)
+newData_clamp_na_wide$insideHJA <- newData$insideHJA
+
+
+## make rasters
+rList <- lapply(newData_clamp_na_wide, function(x) {
+  
+  tmp <- r.msk
+  tmp[indNA] <- x
+  tmp
+  
+})
+
+# plot(tmp)
+
+rStack_clamp <- stack(rList)
+names(rStack_clamp) <- colnames(newData_clamp_na_wide)
+rStack_clamp
+
+plot(rStack_clamp[[1:10]], colNA = "black")
+plot(rStack_clamp[[11:22]], colNA = "black")
+plot(rStack_clamp[[23:35]], colNA = "black")
+plot(rStack_clamp[[35:51]], colNA = "black")
+
+## sum to get all NAs
+smStack_cl <- is.na(sum(dropLayer(rStack_clamp, "insideHJA")))
+plot(smStack_cl, colNA  = "black")
+
+save(rStack_clamp, file = file.path(gis_out, "clamp_grid_na.rdata"))

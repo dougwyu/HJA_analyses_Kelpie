@@ -96,12 +96,21 @@ head(spp, 30)
 sum(is.na(spp$family))
 
 ## In ADA
-load(file.path(resFolder, paste0("sjSDM_predictions_", "M1S1_", "min", minocc, "_", varsName, "_", abund, ".rdata"))) # pred.mn, pred.sd, 
+
+# extrapolated predictions
+load(file.path(resFolder, paste0("sjSDM_predictions_", "M1S1_", "min", minocc, "_", varsName, "_", abund, ".rdata")))
+# pred.mn, pred.sd, 
+
+# clamp predictions
+load(file.path(resFolder, paste0("sjSDM_predictions_", "M1S1_", "min", minocc, "_", varsName, "_", abund, "_clamp", ".rdata")))
+# pred.mn.cl, pred.sd.cl
+
+
 
 ## local
 # gis_out <- "J:/UEA/Oregon/gis/processed_gis_data"
 # load(file.path(gis_out, "r_oversize", paste0("sjSDM_predictions_", "M1S1_", "min", minocc, "_", varsName, "_", abund, ".rdata"))) 
-paste0("sjSDM_predictions_", "M1S1_", "min", minocc, "_", varsName, "_", abund, ".rdata")
+# paste0("sjSDM_predictions_", "M1S1_", "min", minocc, "_", varsName, "_", abund, ".rdata")
 
 dim(pred.mn)
 
@@ -116,6 +125,9 @@ aoi.pred.sf_edit <- st_make_valid(aoi.pred.sf_edit)
 
 pred.in <- pred.mn[,sp.res.test$auc > auc.filt & !is.na(sp.res.test$auc)]
 dim(pred.in)
+
+# clamp predictions filtered by species
+pred.in.cl <- pred.mn.cl[,sp.res.test$auc > auc.filt & !is.na(sp.res.test$auc)]
 
 ## get species names too
 spp.in <- spp[sp.res.test$auc > auc.filt & !is.na(sp.res.test$auc), ]
@@ -132,28 +144,49 @@ rList <- lapply(data.frame(pred.in), function(x) {
   tmp
   
 })
-
 # plot(tmp)
-
-rStack <- stack(rList)
-names(rStack) <- spp.in$best.name
-rStack
+rStack.ex <- stack(rList)
+names(rStack.ex) <- spp.in$best.name
+rStack.ex
 
 ## add auc incidence names to stack
-names(rStack) <- paste0(spp.in$best.name, " ", "auc=", round(spp.in$auc, 2), " ",  "prev=", round(spp.in$incidence,2))
+names(rStack.ex) <- paste0(spp.in$best.name, " ", "auc=", round(spp.in$auc, 2), " ",  "prev=", round(spp.in$incidence,2))
+rm(rList)
+
+## clamp version
+rList <- lapply(data.frame(pred.in.cl), function(x) {
+  
+  tmp <- r.msk
+  tmp[indNA] <- x
+  tmp
+  
+})
+# plot(tmp)
+rStack.cl <- stack(rList)
+names(rStack.cl) <- spp.in$best.name
+rStack.cl
+
+## add auc incidence names to stack
+names(rStack.cl) <- paste0(spp.in$best.name, " ", "auc=", round(spp.in$auc, 2), " ",  "prev=", round(spp.in$incidence,2))
 
 
 # threshold?
 tr <- 0.5
 
-rStack.bin <- raster::reclassify(rStack, rcl = c(0, tr, 0, tr, 1, 1))
+rStack.bin.ex <- raster::reclassify(rStack.ex, rcl = c(0, tr, 0, tr, 1, 1))
+rStack.bin.cl <- raster::reclassify(rStack.cl, rcl = c(0, tr, 0, tr, 1, 1))
 
-rStack.sum <- sum(rStack)
-names(rStack.sum) <- "sp sum"
+rStack.sum.ex <- sum(rStack.ex)
+names(rStack.sum.ex) <- "sp sum"
 
-spRich <- sum(rStack.bin)
-names(spRich) <- "sp richness"
-# plot(stack(spRich, rStack.sum))
+rStack.sum.cl <- sum(rStack.cl)
+names(rStack.sum.cl) <- "sp sum"
+
+spRich.ex <- sum(rStack.bin.ex)
+names(spRich.ex) <- "sp richness"
+spRich.cl <- sum(rStack.bin.cl)
+names(spRich.cl) <- "sp richness"
+# plot(stack(spRich.ex, rStack.sum.ex))
 
 ## Do maps of richness by groups.
 
@@ -170,33 +203,40 @@ hja.utm <- st_transform(hja_bound, crs = utm10N)
 
 
 ## Make species richness stack
-rStack.bin
+rStack.bin.cl
 
-spRich_order <- stackApply(rStack.bin, spp.in$order, fun = sum)
-names(spRich_order)
-names(spRich_order) <- sub("index_", "", names(spRich_order))
+spRich_order.cl <- stackApply(rStack.bin.cl, spp.in$order, fun = sum)
+names(spRich_order.cl)
+names(spRich_order.cl) <- sub("index_", "", names(spRich_order.cl))
 
-# ## Load ordination results
-load(file.path(resFolder, "ord_tsne_res.rdata")) #
-#
-stck <- raster::stack(rSites1, rSites2)
-names(stck) <- c("tsne1", "tsne2")
+spRich_order.ex <- stackApply(rStack.bin.ex, spp.in$order, fun = sum)
+names(spRich_order.ex)
+names(spRich_order.ex) <- sub("index_", "", names(spRich_order.ex))
 
-## save rasters
+# 
+# # ## Load ordination results
+# # load(file.path(resFolder, "ord_tsne_res.rdata")) #
+# # #
+# # stck <- raster::stack(rSites1, rSites2)
+# # names(stck) <- c("tsne1", "tsne2")
+# 
+# ## save rasters
+# 
+# writeRaster(spRich_order.cl, bylayer = T, 
+#             filename = file.path(resFolder, "spRich_.tif"), suffix = "names", overwrite = TRUE, datatype = "FLT4S")
 
-writeRaster(spRich_order, bylayer = T, 
-            filename = file.path(resFolder, "spRich_.tif"), suffix = "names", overwrite = TRUE, datatype = "FLT4S")
+writeRaster(rStack.sum.ex, filename = file.path(resFolder, "spSum_ex.tif"), datatype = "FLT4S", overwrite = T)
+writeRaster(spRich.ex, filename = file.path(resFolder, "spRich_all_ex.tif"), datatype = "FLT4S", overwrite = T)
 
-writeRaster(rStack.sum, filename = file.path(resFolder, "spSum.tif"), datatype = "FLT4S", overwrite = T)
-writeRaster(spRich, filename = file.path(resFolder, "spRich_all.tif"), datatype = "FLT4S", overwrite = T)
+writeRaster(rStack.sum.cl, filename = file.path(resFolder, "spSum_cl.tif"), datatype = "FLT4S", overwrite = T)
+writeRaster(spRich.cl, filename = file.path(resFolder, "spRich_all_cl.tif"), datatype = "FLT4S", overwrite = T)
 
+# writeRaster(stck, bylayer = T, 
+#             filename = file.path(resFolder, "ord.tif"), suffix = "names", overwrite = TRUE, datatype = "FLT4S")
 
-writeRaster(stck, bylayer = T, 
-            filename = file.path(resFolder, "ord.tif"), suffix = "names", overwrite = TRUE, datatype = "FLT4S")
-
-sppFolder <- file.path(resFolder, "spp_tifs")
+sppFolder <- file.path(resFolder, "spp_tifs_cl")
 if(!dir.exists(sppFolder)) dir.create(sppFolder)
-writeRaster(rStack, bylayer = T, filename = file.path(sppFolder, "spp.tif"), suffix = "names", datatype = "FLT4S", overwrite = T)
+writeRaster(rStack.cl, bylayer = T, filename = file.path(sppFolder, "spp_cl.tif"), suffix = "names", datatype = "FLT4S", overwrite = T)
 
 
 
@@ -212,7 +252,7 @@ addAll <- function(){
 
 }
 
-plot(spRich)
+# plot(spRich)
 
 
 #filter species first for those included by AUC
@@ -228,32 +268,32 @@ top4
 
 source("code_GIS/plotStack.r")
 
-pdf(file.path(plotsFolder, "coleoptera.pdf"), width = 7, height = 7)
-plotStack(rStack[[which(spp.in$order == "Coleoptera")]], addfun = addAll)
-dev.off()
-
-pdf(file.path(plotsFolder, "Hymenoptera.pdf"), width = 7, height = 7)
-plotStack(rStack[[which(spp.in$order == "Hymenoptera")]], addfun = addAll)
-dev.off()
-
-pdf(file.path(plotsFolder, "Lepidoptera.pdf"), width = 7, height = 7)
-plotStack(rStack[[which(spp.in$order == "Lepidoptera")]], addfun = addAll)
-dev.off()
-
-pdf(file.path(plotsFolder, "Diptera.pdf"), width = 7, height = 7)
-plotStack(rStack[[which(spp.in$order == "Diptera")]])
-dev.off()
-
-rStack.bin
-
-spRich_order <- stackApply(rStack.bin, spp.in$order, fun = sum)
-names(spRich_order)
-names(spRich_order) <- sub("index_", "", names(spRich_order))
-
-
-pdf(file.path(plotsFolder, "Sp_rich_order.pdf"), width = 7, height = 7)
-plotStack(spRich_order, by = 4, nc = 2, nr= 2)
-dev.off()
+# pdf(file.path(plotsFolder, "coleoptera.pdf"), width = 7, height = 7)
+# plotStack(rStack[[which(spp.in$order == "Coleoptera")]], addfun = addAll)
+# dev.off()
+# 
+# pdf(file.path(plotsFolder, "Hymenoptera.pdf"), width = 7, height = 7)
+# plotStack(rStack[[which(spp.in$order == "Hymenoptera")]], addfun = addAll)
+# dev.off()
+# 
+# pdf(file.path(plotsFolder, "Lepidoptera.pdf"), width = 7, height = 7)
+# plotStack(rStack[[which(spp.in$order == "Lepidoptera")]], addfun = addAll)
+# dev.off()
+# 
+# pdf(file.path(plotsFolder, "Diptera.pdf"), width = 7, height = 7)
+# plotStack(rStack[[which(spp.in$order == "Diptera")]])
+# dev.off()
+# 
+# rStack.bin
+# 
+# spRich_order <- stackApply(rStack.bin, spp.in$order, fun = sum)
+# names(spRich_order)
+# names(spRich_order) <- sub("index_", "", names(spRich_order))
+# 
+# 
+# pdf(file.path(plotsFolder, "Sp_rich_order.pdf"), width = 7, height = 7)
+# plotStack(spRich_order, by = 4, nc = 2, nr= 2)
+# dev.off()
 
 
 # plot(spRich_order[[top4]])
@@ -321,10 +361,10 @@ tmp.msk <- rasterize(aoi.pred.sf_edit, hllshd)
 #plot(tmp.msk)
 
 hllshd <- mask(hllshd, tmp.msk)
-hllshd <- crop(hllshd, spRich)
+hllshd <- crop(hllshd, spRich.ex)
 
 # ## prepare raster data
-allR <- stack(spRich_order, spRich, rStack.sum)
+allR <- stack(spRich_order.cl, spRich.cl, rStack.sum.cl)
 names(allR)
 coords <- xyFromCell(allR, seq_len(ncell(allR)))
 df1 <- as.data.frame(values(allR))
@@ -337,6 +377,21 @@ df2 <- df1 %>%
 
 head(df2)
 
+## extrapolated
+allR.ex <- stack(spRich_order.ex, spRich.ex, rStack.sum.ex)
+names(allR.ex)
+coords <- xyFromCell(allR.ex, seq_len(ncell(allR.ex)))
+df3 <- as.data.frame(values(allR.ex))
+df3 <- cbind(coords, df3)
+# head(df1)
+
+## rearrange
+df4 <- df3 %>%
+  tidyr::pivot_longer(cols = -c(x, y), names_to = "Order", values_to = "Sp_rich")
+
+head(df4)
+
+### hillshade raster - prepare for ggplot
 coords <- xyFromCell(hllshd, seq_len(ncell(hllshd)))
 hsd.df <- data.frame(hsd = values(hllshd))
 hsd.df <- cbind(coords, hsd.df)
@@ -344,8 +399,8 @@ head(hsd.df)
 
 ## save plotting data
 
-save(hsd.df, df1, df2, cut.40, hja.utm, xy.utm, spRich,
-     rStack.sum, spp.in, spp, xlim, ylim,
+save(hsd.df, df1, df2, df3, df4, cut.40, hja.utm, xy.utm, spRich.ex, spRich.cl,
+     rStack.sum.ex, rStack.sum.cl,rStack.bin.ex, rStack.bin.cl, spp.in, spp, xlim, ylim,
      file = file.path(resFolder, "plotData.rdata"))
 
 
@@ -370,8 +425,8 @@ save(hsd.df, df1, df2, cut.40, hja.utm, xy.utm, spRich,
 p1 <- ggplot() +
   geom_tile(data = df1, aes(x, y, fill = sp.richness)) +
   scale_fill_gradientn(colours = rev(terrain.colors(225)), name = "sp richness") +
-  geom_tile(data = hsd.df, aes(x, y, alpha = hsd), fill = "grey20") +
-  scale_alpha(range = c(0.25, 0.65), guide = "none")+
+  #geom_tile(data = hsd.df, aes(x, y, alpha = hsd), fill = "grey20") +
+  #scale_alpha(range = c(0.25, 0.65), guide = "none")+
   geom_sf(data = hja.utm, alpha = 0, col = "blue", bg = NA, inherit.aes = FALSE)+
   geom_sf(data= xy.utm, col = "darkred", size = 1, inherit.aes = FALSE)+
   geom_sf(data = cut.40, bg = NA)+
@@ -386,8 +441,8 @@ head(df1)
 p2 <- ggplot() +
   geom_tile(data = df1, aes(x, y, fill = sp.sum)) +
   scale_fill_gradientn(colours = rev(terrain.colors(225)), name = "summed probability") +
-  geom_tile(data = hsd.df, aes(x, y, alpha = hsd), fill = "grey20") +
-  scale_alpha(range = c(0.25, 0.65), guide = "none")+
+  #geom_tile(data = hsd.df, aes(x, y, alpha = hsd), fill = "grey20") +
+  #scale_alpha(range = c(0.25, 0.65), guide = "none")+
   geom_sf(data = hja.utm, alpha = 0, col = "blue", bg = NA, inherit.aes = FALSE)+
   geom_sf(data= xy.utm, col = "darkred", size = 1, inherit.aes = FALSE)+
   geom_sf(data = cut.40, bg = NA)+
@@ -396,20 +451,58 @@ p2 <- ggplot() +
 ggsave(file.path(plotsFolder, "spSum_map_HJA.pdf"), p2)
 
 
-## Sp richness by order
+### clamp version
 
-p3 <- ggplot(subset(df2, Order %in% top4), aes(x, y)) +
-  geom_tile(aes(fill = Sp_rich)) +
-  scale_fill_gradientn(colours = rev(terrain.colors(225)), name = "sp richness") +
-  geom_tile(data = hsd.df, aes(x, y, alpha = hsd), fill = "grey20", inherit.aes = FALSE) +
-  scale_alpha(range = c(0.25, 0.65), guide = "none")+
+p3 <- ggplot() +
+  geom_tile(data = df3, aes(x, y, fill = sp.richness)) +
+  scale_fill_gradientn(colours = rev(terrain.colors(225)), name = "sp richness - cl") +
+  #geom_tile(data = hsd.df, aes(x, y, alpha = hsd), fill = "grey20") +
+  #scale_alpha(range = c(0.25, 0.65), guide = "none")+
   geom_sf(data = hja.utm, alpha = 0, col = "blue", bg = NA, inherit.aes = FALSE)+
   geom_sf(data= xy.utm, col = "darkred", size = 1, inherit.aes = FALSE)+
-  geom_sf(data = cut.40, bg = NA, inherit.aes = FALSE)+
-  coord_sf(datum = sf::st_crs(32610), ylim = ylim, xlim = xlim)+
-  facet_wrap(~Order)
+  geom_sf(data = cut.40, bg = NA)+
+  coord_sf(datum = sf::st_crs(32610), ylim = ylim, xlim = xlim)
 
-ggsave(file.path(plotsFolder, "spRich_map_x_Order.pdf"), p3, width = 7, height = 7)
+ggsave(file.path(plotsFolder, "spRich_map_HJA_cl.pdf"), p1)
+
+
+
+head(df1)
+## Sp summed in HJA
+p4 <- ggplot() +
+  geom_tile(data = df3, aes(x, y, fill = sp.sum)) +
+  scale_fill_gradientn(colours = rev(terrain.colors(225)), name = "summed probability - cl") +
+  #geom_tile(data = hsd.df, aes(x, y, alpha = hsd), fill = "grey20") +
+  #scale_alpha(range = c(0.25, 0.65), guide = "none")+
+  geom_sf(data = hja.utm, alpha = 0, col = "blue", bg = NA, inherit.aes = FALSE)+
+  geom_sf(data= xy.utm, col = "darkred", size = 1, inherit.aes = FALSE)+
+  geom_sf(data = cut.40, bg = NA)+
+  coord_sf(datum = sf::st_crs(32610), ylim = ylim, xlim = xlim)
+
+ggsave(file.path(plotsFolder, "spSum_map_HJA_cl.pdf"), p2)
+
+
+# library(cowplot)
+# 
+# p5 <- plot_grid(p1, p3, p2, p4, nrow = 2, ncol= 2, labels = c("richness - no clamping", "clamping", "summed - no clamping", "clamping") )
+# ggsave(file.path(plotsFolder, "clamp_comparision.pdf"), p5)
+
+
+
+## Sp richness by order
+# 
+# p3 <- ggplot(subset(df2, Order %in% top4), aes(x, y)) +
+#   geom_tile(aes(fill = Sp_rich)) +
+#   scale_fill_gradientn(colours = rev(terrain.colors(225)), name = "sp richness") +
+#   geom_tile(data = hsd.df, aes(x, y, alpha = hsd), fill = "grey20", inherit.aes = FALSE) +
+#   scale_alpha(range = c(0.25, 0.65), guide = "none")+
+#   geom_sf(data = hja.utm, alpha = 0, col = "blue", bg = NA, inherit.aes = FALSE)+
+#   geom_sf(data= xy.utm, col = "darkred", size = 1, inherit.aes = FALSE)+
+#   geom_sf(data = cut.40, bg = NA, inherit.aes = FALSE)+
+#   coord_sf(datum = sf::st_crs(32610), ylim = ylim, xlim = xlim)+
+#   facet_wrap(~Order)
+# 
+# ggsave(file.path(plotsFolder, "spRich_map_x_Order.pdf"), p3, width = 7, height = 7)
 #
 #
 # ### Figure plots
@@ -442,83 +535,83 @@ head(df2)
 # names(stck) <- c("tsne1", "tsne2")
 
 
-
-# prepare for ggplot
-coords <- xyFromCell(stck, seq_len(ncell(stck)))
-tsne.df <- data.frame(values(stck))
-tsne.df <- cbind(coords, tsne.df)
-head(tsne.df)
-
-unique(df1$sp.richness)
-
-#
-myTheme <- theme(panel.grid.major = element_line(color = '#cccccc'
-                                                 ,linetype = 'dashed'
-                                                 ,size = .3),
-                 axis.title = element_blank(),
-                 legend.key = element_rect(fill = "grey80"))
-
-myTheme2 <- theme(panel.grid.major = element_line(color = '#cccccc'
-                                                  ,linetype = 'dashed'
-                                                  ,size = .3),
-                  axis.title = element_blank(),
-                  legend.key = element_rect(fill = "grey80"),
-                  axis.text = element_blank())
-
-
-
-## species richness
-p1 <- ggplot() +
-  geom_tile(data = df1, aes(x, y, fill = sp.richness)) +
-  scale_fill_fermenter(palette = "YlGnBu", type = "seq", name = "Species richness")+ ## binned scale
-  # scale_fill_gradientn(colours = heat.colors(225), name = "Species richness") +
-  # scale_fill_viridis_c(name = "Species richness", option = "C", alpha = 0.7)+
-  geom_tile(data = hsd.df, aes(x, y, alpha = hsd), fill = "grey20") +
-  scale_alpha(range = c(0.25, 0.65), guide = "none")+
-  geom_sf(data = hja.utm, aes(color = "A"), bg = NA, inherit.aes = FALSE, show.legend = "polygon")+
-  geom_sf(data= xy.utm, aes(color = "B"), size = 2.5, inherit.aes = FALSE, show.legend = "point")+
-  geom_sf(data = cut.40, alpha = 0.3, bg = NA, aes(color = "C"), show.legend = "polygon")+
-  scale_color_manual(values = c("A" = "blue", "B"= "white", "C" = "grey50"),
-                     labels = c("HJA border", "Sample sites", "Logged within 40 years"),
-                     name = NULL,
-                     guide = guide_legend(override.aes = list(linetype = c("solid", "blank", "solid"),
-                                                              shape = c(NA, 16, NA))))+
-  coord_sf(datum = sf::st_crs(32610), ylim = ylim, xlim = xlim)+
-  myTheme
-
-#unlink(file.path(plotsFolder, "results_p1.png"))
-ggsave(file.path(plotsFolder, "results_p1.pdf"), p1, width = 300, height = 300, units= "mm")
-
-## ordination
-p2 <- ggplot() +
-  geom_tile(data = tsne.df, aes(x, y, fill = tsne1)) +
-  scale_fill_viridis_c(name = "T-SNE axis 1", option = "B", alpha = 0.7)+
-  geom_tile(data = hsd.df, aes(x, y, alpha = hsd), fill = "grey20") +
-  scale_alpha(range = c(0.25, 0.65), guide = "none")+
-  geom_sf(data = hja.utm, alpha = 0, col = "blue", bg = NA, inherit.aes = FALSE)+
-  geom_sf(data= xy.utm, col = "white", size = 2.5, inherit.aes = FALSE)+
-  geom_sf(data = cut.40, col = "grey50", bg = NA)+
-  coord_sf(datum = sf::st_crs(32610), ylim = ylim, xlim = xlim)+
-  myTheme
-
-#unlink(file.path(plotsFolder, "results_tsne1.png"))
-ggsave(file.path(plotsFolder, "results_tsne1.pdf"), p2, width = 300, height = 300, units= "mm")
-
-## ordination
-p2 <- ggplot() +
-  geom_tile(data = tsne.df, aes(x, y, fill = tsne2)) +
-  scale_fill_viridis_c(name = "T-SNE axis 2", option = "B", alpha = 0.7)+
-  geom_tile(data = hsd.df, aes(x, y, alpha = hsd), fill = "grey20") +
-  scale_alpha(range = c(0.25, 0.65), guide = "none")+
-  geom_sf(data = hja.utm, alpha = 0, col = "blue", bg = NA, inherit.aes = FALSE)+
-  geom_sf(data= xy.utm, col = "white", size = 2.5, inherit.aes = FALSE)+
-  geom_sf(data = cut.40, col = "grey50", bg = NA)+
-  coord_sf(datum = sf::st_crs(32610), ylim = ylim, xlim = xlim)+
-  myTheme
-
-#unlink(file.path(plotsFolder, "results_tsne2.png"))
-ggsave(file.path(plotsFolder, "results_tsne2.pdf"), p2, width = 300, height = 300, units= "mm")
-
-
+# 
+# # prepare for ggplot
+# coords <- xyFromCell(stck, seq_len(ncell(stck)))
+# tsne.df <- data.frame(values(stck))
+# tsne.df <- cbind(coords, tsne.df)
+# head(tsne.df)
+# 
+# unique(df1$sp.richness)
+# 
+# #
+# myTheme <- theme(panel.grid.major = element_line(color = '#cccccc'
+#                                                  ,linetype = 'dashed'
+#                                                  ,size = .3),
+#                  axis.title = element_blank(),
+#                  legend.key = element_rect(fill = "grey80"))
+# 
+# myTheme2 <- theme(panel.grid.major = element_line(color = '#cccccc'
+#                                                   ,linetype = 'dashed'
+#                                                   ,size = .3),
+#                   axis.title = element_blank(),
+#                   legend.key = element_rect(fill = "grey80"),
+#                   axis.text = element_blank())
+# 
+# 
+# 
+# ## species richness
+# p1 <- ggplot() +
+#   geom_tile(data = df1, aes(x, y, fill = sp.richness)) +
+#   scale_fill_fermenter(palette = "YlGnBu", type = "seq", name = "Species richness")+ ## binned scale
+#   # scale_fill_gradientn(colours = heat.colors(225), name = "Species richness") +
+#   # scale_fill_viridis_c(name = "Species richness", option = "C", alpha = 0.7)+
+#   geom_tile(data = hsd.df, aes(x, y, alpha = hsd), fill = "grey20") +
+#   scale_alpha(range = c(0.25, 0.65), guide = "none")+
+#   geom_sf(data = hja.utm, aes(color = "A"), bg = NA, inherit.aes = FALSE, show.legend = "polygon")+
+#   geom_sf(data= xy.utm, aes(color = "B"), size = 2.5, inherit.aes = FALSE, show.legend = "point")+
+#   geom_sf(data = cut.40, alpha = 0.3, bg = NA, aes(color = "C"), show.legend = "polygon")+
+#   scale_color_manual(values = c("A" = "blue", "B"= "white", "C" = "grey50"),
+#                      labels = c("HJA border", "Sample sites", "Logged within 40 years"),
+#                      name = NULL,
+#                      guide = guide_legend(override.aes = list(linetype = c("solid", "blank", "solid"),
+#                                                               shape = c(NA, 16, NA))))+
+#   coord_sf(datum = sf::st_crs(32610), ylim = ylim, xlim = xlim)+
+#   myTheme
+# 
+# #unlink(file.path(plotsFolder, "results_p1.png"))
+# ggsave(file.path(plotsFolder, "results_p1.pdf"), p1, width = 300, height = 300, units= "mm")
+# 
+# ## ordination
+# p2 <- ggplot() +
+#   geom_tile(data = tsne.df, aes(x, y, fill = tsne1)) +
+#   scale_fill_viridis_c(name = "T-SNE axis 1", option = "B", alpha = 0.7)+
+#   geom_tile(data = hsd.df, aes(x, y, alpha = hsd), fill = "grey20") +
+#   scale_alpha(range = c(0.25, 0.65), guide = "none")+
+#   geom_sf(data = hja.utm, alpha = 0, col = "blue", bg = NA, inherit.aes = FALSE)+
+#   geom_sf(data= xy.utm, col = "white", size = 2.5, inherit.aes = FALSE)+
+#   geom_sf(data = cut.40, col = "grey50", bg = NA)+
+#   coord_sf(datum = sf::st_crs(32610), ylim = ylim, xlim = xlim)+
+#   myTheme
+# 
+# #unlink(file.path(plotsFolder, "results_tsne1.png"))
+# ggsave(file.path(plotsFolder, "results_tsne1.pdf"), p2, width = 300, height = 300, units= "mm")
+# 
+# ## ordination
+# p2 <- ggplot() +
+#   geom_tile(data = tsne.df, aes(x, y, fill = tsne2)) +
+#   scale_fill_viridis_c(name = "T-SNE axis 2", option = "B", alpha = 0.7)+
+#   geom_tile(data = hsd.df, aes(x, y, alpha = hsd), fill = "grey20") +
+#   scale_alpha(range = c(0.25, 0.65), guide = "none")+
+#   geom_sf(data = hja.utm, alpha = 0, col = "blue", bg = NA, inherit.aes = FALSE)+
+#   geom_sf(data= xy.utm, col = "white", size = 2.5, inherit.aes = FALSE)+
+#   geom_sf(data = cut.40, col = "grey50", bg = NA)+
+#   coord_sf(datum = sf::st_crs(32610), ylim = ylim, xlim = xlim)+
+#   myTheme
+# 
+# #unlink(file.path(plotsFolder, "results_tsne2.png"))
+# ggsave(file.path(plotsFolder, "results_tsne2.pdf"), p2, width = 300, height = 300, units= "mm")
+# 
+# 
 
 #
