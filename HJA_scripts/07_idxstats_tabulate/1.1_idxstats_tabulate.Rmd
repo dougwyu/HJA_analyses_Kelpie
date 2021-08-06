@@ -476,16 +476,16 @@ loadFile2 <- function(x) {
 } 
  
 # parallel purrr::map() implementation, using furrr::future_map_dfr()
-plan(multisession) # uses all available cores, 190.6 secs
-# plan(multisession, workers = 4) # uses 4 cores
-tictoc::tic()
-genomecoverages_summ <- future_map_dfr(genomecov_files, 
-                                   loadFile2, 
-                                   .progress=TRUE,
-                                   .options = furrr_options(seed = TRUE)
-                                   ); 
-notify("Your loadfile2 function has finished.", "Message from R", speakIt=TRUE)
-tictoc::toc() # 299 secs
+# plan(multisession) # uses all available cores, 190.6 secs
+# plan(multisession, workers = 3) # uses 4 cores
+# tictoc::tic()
+# genomecoverages_summ <- future_map_dfr(genomecov_files, 
+#                                    loadFile2, 
+#                                    .progress=TRUE,
+#                                    .options = furrr_options(seed = TRUE)
+#                                    ); 
+# notify("Your loadfile2 function has finished.", "Message from R", speakIt=TRUE)
+# tictoc::toc() # 299 secs
 # using future_map_dfr() instead of future_map() avoids having to run this line after
 # genomecoverages_summ <- do.call(rbind, genomecoverages_summ) 
 
@@ -493,11 +493,11 @@ tictoc::toc() # 299 secs
 # THIS STEP REQUIRES many mins for barcodes if using purrr:map()
 # lapply loadFile2() function to all of the genomecov_files, save the output in genomecovfiles as a list 
 # map is equivalent to lapply 
-# tictoc::tic()
-# genomecoverages_summ <- purrr::map(genomecov_files, loadFile2); notify("Your loadfile2 function has finally finished!", "Message from R", speakIt=TRUE) 
-# tictoc::toc()
+tictoc::tic()
+genomecoverages_summ <- purrr::map(genomecov_files, loadFile2); notify("Your loadfile2 function has finally finished!", "Message from R", speakIt=TRUE)
+tictoc::toc() # 706 secs
 # # rbind the list into a dataframe 
-# genomecoverages_summ <- do.call(rbind, genomecoverages_summ) 
+genomecoverages_summ <- do.call(rbind, genomecoverages_summ)
 
 # identical(genomecoverages_summ, genomecoverages_summ_furrr) # TRUE
 ```
@@ -875,10 +875,10 @@ primer # <- "BF3BR2"
 glue("sample_by_species_table_{samtoolsfilter}_minimap2_{minimaprundate}_kelpie{kelpierundate}.csv")
 
 # write output file
-write_csv(idx_meta_genomecov_filtered_wide, 
-          file.path("..", "..", "Kelpie_maps", 
-                    outputidxstatstabulatefolder,
-                    glue("sample_by_species_table_{samtoolsfilter}_minimap2_{minimaprundate}_kelpie{kelpierundate}.csv")))
+# write_csv(idx_meta_genomecov_filtered_wide, 
+#           file.path("..", "..", "Kelpie_maps", 
+#                     outputidxstatstabulatefolder,
+#                     glue("sample_by_species_table_{samtoolsfilter}_minimap2_{minimaprundate}_kelpie{kelpierundate}.csv")))
 ```
 
 
@@ -903,9 +903,12 @@ pt$evaluatePivot()
 sampletable_pt <- pt$asDataFrame(separator="_")
 names(sampletable_pt)
 sampletable_pt <- sampletable_pt %>% 
-  # rownames_to_column(var = "site") %>% 
-  # filter(site !="Total") %>% 
+  rownames_to_column(var = "site") %>%
+  # filter(site !="Total") %>%
   arrange(desc(S1_Total)); View(sampletable_pt)
+# write_csv(sampletable_pt, "sampletable_pt.csv")
+
+
 
 # other summarising code
 # library(janitor)
@@ -920,6 +923,7 @@ sampletable_pt <- sampletable_pt %>%
 #   arrange(desc(n))
 ```
 
+The code below is not used but retained in case snippets are useful. 
 
 ### lulu.  
 I ran lulu on the kelpie_20200214_BF3BR2_derep_filtered_geneious_vsearch97_min2.fas OTUs, and lulu removed no OTUs.  So it looks like Kelpie + vsearch97 produces separate OTUs, and lulu does not help. Thus, I do not run this code.  It is here for archival purposes. 
