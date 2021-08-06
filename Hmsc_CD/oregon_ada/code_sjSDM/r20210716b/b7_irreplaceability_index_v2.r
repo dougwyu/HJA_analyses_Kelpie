@@ -18,21 +18,21 @@ options(echo=TRUE) # if you want see commands in output file
 library(dplyr)
 library(rgdal)
 library(raster)
-library(sf)
-library(ggplot2)
 
 utm10N <- 32610
 
 ## on ADA
-# gis_out <- gis_in <- "data/gis"
+gis_out <- gis_in <- "data/gis"
 
+
+source("code_sjSDM/irrAB.r")
 
 ######### Load data  ##############
 
 
 ## local
-gis_out <- "J:/UEA/Oregon/gis/processed_gis_data"
-gis_in <- "J:/UEA/Oregon/gis/raw_gis_data"
+# gis_out <- "J:/UEA/Oregon/gis/processed_gis_data"
+# gis_in <- "J:/UEA/Oregon/gis/raw_gis_data"
 # gis_out <- "D:/CD/UEA/Oregon/gis/processed_gis_data"
 # gis_in <- "D:/CD/UEA/Oregon/gis/raw_gis_data"
 
@@ -107,17 +107,24 @@ sum(is.na(spp$family))
 
 ### Load prediction results
 ## In ADA
-# load(file.path(resFolder, paste0("sjSDM_predictions_", "M1S1_", "min", minocc, "_", varsName, "_", abund, ".rdata"))) # pred.mn, pred.sd, 
+
+# extrapolated predictions
+# load(file.path(resFolder, paste0("sjSDM_predictions_", "M1S1_", "min", minocc, "_", varsName, "_", abund, ".rdata")))
+# pred.mn, pred.sd, 
+
+# clamp predictions
+load(file.path(resFolder, paste0("sjSDM_predictions_", "M1S1_", "min", minocc, "_", varsName, "_", abund, "_clamp", ".rdata")))
+# pred.mn.cl, pred.sd.cl
+
 
 ## local
 # gis_out <- "J:/UEA/Oregon/gis/processed_gis_data"
-load(file.path(gis_out, "r_oversize", paste0("sjSDM_predictions_", "M1S1_", "min", minocc, "_", varsName, "_", abund, ".rdata"))) 
-paste0("sjSDM_predictions_", "M1S1_", "min", minocc, "_", varsName, "_", abund, ".rdata")
+# load(file.path(gis_out, "r_oversize", paste0("sjSDM_predictions_", "M1S1_", "min", minocc, "_", varsName, "_", abund, ".rdata"))) 
 
-dim(pred.mn)
+dim(pred.mn.cl)
 
-pred.in <- pred.mn[,sp.res.test$auc > auc.filt & !is.na(sp.res.test$auc)]
-dim(pred.in)
+pred.in.cl <- pred.mn.cl[,sp.res.test$auc > auc.filt & !is.na(sp.res.test$auc)]
+dim(pred.in.cl)
 
 ## get species names too
 spp.in <- spp[sp.res.test$auc > auc.filt & !is.na(sp.res.test$auc), ]
@@ -130,7 +137,7 @@ head(spp.in)
 # plot(r.aoi.pred)
 # x <- data.frame(pred.in)[,1]
 
-rList <- lapply(data.frame(pred.in), function(x) {
+rList <- lapply(data.frame(pred.in.cl), function(x) {
   
   tmp <- r.msk
   tmp[indNA] <- x
@@ -154,13 +161,13 @@ rStack.ct <- raster::reclassify(rStack, rcl = c(0, tr2, 0))
 plot(rStack.ct, 1:6)
 
 save(rStack, rStack.ct, file = file.path(resFolder, "spStacks.rdata"))
-load(file.path(resFolder, "spStacks.rdata"))
+# load(file.path(resFolder, "spStacks.rdata"))
 
-sapply(1:nlayers(rStack),function(x) raster::inMemory(rStack[[x]]))
-rm(rStack); gc()
+# sapply(1:nlayers(rStack),function(x) raster::inMemory(rStack[[x]]))
+# rm(rStack); gc()
 
 ## Create block grid
-plot(r.msk)
+# plot(r.msk)
 
 rBlock <- r.msk # from template raster
 
@@ -208,22 +215,22 @@ rCt <- stack(rStack.ct, rBlckID)
 rValsProb <- values(rProb)
 rValsCT <- values(rCt)
 
-save(rValsProb, rValsCT, file= file.path(resFolder, "rVals.rdata"))
-load(file.path(resFolder, "rVals.rdata"))
+# save(rValsProb, rValsCT, file= file.path(resFolder, "rVals.rdata"))
+# load(file.path(resFolder, "rVals.rdata"))
 
-dim(rVals)
+# dim(rVals)
 # head(rVals)
-rVals[2000:2010, 80:ncol(rVals)]
-rVals[1:36, 80:ncol(rVals)]
+# rVals[2000:2010, 80:ncol(rVals)]
+# rVals[1:36, 80:ncol(rVals)]
 
-sum(rVals[rVals[,"ID"] == 1, 1], na.rm = T)
+# sum(rVals[rVals[,"ID"] == 1, 1], na.rm = T)
 
 ## Summarise by block
 blckValsProb <- aggregate(rValsProb[,1:(ncol(rValsProb)-1)], list(rValsProb[,"ID"]), sum, na.rm = F)
 blckValsCT <- aggregate(rValsCT[,1:(ncol(rValsCT)-1)], list(rValsCT[,"ID"]), sum, na.rm = F)
 
 save(blckValsProb, blckValsCT, file = file.path(resFolder, "blckVals.rdata"))
-load(file.path(resFolder, "blckVals.rdata"))
+# load(file.path(resFolder, "blckVals.rdata"))
 
 # blckVals[2000:2010, 80:ncol(blckVals)]
 # str(blckVals)
@@ -234,22 +241,22 @@ load(file.path(resFolder, "blckVals.rdata"))
 # range(blckVals$Group.1)
 
 # remove ID col (group.1 - first column). Each row is a cell/site - convert to matrix.
-x_in_prob <- as.matrix(blckValsProb[, 2:ncol(blckVals)])
+x_in_prob <- as.matrix(blckValsProb[, 2:ncol(blckValsProb)])
 x_in_ct <- as.matrix(blckValsCT[, 2:ncol(blckValsCT)])
 
-dim(x_in)
+# dim(x_in)
 dim(x_in_prob)
 
 x_in_prob[1:100, 1:10]
 blckValsProb[1:100, 1:10]
 
 # Rs distribution
-hist(colSums(x_in_ct, na.rm = T))
-hist(colSums(x_in_prob, na.rm = T))
+# hist(colSums(x_in_ct, na.rm = T))
+# hist(colSums(x_in_prob, na.rm = T))
 
 ## Median Rs, range
-range(colSums(x_in, na.rm = T))
-median(colSums(x_in, na.rm = T))
+# range(colSums(x_in, na.rm = T))
+# median(colSums(x_in, na.rm = T))
 
 range(colSums(x_in_prob, na.rm = T))
 median(colSums(x_in_prob, na.rm = T))
@@ -257,19 +264,25 @@ median(colSums(x_in_prob, na.rm = T))
 median(colSums(x_in_ct, na.rm = T))
 
 # ## total available area:
-sum(complete.cases(rVals)) == sum(!is.na(values(r.msk)))
+# sum(complete.cases(rVals)) == sum(!is.na(values(r.msk)))
 # 247,743 pixels (30x30m)
 
 # Max prob sum is ~175,000  max would be 1 in every available pixel
 
 beta.r.prob <- irrAB(x = x_in_prob, pc = 0.90, type = "total", r = rBlock)
-writeRaster(beta.r.prob, file = file.path(resFolder, "beta_r_prob.tif"))
+beta.r.prob.res <- irrAB(x = x_in_prob, pc = 0.90, type = "total")
 
-tmp_stck <- stack(beta.r.bin, beta.r.prob)
-names(tmp_stck) <- c("beta_binary_90pc", "beta_prob_90pc")
-plot(tmp_stck)
+# tmp_stck <- stack(beta.r.bin, beta.r.prob)
+# names(tmp_stck) <- c("beta_binary_90pc", "beta_prob_90pc")
+# plot(tmp_stck)
 
 beta.r.prob_ct <- irrAB(x = x_in_ct, pc = 0.90, type = "total", r = rBlock)
-plot(beta.r.prob_ct)
+beta.r.prob_ct.res <- irrAB(x = x_in_ct, pc = 0.90, type = "total")
+
+save(beta.r.prob, beta.r.prob.res, beta.r.prob_ct, beta.r.prob_ct.res, file = file.path(resFolder, "beta_res_all.rdata"))
+
+# plot(beta.r.prob_ct)
+writeRaster(beta.r.prob, file = file.path(resFolder, "beta_r_prob.tif"))
 writeRaster(beta.r.prob_ct, file = file.path(resFolder, "beta_r_prob_ct.tif"))
+
 

@@ -8,7 +8,7 @@
 #SBATCH -p compute-16-64 
 #   #SBATCH --mem 128G           					# memory needed?
 #   #SBATCH --ntasks=2 					        # number of slots == number of CPU cores (match n_cpu) in sjSDM_cv
-#SBATCH -t 12:00:00 				        	# 48 hrs # time (DD-HH:MM)
+#SBATCH -t 48:00:00 				        	# 48 hrs # time (DD-HH:MM)
 #SBATCH --job-name=v11_ord  					# job name
 #SBATCH -o code_sjSDM/r20210716b/v11_ord_%J.out			    	# log out file
 #SBATCH -e code_sjSDM/r20210716b/v11_ord_%J.err			    	# error file out
@@ -31,4 +31,4 @@ module purge
 #   module add python/anaconda/2019.10/3.7
 #   source /gpfs/scratch/hsp20azu/sjSDM_env/bin/activate
 module add R/4.0.0x
-Rscript code_sjSDM/r20210716b/b6_ordination_analysis_tsne_full.r
+Rscript code_sjSDM/r20210716b/b6_ordination_analysis_tsne_full_clamp_nopca.r
