@@ -1,0 +1,25 @@
+\documentclass[10pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{graphicx, geometry, array, booktabs, multirow, lipsum}
+\usepackage[export]{adjustbox}
+\geometry{paperheight=18cm,paperwidth=4cm,landscape,margin=5mm}
+
+
+\begin{document}
+
+    \begin{tabular}{*{6}{l l l |l l |l}}
+    %\caption{hyper-parameters}
+   % \label{Table.}
+    \multicolumn{3}{l|}{\textbf{Regularization} }&  \multicolumn{2}{l|}{\textbf{DNN-specific} }&  \\
+ %   \midrule
+    Environmental  & Saptial & Biotic covariance & \multirow{2}{*}{Hidden layers}  & \multirow{2}{*}{Dropout rate}  & \multirow{2}{*}{Learning rate}  \\
+    $\alpha_e$, $\lambda_e$ & $\alpha_{s}$, $\lambda_{s}$ & $\alpha_{b}$, ${\lambda_{b}}^*$ & & & \\
+    \toprule
+    \multirow{2}{*}{0 to 1, step 0.2 } & \multirow{2}{*}{0 to 1, step 0.25}  & \multirow{2}{*}{0 to 1, step 0.1}  & 50, 50, 10  & \multirow{2}{*}{0.1, 0.2}  & \multirow{2}{*}{0.001, 0.002}  \\
+    & & & 25, 25, 10 &\\
+    \bottomrule
+    \multicolumn{6}{l}{$*\:\alpha_{b}$, $\lambda_{b}$ were set to the same value for each run}\\
+    \end{tabular}
+    
+    
+\end{document}

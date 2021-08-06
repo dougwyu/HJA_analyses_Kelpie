@@ -1,0 +1,28 @@
+\documentclass[]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{graphicx, geometry, array, booktabs, subfigure, subcaption, caption}
+\usepackage[export]{adjustbox}
+\graphicspath{{../}}
+\geometry{paperheight=18cm,paperwidth=11cm,landscape,margin=5mm}
+
+
+\begin{document}
+
+\noindent\begin{tabular}{*{4}{@{}l@{}l@{}l@{}}}
+    A. & \adjustbox{valign=t}{\includegraphics[width=0.3\linewidth]{random-test-train_s1_min6.pdf}} & C. & 
+    \adjustbox{valign=t}{\includegraphics[width=0.68\linewidth]{tab-hyperparam.pdf}} \\
+ \end{tabular} 
+ 
+ \noindent\begin{tabular}{*{4}{@{}l@{}l@{}l@{}}}
+    B. & \adjustbox{valign=t}{\includegraphics[height=0.27\linewidth]{cross-validation3.pdf}}  & D. & \adjustbox{valign=t}{\includegraphics[height=0.3\linewidth]{plot_tuning_sjsdm_M1S1_5CV_pa_min6_vars11_20210722.pdf}} \\
+  \end{tabular}    
+    
+ 
+
+%\begin{subfigure}{}
+% \includegraphics[height=0.27\linewidth]{}
+ %\caption{A.}
+% \end{subfigure}
+
+
+\end{document}
