@@ -3,9 +3,11 @@
 ## Local
 wd <- here::here()
 wd # "J:/UEA/gitHRepos/HJA_analyses_Kelpie"
+# wd <- "J:/UEA/gitHRepos/HJA_analyses_Kelpie"
 setwd(wd)
 # dir()
 getwd()
+
 
 library(raster)
 library(sf)
@@ -24,6 +26,22 @@ names(allBrck) <- allNames
 allBrck
 names(allBrck)
 
+## Load predictor names and codes and rename
+tableS1 <- read.csv("Hmsc_CD/oregon_ada/code_GIS/table_S_predictors_20210820.csv")
+head(tableS1)
+
+sum(tableS1$PredictorCode %in% allNames)
+tableS1$PredictorCode[!tableS1$PredictorCode %in% allNames]
+#  "lg_cover2m_4m"  "lg_cover2m_max" "lg_cover4m_16m" "lg_DistRoad"    "lg_DistStream"
+# "l_Cover_2m_4m"   "l_Cover_2m_max"    "l_Cover_4m_16m","DistRoad","DistStream"
+
+## get only 58 candidate predictors
+allBrck <- subset(allBrck, tableS1$PredictorCode[tableS1$PredictorCode %in% allNames])
+
+
+tableS1[match()]$PredictorCode %in% allNames)
+
+
 ## templates 
 load("Hmsc_CD/oregon_ada/data/gis/templateRaster.rdata") # aoi.pred.sf
 rm(r.msk, indNA, r.aoi.pred)
@@ -37,6 +55,7 @@ xy.utm
 hja <- st_read(file.path(gis_in, "shape/HJA_Boundary.shp"))
 hja_bound <- subset(hja, FP_NAME == "H.J. Andrew Experimental Forest")
 hja.utm <- st_transform(hja_bound, crs = utm10N)
+
 
 ##### Do plots #####
 
