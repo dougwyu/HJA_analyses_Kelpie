@@ -37,14 +37,32 @@ tableS1$PredictorCode[!tableS1$PredictorCode %in% allNames]
 
 ## get only 58 candidate predictors
 allBrck <- subset(allBrck, tableS1$PredictorCode[tableS1$PredictorCode %in% allNames])
+names(allBrck)
 
+# subset names file and reorder
+tableS1 <- subset(tableS1, PredictorCode %in% names(allBrck))
+unique(tableS1$Group)
 
-tableS1[match()]$PredictorCode %in% allNames)
+tableS1$Group <- factor(tableS1$Group, 
+                        levels = c("Lidar - Canopy","Topography","Landsat - annual","Landsat - bands","Anthropogenic"))
+tableS1 <- tableS1[order(tableS1$Group, tableS1$PredictorName), ]
+tableS1[,c(1:2,4)]
+
+## reorder raster stack
+allBrck <- subset(allBrck, tableS1$PredictorCode)
+names(allBrck)
+
+## Use these names for plot (check these symbols work as names on raster... ... NO!)
+plotNames <- tableS1$PredictorName[match(names(allBrck), tableS1$PredictorCode)]
+
 
 
 ## templates 
 load("Hmsc_CD/oregon_ada/data/gis/templateRaster.rdata") # aoi.pred.sf
 rm(r.msk, indNA, r.aoi.pred)
+
+# get edited prediction area
+aoi.pred.sf_edit <- st_read(file.path(gis_out, "s_utm/aoi_pred_sf_edit.shp"))
 
 ## Load sample site points
 load(file.path(gis_out, "sample_sites.rdata"))
@@ -63,13 +81,13 @@ hja.utm <- st_transform(hja_bound, crs = utm10N)
 addAll <- function(){
   
   plot(st_geometry(hja.utm), add = T, col = NA, border = "black")
-  plot(st_geometry(aoi.pred.sf), add = T, col = NA, border = "black")
-  plot(st_geometry(xy.utm), add = T, col = "black", pch = 3)
+  plot(st_geometry(aoi.pred.sf_edit), add = T, col = NA, border = "black")
+  plot(st_geometry(xy.utm), add = T, col = "black", pch = 3, cex = 0.5)
   
 }
 
-pdf("Hmsc_CD/local/plots/predictors.pdf", width = 7, height = 10)
-plot(allBrck[[1:6]], nc = 2, nr = 3, addfun = addAll)
+pdf("Hmsc_CD/local/plots/predictors_trial.pdf", width = 7, height = 10)
+plot(allBrck[[1:6]], nc = 2, nr = 3, addfun = addAll, main = plotNames[1:6])
 dev.off()
 
 66%/%12
@@ -81,11 +99,13 @@ start <- (end - by) + 1
 start
 end
 
+#i = 1
+
 pdf("Hmsc_CD/local/plots/predictors_all_plots.pdf", width = 7, height = 10)
 
 for(i in seq_along(start)){
   
-  plot(allBrck[[ start[i]:end[i] ]], nc = 2, nr = 3, addfun = addAll)
+  plot(allBrck[[ start[i]:end[i] ]], nc = 2, nr = 3, addfun = addAll, main= plotNames[ start[i]:end[i] ])
 }
 
 dev.off()

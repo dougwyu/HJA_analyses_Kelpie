@@ -2,29 +2,29 @@ PredictorCode,PredictorName,Description,Group,Used in model
 ht30,Canopy height,canopy height in m derived from LiDAR data,Lidar - Canopy,
 l_p25,Canopy height (25th percentile),"25th percentile height, for first returns",Lidar - Canopy,
 l_p95,Canopy height (95th percentile),"95th percentile height, for first returns",Lidar - Canopy,
-lg_cover2m_4m,Canopy cover (2-4m),"Log of vegetation cover for 2m to 4m, for first returns (+0.001 prior to logging)",Lidar - Canopy,y
-lg_cover2m_max,Canopy cover (2m+),"Log of vegetation cover based on the proportion of total returns at least 2 m above ground, for first returns (+0.001 prior to logging)",Lidar - Canopy,y
-lg_cover4m_16m,Canopy cover (4-16m),"Log of vegetation cover for 4m to 16m, for first returns (+0.001 prior to logging)",Lidar - Canopy,y
-l_rumple,Rumple index,Rumple index (rumple) for first returns (rugosity of the canopy surface),Lidar - Canopy,y
+lg_cover2m_4m,Canopy cover (2-4m)*,"Log of vegetation cover for 2m to 4m, for first returns (+0.001 prior to logging)",Lidar - Canopy,y
+lg_cover2m_max,Canopy cover (2m+)*,"Log of vegetation cover based on the proportion of total returns at least 2 m above ground, for first returns (+0.001 prior to logging)",Lidar - Canopy,y
+lg_cover4m_16m,Canopy cover (4-16m)*,"Log of vegetation cover for 4m to 16m, for first returns (+0.001 prior to logging)",Lidar - Canopy,y
+l_rumple,Rumple index*,Rumple index (rumple) for first returns (rugosity of the canopy surface),Lidar - Canopy,y
 gt4_250,Vegetation > 4m (250m),"Proportion of vegetation cover over 4m, in 250 m radius",Lidar - Canopy,
-gt4_500,Vegetation > 4m (500m),"Proportion of vegetation cover over 4m, in 500 m radius",Lidar - Canopy,y
+gt4_500,Vegetation > 4m (500m)*,"Proportion of vegetation cover over 4m, in 500 m radius",Lidar - Canopy,y
 gt4_r30,Vegetation > 4m (30m),"Proportion of vegetation cover over 4m, in 30 m radius",Lidar - Canopy,
-Ess30,Eastness,Eastness sin(aspect) - avoids circularity of aspect,Topography,y
-be30,Elevation,elevation in m derived from LIDAR (bare earth tif) at 30 m resolution (equivalent to elevation_m),Topography,y
-Nss30,Northness,Northness cos(aspect) - avoids circularity of aspect,Topography,y
+Ess30,Eastness*,Eastness sin(aspect) - avoids circularity of aspect,Topography,y
+be30,Elevation*,elevation in m derived from LIDAR (bare earth tif) at 30 m resolution (equivalent to elevation_m),Topography,y
+Nss30,Northness*,Northness cos(aspect) - avoids circularity of aspect,Topography,y
 slope30,Slope,"slope in degrees (calculated from be10, using raster::terrain() )",Topography,
-tpi1k,Topographic Position Index (1k),Topographic position index over 1km,Topography,y
-tpi250,Topographic Position Index (250m),Topographic position index over 250 m (central pixel - average elevation in surrounding window),Topography,y
+tpi1k,Topographic Position Index (1k)*,Topographic position index over 1km,Topography,y
+tpi250,Topographic Position Index (250m)*,Topographic position index over 250 m (central pixel - average elevation in surrounding window),Topography,y
 tpi500,Topographic Position Index (500m),Topographic position index over 500 m,Topography,
-tri30,Topographic Roughness Index,"Topographic Roughness Index (calculated from be10, using raster::terrain() )",Topography,y
-twi30,Topographic Wetness Index,"Topographic Wetness Index (calculated from be10,  dynatopmodel::upslope.area(be, atb = T) )",Topography,y
-LC08_045029_20180726_B1,Landsat B1,Landsat band B1 reflectance. 2018 07 26,Landsat - bands,y
+tri30,Topographic Roughness Index*,"Topographic Roughness Index (calculated from be10, using raster::terrain() )",Topography,y
+twi30,Topographic Wetness Index*,"Topographic Wetness Index (calculated from be10,  dynatopmodel::upslope.area(be, atb = T) )",Topography,y
+LC08_045029_20180726_B1,Landsat B1*,Landsat band B1 reflectance. 2018 07 26,Landsat - bands,y
 LC08_045029_20180726_B10,Landsat B10,Landsat band B10 reflectance. 2018 07 26,Landsat - bands,
 LC08_045029_20180726_B3,Landsat B3,Landsat band B3 reflectance. 2018 07 26,Landsat - bands,
 LC08_045029_20180726_B4,Landsat B4,Landsat band B4 reflectance. 2018 07 26,Landsat - bands,
-LC08_045029_20180726_B5,Landsat B5,Landsat band B5 reflectance. 2018 07 26,Landsat - bands,y
+LC08_045029_20180726_B5,Landsat B5*,Landsat band B5 reflectance. 2018 07 26,Landsat - bands,y
 LC08_045029_20180726_B7,Landsat B7,Landsat band B7 reflectance. 2018 07 26,Landsat - bands,
-nbr_stdDev_r100,std dev NBR (100m),"standard deviation of annual NBR, averaged over 500m radius [Landsat 8, NBR = (Band 5 – Band 7) / (Band 5 + Band 7)]",Landsat - annual,y
+nbr_stdDev_r100,std dev NBR (100m)*,"standard deviation of annual NBR, averaged over 500m radius [Landsat 8, NBR = (Band 5 – Band 7) / (Band 5 + Band 7)]",Landsat - annual,y
 nbr_stdDev_r250,std dev NBR (250m),standard deviation of annual NBR over 250m radius ,Landsat - annual,
 nbr_stdDev_r500,std dev NBR (500m),standard deviation of annual NBR over 500m radius ,Landsat - annual,
 ndmi_p5_r100,5 percentile NDMI (100m),5% percentile annual NDMI over 100m radius,Landsat - annual,
@@ -33,32 +33,32 @@ ndmi_p5_r500,5 percentile NDMI (500m),5% percentile annual NDMI over 500m radius
 ndmi_p50_r100,median NDMI (100m),median NDMI over 100 m radius,Landsat - annual,
 ndmi_p50_r250,median NDMI (250m),median NDMI over 250 m radius,Landsat - annual,
 ndmi_p50_r500,median NDMI (500m),median NDMI over 500 m radius,Landsat - annual,
-ndmi_p95_r100,95 percentile NDMI (100m),95% percentile NDMI over 100m radius,Landsat - annual,y
+ndmi_p95_r100,95 percentile NDMI (100m)*,95% percentile NDMI over 100m radius,Landsat - annual,y
 ndmi_p95_r250,95 percentile NDMI (250m),95% percentile NDMI over 250m radius,Landsat - annual,
 ndmi_p95_r500,95 percentile NDMI (500m),95% percentile NDMI over 500m radius,Landsat - annual,
 ndmi_stdDev_r100,std dev NDMI (100m),"standard deviation of annual NDMI, averaged over 100m radius [Landsat 8, NDMI = (Band 5 – Band 6) / (Band 5 + Band 6)]",Landsat - annual,
 ndmi_stdDev_r250,std dev NDMI (250m),"standard deviation of annual NDMI, averaged over 250m radius",Landsat - annual,
 ndmi_stdDev_r500,std dev NDMI (500m),"standard deviation of annual NDMI, averaged over 500m radius",Landsat - annual,
-ndvi_p5_r100,5 percentile NDVI (100m),"5% percentile of annual NDVI averaged over 100m radius [Landsat 8, NDVI = (Band 5 – Band 4) / (Band 5 + Band 4)]",Landsat - annual,y
+ndvi_p5_r100,5 percentile NDVI (100m)*,"5% percentile of annual NDVI averaged over 100m radius [Landsat 8, NDVI = (Band 5 – Band 4) / (Band 5 + Band 4)]",Landsat - annual,y
 ndvi_p5_r250,5 percentile NDVI (250m),5% percentile of annual NDVI averaged over 250m radius,Landsat - annual,
-ndvi_p5_r500,5 percentile NDVI (500m),5% percentile of annual NDVI averaged over 500m radius,Landsat - annual,y
-ndvi_p50_r100,median NDVI (100m),median annual NDVI averaged over 100m radius,Landsat - annual,y
+ndvi_p5_r500,5 percentile NDVI (500m)*,5% percentile of annual NDVI averaged over 500m radius,Landsat - annual,y
+ndvi_p50_r100,median NDVI (100m)*,median annual NDVI averaged over 100m radius,Landsat - annual,y
 ndvi_p50_r250,median NDVI (250m),median annual NDVI averaged over 250m radius,Landsat - annual,
-ndvi_p50_r500,median NDVI (500m),median annual NDVI averaged over 500m radius,Landsat - annual,y
+ndvi_p50_r500,median NDVI (500m)*,median annual NDVI averaged over 500m radius,Landsat - annual,y
 ndvi_p95_r100,95 percentile NDVI (100m),95% percentile annual NDVI over 100m radius,Landsat - annual,
 ndvi_p95_r250,95 percentile NDVI (250m),95% percentile annual NDVI over 250m radius,Landsat - annual,
 ndvi_p95_r500,95 percentile NDVI (500m),95% percentile annual NDVI over 500m radius,Landsat - annual,
-cut_r1k,Area logged (1 km),proportion of area ever been logged (disturbed) within 1km radius,Anthropogenic,y
-cut_r250,Area logged (250m),proportion of area ever been logged (disturbed) within 250m radius,Anthropogenic,y
+cut_r1k,Area logged (1 km)*,proportion of area ever been logged (disturbed) within 1km radius,Anthropogenic,y
+cut_r250,Area logged (250m)*,proportion of area ever been logged (disturbed) within 250m radius,Anthropogenic,y
 cut_r500,Area logged (500m),proportion of area ever been logged (disturbed) within 500m radius,Anthropogenic,
-cut40_r1k,Area logged < 40 years (1 km),proportion of area logged (disturbed) within last 40 years within 1km radius,Anthropogenic,y
-cut40_r250,Area logged < 40 years (250m),proportion of area logged (disturbed) within last 40 years within 250m radius,Anthropogenic,y
+cut40_r1k,Area logged < 40 years (1 km)*,proportion of area logged (disturbed) within last 40 years within 1km radius,Anthropogenic,y
+cut40_r250,Area logged < 40 years (250m)*,proportion of area logged (disturbed) within last 40 years within 250m radius,Anthropogenic,y
 cut40_r500,Area logged < 40 years (500m),proportion of area logged (disturbed) within last 40 years within 500m radius,Anthropogenic,
-lg_DistRoad,Distance to road,distance to road logged log(x+0.001),Anthropogenic,y
-lg_DistStream,Distance to stream,distance to stream logged log(x+0.001),Topography,y
-insideHJA,HJA boundary,"Inside or outside the boundaris of HJ Andrews Experimental Forest, Oregon, USA",Anthropogenic,y
-DistRoad,Distance to road,distance to road,Anthropogenic,y
-DistStream,Distance to stream,distance to stream,Topography,y
-l_Cover_2m_4m,Canopy cover (2-4m),"Vegetation cover for 2m to 4m, for first returns",Lidar - Canopy,y
-l_Cover_2m_max,Canopy cover (2m+),"Vegetation cover based on the proportion of total returns at least 2 m above ground, for first returns",Lidar - Canopy,y
-l_Cover_4m_16m,Canopy cover (4-16m),"Vegetation cover for 4m to 16m, for first returns",Lidar - Canopy,y
+lg_DistRoad,Distance to road*,distance to road logged log(x+0.001),Anthropogenic,y
+lg_DistStream,Distance to stream*,distance to stream logged log(x+0.001),Topography,y
+insideHJA,HJA boundary*,"Inside or outside the boundaris of HJ Andrews Experimental Forest, Oregon, USA",Anthropogenic,y
+DistRoad,Distance to road*,distance to road,Anthropogenic,y
+DistStream,Distance to stream*,distance to stream,Topography,y
+l_Cover_2m_4m,Canopy cover (2-4m)*,"Vegetation cover for 2m to 4m, for first returns",Lidar - Canopy,y
+l_Cover_2m_max,Canopy cover (2m+)*,"Vegetation cover based on the proportion of total returns at least 2 m above ground, for first returns",Lidar - Canopy,y
+l_Cover_4m_16m,Canopy cover (4-16m)*,"Vegetation cover for 4m to 16m, for first returns",Lidar - Canopy,y
