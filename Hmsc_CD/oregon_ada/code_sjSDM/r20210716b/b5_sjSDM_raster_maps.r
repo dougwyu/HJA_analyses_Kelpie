@@ -62,7 +62,22 @@ sum(is.na(sp.res.test$auc))
 
 ## Filter species by auc
 auc.filt <- 0.70
-sum(sp.res.test$auc > auc.filt, na.rm = T)
+sum(sp.res.test$auc >= auc.filt, na.rm = T) # 87
+
+# What is incidence of species in test set?
+hist(colSums(otu.pa.csv.test))
+hist(colSums(otu.pa.csv)) # train set
+sum(colSums(otu.pa.csv.test) > 1)
+
+# What is incidence of test data
+table(colSums(otu.pa.csv.test))
+
+sum(colSums(otu.pa.csv.test) ==0) # 17 not represented
+
+plot(colSums(otu.pa.csv.test), sp.res.test$auc)
+
+
+(87+17) / ncol(otu.pa.csv.test)
 
 # ## extract species over AUC filter
 # str(pred.sp, max.level = 1)

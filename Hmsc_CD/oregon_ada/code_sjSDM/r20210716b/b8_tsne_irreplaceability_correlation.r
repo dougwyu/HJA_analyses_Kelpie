@@ -35,6 +35,7 @@ if(!dir.exists(plotsFolder)) dir.create(plotsFolder, recursive = TRUE)
 
 #### Load TSNE data 
 load(file.path(resFolder, "ord_tsne_res_cl_p50.rdata"))
+
 # tsne, r, rSites1, rSites2, NAs, 
 
 str(tsne, max.level = 1)
@@ -62,7 +63,7 @@ mod.cor <- cor(tsne$Y, newData[,vars11])
 mod.cor
 
 getwd()
-pdf(file.path(plotsFolder, "tsne_predictors_corrplot.pdf"), width = 8, height = 8)
+pdf(file.path(plotsFolder, "tsne_nopca_predictors_corrplot.pdf"), width = 8, height = 8)
 corrplot::corrplot(t(mod.cor), 
            is.corr = F,
            method = "ellipse",
@@ -78,7 +79,7 @@ corrplot::corrplot(t(mod.cor),
 
 dev.off()
 
-shell.exec(file.path(getwd(), plotsFolder, "tsne_predictors_corrplot.pdf"))
+shell.exec(file.path(getwd(), plotsFolder, "tsne_nopca_predictors_corrplot.pdf"))
 
 ## scatter plots
 
@@ -105,7 +106,7 @@ ind <- sample(1:nrow(newData), size = 5000)
 # ggsave(file.path(plotsFolder, "tsne_predictors_scatterplot.pdf"), p1)
 # shell.exec(file.path(getwd(), plotsFolder, "tsne_predictors_scatterplot.pdf"))
 
-pdf(file.path(plotsFolder, "tsne_predictors_scatterplot.pdf"), width = 2.5, height = 30)
+pdf(file.path(plotsFolder, "tsne_nopca_predictors_scatterplot.pdf"), width = 2.5, height = 30)
 par(mfcol=c(length(vars11), ncol(tsne$Y)), mar = c(2,2,2,2))
 sapply(vars11, function(x) smoothScatter(
   newData[ind,x], tsne$Y[ind,1], 
@@ -116,4 +117,4 @@ sapply(vars11, function(x) smoothScatter(
 
 dev.off()
 
-shell.exec(file.path(getwd(), plotsFolder, "tsne_predictors_scatterplot.pdf"))
+shell.exec(file.path(getwd(), plotsFolder, "tsne_nopca_predictors_scatterplot.pdf"))
