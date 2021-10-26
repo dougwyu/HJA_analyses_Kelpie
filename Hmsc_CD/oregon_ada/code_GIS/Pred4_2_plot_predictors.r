@@ -110,5 +110,21 @@ for(i in seq_along(start)){
 
 dev.off()
 
+### some individual plots
 
+n <- 36
+
+extent(allBrck[[i]])
+hcl.pals()
+
+png("Hmsc_CD/local/plots/predictors_small%02d.png", width = 500, height = 500)
+par(bg = NA, mar = c(0,0,0,0), oma = c(0,0,0,0))
+for(i in 1:n) image(allBrck[[i]], axes = F,  
+                    col = hcl.colors(12, c("YlOrRd",
+                                           "Viridis",
+                                           "Plasma",
+                                           "Inferno",
+                                           "Terrain",
+                                           "Terrain 2")[i%%6+1], rev = TRUE))
+dev.off()
 

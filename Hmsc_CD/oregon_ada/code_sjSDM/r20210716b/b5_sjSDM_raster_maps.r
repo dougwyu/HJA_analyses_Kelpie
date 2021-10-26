@@ -26,6 +26,8 @@ library(raster)
 library(sf)
 library(ggplot2)
 
+source("https://raw.githubusercontent.com/Cdevenish/R-Material/master/Functions/w.xls.r")
+
 utm10N <- 32610
 
 ## on ADA
@@ -62,7 +64,7 @@ sum(is.na(sp.res.test$auc))
 
 ## Filter species by auc
 auc.filt <- 0.70
-sum(sp.res.test$auc >= auc.filt, na.rm = T) # 87
+sum(sp.res.test$auc >= auc.filt, na.rm = T) # 88
 
 # What is incidence of species in test set?
 hist(colSums(otu.pa.csv.test))
@@ -76,8 +78,13 @@ sum(colSums(otu.pa.csv.test) ==0) # 17 not represented
 
 plot(colSums(otu.pa.csv.test), sp.res.test$auc)
 
+test.incidence <- data.frame(species = colnames(otu.pa.csv.test), test.noSites = colSums(otu.pa.csv.test), 
+                              test.incid = colSums(otu.pa.csv.test)/nrow(otu.pa.csv.test), row.names = NULL)
 
-(87+17) / ncol(otu.pa.csv.test)
+head(test.incidence)
+
+# how many species are included?
+(88+17) / ncol(otu.pa.csv.test)
 
 # ## extract species over AUC filter
 # str(pred.sp, max.level = 1)
@@ -99,8 +106,10 @@ spp <- data.frame(species = colnames(get(paste0("otu.", abund, ".csv")))) %>%
                                )) %>%
   dplyr::select(-empty)%>%
   mutate(auc = sp.res.test$auc,
+         tjur = sp.res.test$tjur,
          incidence = incidence,
-         best.name = paste(best.name, BOLDID, sep = "_"))
+         best.name = paste(best.name, BOLDID, sep = "_"))%>%
+  left_join(y = test.incidence, by = "species")
 
 head(spp)
 
@@ -109,6 +118,18 @@ sum(grepl("NA_NA", spp$best.name))
 head(spp, 30)
 
 sum(is.na(spp$family))
+
+## check relationship of incidence and tjur
+# plot(spp$incidence, spp$tjur)
+# plot(spp$incidence, spp$auc)
+cor.test(spp$incidence, spp$tjur)
+cor.test(spp$incidence, spp$auc)
+
+# plot(spp$test.incid, spp$tjur)
+cor.test(spp$test.incid, spp$tjur)
+cor.test(spp$test.incid, spp$auc)
+
+# plot(spp$test.incid, spp$auc)
 
 ## In ADA
 
@@ -120,6 +141,8 @@ load(file.path(resFolder, paste0("sjSDM_predictions_", "M1S1_", "min", minocc, "
 load(file.path(resFolder, paste0("sjSDM_predictions_", "M1S1_", "min", minocc, "_", varsName, "_", abund, "_clamp", ".rdata")))
 # pred.mn.cl, pred.sd.cl
 
+## local
+# load("J:/UEA/Oregon/gis/processed_gis_data/r_oversize/sjSDM_predictions_M1S1_min6_vars11_pa_clamp.rdata")
 
 
 ## local
@@ -138,15 +161,26 @@ load(file.path(gis_out, "templateRaster.rdata")) ## r.msk, indNA aoi.pred.sf, r.
 aoi.pred.sf_edit <- st_read(file.path(gis_out, "shape/aoi_pred_sf_edit.shp"))
 aoi.pred.sf_edit <- st_make_valid(aoi.pred.sf_edit)
 
-pred.in <- pred.mn[,sp.res.test$auc > auc.filt & !is.na(sp.res.test$auc)]
+st_area(aoi.pred.sf_edit)/1000000
+
+pred.in <- pred.mn[,sp.res.test$auc >= auc.filt & !is.na(sp.res.test$auc)]
 dim(pred.in)
 
 # clamp predictions filtered by species
-pred.in.cl <- pred.mn.cl[,sp.res.test$auc > auc.filt & !is.na(sp.res.test$auc)]
+pred.in.cl <- pred.mn.cl[,sp.res.test$auc >= auc.filt & !is.na(sp.res.test$auc)]
 
 ## get species names too
-spp.in <- spp[sp.res.test$auc > auc.filt & !is.na(sp.res.test$auc), ]
+spp.in <- spp[sp.res.test$auc >= auc.filt & !is.na(sp.res.test$auc), ]
 head(spp.in)
+
+w.xls(spp.in)
+sppTable <- spp.in
+
+colnames(sppTable)[1] <- "colname"
+write.csv(sppTable, file = file.path(resFolder, "modelled_species.csv"), row.names = F)
+rm(sppTable)
+
+hist(spp.in$tjur)
 
 ## make rasters
 # plot(r.aoi.pred)
@@ -216,6 +250,7 @@ hja <- st_read(file.path(gis_in, "shape/HJA_Boundary.shp"))
 hja_bound <- subset(hja, FP_NAME == "H.J. Andrew Experimental Forest")
 hja.utm <- st_transform(hja_bound, crs = utm10N)
 
+st_area(hja.utm) / 1000000
 
 ## Make species richness stack
 rStack.bin.cl
@@ -254,9 +289,36 @@ if(!dir.exists(sppFolder)) dir.create(sppFolder)
 writeRaster(rStack.cl, bylayer = T, filename = file.path(sppFolder, "spp_cl.tif"), suffix = "names", datatype = "FLT4S", overwrite = T)
 
 
+## save clamped prediction species raster stack
+save(rStack.cl, file = file.path(resFolder, "rasterStacks_cl.rdata"))
+
+# convert HJA to raster and save
+hja.r <- rStack.cl
+
+hja.utm
+plot(r.aoi.pred, colNA = "black")
+hja.r <- rasterize(hja.utm, r.aoi.pred)
+
+plot(hja.r, colNA = "black")
+
+# convert to 1 and 0 for inside/outside HJA
+
+hja.r[is.na(hja.r)] <- 0
+hja.r <- mask(hja.r, r.aoi.pred)
+plot(hja.r, colNA = "black")
+
+save(hja.r, file = file.path(gis_out, "hja_raster.rdata"))
+
+getwd()
+
+## write single pdf with all spp
+
+
 
 
 ##### Do plots #####
+
+source("code_GIS/plotStack.r")
 
 # function to add to each plot
 addAll <- function(){
@@ -266,6 +328,14 @@ addAll <- function(){
   plot(st_geometry(xy.utm), add = T, col = "grey40", pch = 3, cex = 0.2)
 
 }
+
+
+## write single pdf with all spp
+pdf(file.path(plotsFolder, "all_spp.pdf"), width = 7, height = 7)
+plotStack(rStack.cl, addfun = addAll, cex.main = 0.7)
+dev.off()
+
+
 
 # plot(spRich)
 
@@ -280,8 +350,6 @@ top4 <- names(sort(table(spp.in$order), decreasing = T)[1:4])
 top4
 
 # plot(rStack[[which(spp.auc$order == "Lepidoptera")]])
-
-source("code_GIS/plotStack.r")
 
 # pdf(file.path(plotsFolder, "coleoptera.pdf"), width = 7, height = 7)
 # plotStack(rStack[[which(spp.in$order == "Coleoptera")]], addfun = addAll)
@@ -312,8 +380,6 @@ source("code_GIS/plotStack.r")
 
 
 # plot(spRich_order[[top4]])
-
-# save(rStack, file = file.path(resFolder, "rasterStacks.rdata"))
 
 
 # p <- ggplot()+
@@ -417,6 +483,7 @@ head(hsd.df)
 save(hsd.df, df1, df2, df3, df4, cut.40, hja.utm, xy.utm, spRich.ex, spRich.cl,
      rStack.sum.ex, rStack.sum.cl,rStack.bin.ex, rStack.bin.cl, spp.in, spp, xlim, ylim,
      file = file.path(resFolder, "plotData.rdata"))
+
 
 
 
